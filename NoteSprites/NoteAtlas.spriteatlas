@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: NoteAtlas
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 1
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 1
+      enableTightPacking: 1
+    variantMultiplier: 1
+    packables:
+    - {fileID: 21300000, guid: 4d7a7c66572c8c7408501fa7c935d980, type: 3}
+    - {fileID: 2800000, guid: 4d7a7c66572c8c7408501fa7c935d980, type: 3}
+    - {fileID: 2800000, guid: bae87d7032c5cc740bd40821d95511b4, type: 3}
+    - {fileID: 2800000, guid: d0aa5f8effbcdcf419c38667b5bde60a, type: 3}
+    - {fileID: 2800000, guid: 01944aea3f67cdc42a5a2b8d3e99c15f, type: 3}
+    - {fileID: 2800000, guid: ebdb59156a9b6b642902cbc2288b4d4a, type: 3}
+    - {fileID: 2800000, guid: b61efaf13e7dc2c448d4d2c02fb72af7, type: 3}
+    - {fileID: 2800000, guid: 8c1fbbdfd8bb8e54e85ce71c092af8a0, type: 3}
+    - {fileID: 2800000, guid: dd84830ef07e5cf4192887bc6ae2f0e6, type: 3}
+    totalSpriteSurfaceArea: 283402
+    bindAsDefault: 1
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: bae87d7032c5cc740bd40821d95511b4, type: 3}
+  - {fileID: 21300000, guid: b61efaf13e7dc2c448d4d2c02fb72af7, type: 3}
+  - {fileID: 21300000, guid: ebdb59156a9b6b642902cbc2288b4d4a, type: 3}
+  - {fileID: 21300000, guid: 4d7a7c66572c8c7408501fa7c935d980, type: 3}
+  - {fileID: 21300000, guid: 01944aea3f67cdc42a5a2b8d3e99c15f, type: 3}
+  - {fileID: 21300000, guid: dd84830ef07e5cf4192887bc6ae2f0e6, type: 3}
+  - {fileID: 21300000, guid: d0aa5f8effbcdcf419c38667b5bde60a, type: 3}
+  - {fileID: 21300000, guid: 8c1fbbdfd8bb8e54e85ce71c092af8a0, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - clef_bass
+  - bar_line
+  - quarternote_up_striked
+  - staff
+  - quarternote_up
+  - quarternote_down
+  - clef_treble
+  - quarternote_down_strike
+  m_Tag: NoteAtlas
+  m_IsVariant: 0
