@@ -138,7 +138,8 @@ namespace ABCUnity
             if (stepCount > 3)
                 noteDirection = NoteDirection.Down;
 
-            if (stepCount < -1 && stepCount % 2 != 0)
+            if ((stepCount < -1 && stepCount % 2 != 0) || // below the staff
+                (stepCount > 8 && stepCount %2 == 1)) // above the staff
                 noteBar = StaffMarker.Middle;
 
             var obj = cache.GetObject($"Note_{noteName}_{noteDirection.ToString()}_{noteBar.ToString()}");
