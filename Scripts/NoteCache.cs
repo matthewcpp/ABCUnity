@@ -17,7 +17,7 @@ namespace ABCUnity
             this.spriteAtlas = spriteAtlas;
         }
 
-        public GameObject GetObject(string name)
+        public SpriteRenderer GetSpriteObject(string name)
         {
             var sprite = GetSprite(name);
 
@@ -26,8 +26,10 @@ namespace ABCUnity
                 var obj = objectPool[objectPool.Count - 1];
                 objectPool.RemoveAt(objectPool.Count - 1);
 
-                obj.GetComponent<SpriteRenderer>().sprite = sprite;
-                return obj;
+                var spriteRenderer = obj.GetComponent<SpriteRenderer>();
+                spriteRenderer.sprite = sprite;
+
+                return spriteRenderer;
             }
 
             return CreateSpriteObject(sprite);
@@ -38,13 +40,13 @@ namespace ABCUnity
             objectPool.Add(obj);
         }
 
-        GameObject CreateSpriteObject(Sprite sprite)
+        SpriteRenderer CreateSpriteObject(Sprite sprite)
         {
             var staffObj = new GameObject();
             var spriteRenderer = staffObj.AddComponent<SpriteRenderer>();
             spriteRenderer.sprite = sprite;
 
-            return staffObj;
+            return spriteRenderer;
         }
 
         private Sprite GetSprite(string name)

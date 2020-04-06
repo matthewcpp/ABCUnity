@@ -5,6 +5,27 @@ using UnityEngine.U2D;
 
 namespace ABCUnity
 {
+    class VoiceLayout
+    {
+        public ABC.Voice voice { get; }
+        public float minY { get; set; } = float.MaxValue;
+        public float maxY { get; set; } = float.MinValue;
+
+        public VoiceLayout(ABC.Voice v)
+        {
+            voice = v;
+        }
+
+        public void AdjustMinMax(Bounds b)
+        {
+            if (b.min.y < minY)
+                minY = b.min.y;
+
+            if (b.max.y > maxY)
+                maxY = b.max.y;
+        }
+    }
+
     public class Layout : MonoBehaviour
     {
         [SerializeField]
@@ -38,20 +59,24 @@ namespace ABCUnity
         }
 
         Dictionary<ABC.Clef, ABC.Note.Value> cleffZero = new Dictionary<ABC.Clef, ABC.Note.Value>()
-    {
-        { ABC.Clef.Treble, ABC.Note.Value.F4}, { ABC.Clef.Bass, ABC.Note.Value.A2}
-    };
+        {
+            { ABC.Clef.Treble, ABC.Note.Value.F4}, { ABC.Clef.Bass, ABC.Note.Value.A2}
+        };
 
-        const float staffHeight = 2.25f;
-        const float staffClear = 2.0f;
         const float noteStep = 0.28f;
         const float staffPadding = 0.3f;
+        const float staffMargin = 0.2f;
         const float clefAdvance = 2.0f;
         const float noteAdvance = 1.5f;
 
+        float staffYPos = 0.0f;
         Vector3 insertPos = Vector3.zero;
 
+        List<VoiceLayout> voiceLayouts = new List<VoiceLayout>();
+        VoiceLayout layout;
+
         GameObject currentStaff;
+        GameObject container;
 
         void Create()
         {
@@ -60,14 +85,19 @@ namespace ABCUnity
 
             foreach (var voice in tune.voices)
             {
-                LayoutStaff(voice);
+                container = new GameObject();
+                layout = new VoiceLayout(voice);
+
+                insertPos = Vector3.zero;
+
+                LayoutStaff();
 
                 foreach (var item in voice.items)
                 {
                     switch (item.type)
                     {
                         case ABC.Item.Type.Note:
-                            LayoutNote(item as ABC.NoteItem, voice);
+                            LayoutNote(item as ABC.NoteItem);
                             break;
 
                         case ABC.Item.Type.Bar:
@@ -78,8 +108,11 @@ namespace ABCUnity
 
                 AdjustStaffScale();
 
-                insertPos.x = 0.0f;
-                insertPos.y -= staffClear;
+                container.transform.parent = this.transform;
+                container.transform.localPosition = new Vector3(0.0f, staffYPos - layout.maxY, 0.0f);
+
+                staffYPos -= (layout.maxY - layout.minY);
+                staffYPos -= staffMargin;
             }
 
             this.gameObject.transform.localScale = scale;
@@ -94,26 +127,28 @@ namespace ABCUnity
             
         void LayoutBar(ABC.BarItem barItem)
         {
-            var barObj = cache.GetObject("Bar_Line");
-            barObj.transform.parent = this.transform;
+            var barObj = cache.GetSpriteObject("Bar_Line");
+            barObj.transform.parent = container.transform;
             barObj.transform.localPosition = insertPos;
 
             insertPos.x += noteAdvance / 2.0f;
         }
 
-        void LayoutStaff(ABC.Voice voice)
+        void LayoutStaff()
         {
-            insertPos.y -= staffHeight;
-            currentStaff = cache.GetObject("Staff");
-            currentStaff.transform.parent = this.transform;
+            var staff = cache.GetSpriteObject("Staff");
+            currentStaff = staff.gameObject;
+            currentStaff.transform.parent = container.transform;
             currentStaff.transform.localPosition = insertPos;
 
+            layout.AdjustMinMax(staff.bounds);
             insertPos.x += staffPadding;
 
-            var clef = cache.GetObject($"Clef_{voice.clef.ToString()}");
-            clef.transform.parent = this.transform;
+            var clef = cache.GetSpriteObject($"Clef_{layout.voice.clef.ToString()}");
+            clef.transform.parent = container.transform;
             clef.transform.localPosition = insertPos;
 
+            layout.AdjustMinMax(clef.bounds);
             insertPos.x += clefAdvance;
         }
 
@@ -127,9 +162,9 @@ namespace ABCUnity
             None, Middle, Above, Below
         }
 
-        void LayoutNote(ABC.NoteItem noteItem, ABC.Voice voice)
+        void LayoutNote(ABC.NoteItem noteItem)
         {
-            int stepCount = noteItem.note.value - cleffZero[voice.clef];
+            int stepCount = noteItem.note.value - cleffZero[layout.voice.clef];
 
             var noteName = noteItem.note.length.ToString();
             var noteDirection = NoteDirection.Up;
@@ -154,17 +189,18 @@ namespace ABCUnity
                     InsertStaffMark(sc);
             }
 
-            var obj = cache.GetObject($"Note_{noteName}_{noteDirection.ToString()}_{staffMarker.ToString()}");
-            obj.transform.parent = this.transform;
+            var note = cache.GetSpriteObject($"Note_{noteName}_{noteDirection.ToString()}_{staffMarker.ToString()}");
+            note.transform.parent = container.transform;
+            note.transform.localPosition = insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
-            obj.transform.localPosition = insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+            layout.AdjustMinMax(note.bounds);
             insertPos.x += noteAdvance;
         }
 
         void InsertStaffMark(int stepCount)
         {
-            var mark = cache.GetObject("Staff_Mark");
-            mark.transform.parent = this.transform;
+            var mark = cache.GetSpriteObject("Staff_Mark");
+            mark.transform.parent = container.transform;
             mark.transform.localPosition = insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
         }
     }
