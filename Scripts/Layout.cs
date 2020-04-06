@@ -24,6 +24,8 @@ namespace ABCUnity
             if (b.max.y > maxY)
                 maxY = b.max.y;
         }
+
+        public float height { get { return maxY - minY; } }
     }
 
     public class Layout : MonoBehaviour
@@ -36,9 +38,11 @@ namespace ABCUnity
         private SpriteCache cache;
 
         private ABC.Tune tune;
+        private BoxCollider2D bounding;
 
         public void Start()
         {
+            bounding = this.GetComponent<BoxCollider2D>();
             cache = new SpriteCache(spriteAtlas);
 
             if (AbcCode.Length > 0)
@@ -69,7 +73,7 @@ namespace ABCUnity
         const float clefAdvance = 2.0f;
         const float noteAdvance = 1.5f;
 
-        float staffYPos = 0.0f;
+        Vector2 staffOffset;
         Vector3 insertPos = Vector3.zero;
 
         List<VoiceLayout> voiceLayouts = new List<VoiceLayout>();
@@ -80,6 +84,8 @@ namespace ABCUnity
 
         void Create()
         {
+            staffOffset = new Vector2(-bounding.bounds.extents.x, bounding.bounds.extents.y);
+
             Vector3 scale = this.gameObject.transform.localScale;
             this.gameObject.transform.localScale = Vector3.one;
 
@@ -109,10 +115,9 @@ namespace ABCUnity
                 AdjustStaffScale();
 
                 container.transform.parent = this.transform;
-                container.transform.localPosition = new Vector3(0.0f, staffYPos - layout.maxY, 0.0f);
+                container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - layout.maxY, 0.0f);
 
-                staffYPos -= (layout.maxY - layout.minY);
-                staffYPos -= staffMargin;
+                staffOffset.y -= (layout.height + staffMargin);
             }
 
             this.gameObject.transform.localScale = scale;
