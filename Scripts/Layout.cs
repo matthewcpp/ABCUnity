@@ -124,7 +124,7 @@ namespace ABCUnity
 
         enum StaffMarker
         {
-            None, Middle
+            None, Middle, Above, Below
         }
 
         void LayoutNote(ABC.NoteItem noteItem, ABC.Voice voice)
@@ -133,20 +133,39 @@ namespace ABCUnity
 
             var noteName = noteItem.note.length.ToString();
             var noteDirection = NoteDirection.Up;
-            var noteBar = StaffMarker.None;
+            var staffMarker = StaffMarker.None;
 
             if (stepCount > 3)
                 noteDirection = NoteDirection.Down;
 
-            if ((stepCount < -1 && stepCount % 2 != 0) || // below the staff
-                (stepCount > 8 && stepCount %2 == 1)) // above the staff
-                noteBar = StaffMarker.Middle;
+            if (stepCount < -2)  // below the staff
+            {
+                staffMarker = stepCount % 2 == 0 ? StaffMarker.Above : StaffMarker.Middle;
 
-            var obj = cache.GetObject($"Note_{noteName}_{noteDirection.ToString()}_{noteBar.ToString()}");
+                for (int sc = stepCount + 2; sc < -2; sc += 2)
+                    InsertStaffMark(sc);
+            }
+
+            else if (stepCount > 8) // above the staff
+            {
+                staffMarker = stepCount % 2 == 0 ? StaffMarker.Below : StaffMarker.Middle;
+
+                for (int sc = stepCount - 2; sc > 8; sc -= 2)
+                    InsertStaffMark(sc);
+            }
+
+            var obj = cache.GetObject($"Note_{noteName}_{noteDirection.ToString()}_{staffMarker.ToString()}");
             obj.transform.parent = this.transform;
 
             obj.transform.localPosition = insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
             insertPos.x += noteAdvance;
+        }
+
+        void InsertStaffMark(int stepCount)
+        {
+            var mark = cache.GetObject("Staff_Mark");
+            mark.transform.parent = this.transform;
+            mark.transform.localPosition = insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
         }
     }
 }
