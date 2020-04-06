@@ -91,10 +91,10 @@ namespace ABCUnity
             var scaleX = (insertPos.x + noteAdvance) / currentWidth;
             currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
         }
-
+            
         void LayoutBar(ABC.BarItem barItem)
         {
-            var barObj = cache.GetObject("bar_line");
+            var barObj = cache.GetObject("Bar_Line");
             barObj.transform.parent = this.transform;
             barObj.transform.localPosition = insertPos;
 
@@ -104,34 +104,44 @@ namespace ABCUnity
         void LayoutStaff(ABC.Voice voice)
         {
             insertPos.y -= staffHeight;
-            currentStaff = cache.GetObject("staff");
+            currentStaff = cache.GetObject("Staff");
             currentStaff.transform.parent = this.transform;
             currentStaff.transform.localPosition = insertPos;
 
             insertPos.x += staffPadding;
 
-            var clef = cache.GetObject(voice.clef == ABC.Clef.Treble ? "clef_treble" : "clef_bass");
+            var clef = cache.GetObject($"Clef_{voice.clef.ToString()}");
             clef.transform.parent = this.transform;
             clef.transform.localPosition = insertPos;
 
             insertPos.x += clefAdvance;
         }
 
+        enum NoteDirection
+        {
+            Down, Up
+        }
+
+        enum StaffMarker
+        {
+            None, Middle
+        }
+
         void LayoutNote(ABC.NoteItem noteItem, ABC.Voice voice)
         {
             int stepCount = noteItem.note.value - cleffZero[voice.clef];
 
-            string note_handle = "quarternote";
+            var noteName = noteItem.note.length.ToString();
+            var noteDirection = NoteDirection.Up;
+            var noteBar = StaffMarker.None;
 
             if (stepCount > 3)
-                note_handle += "_down";
-            else
-                note_handle += "_up";
+                noteDirection = NoteDirection.Down;
 
             if (stepCount < -1 && stepCount % 2 != 0)
-                note_handle += "_striked";
+                noteBar = StaffMarker.Middle;
 
-            var obj = cache.GetObject(note_handle);
+            var obj = cache.GetObject($"Note_{noteName}_{noteDirection.ToString()}_{noteBar.ToString()}");
             obj.transform.parent = this.transform;
 
             obj.transform.localPosition = insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);

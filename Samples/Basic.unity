@@ -328,7 +328,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spriteAtlas: {fileID: 4343727234628468602, guid: c135832626606554697bc5e6d39f5867,
     type: 2}
-  AbcCode: '[V:1] CDEF|GABc [V:2 clef=bass] A,,B,,C,D, | E,F,G, A,'
+  AbcCode: '[L:1/4] [V:1] CDEF| efga [L:1/4] [V:2 clef=bass] A,,B,,C,D, | G,A,B,C'
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
