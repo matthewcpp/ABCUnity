@@ -33,6 +33,8 @@ namespace ABCUnity
         [SerializeField]
         SpriteAtlas spriteAtlas; // set in editor
 
+        float layoutScale = 0.5f;
+
         public string AbcCode;
 
         private SpriteCache cache;
@@ -115,9 +117,10 @@ namespace ABCUnity
                 AdjustStaffScale();
 
                 container.transform.parent = this.transform;
-                container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - layout.maxY, 0.0f);
+                container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.maxY * layoutScale), 0.0f);
+                container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
 
-                staffOffset.y -= (layout.height + staffMargin);
+                staffOffset.y -= (layout.height + staffMargin) * layoutScale;
             }
 
             this.gameObject.transform.localScale = scale;
