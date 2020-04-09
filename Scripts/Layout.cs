@@ -1,62 +1,36 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.U2D;
 
 namespace ABCUnity
 {
-    class VoiceLayout
-    {
-        public ABC.Voice voice { get; }
-        public float minY { get; set; } = float.MaxValue;
-        public float maxY { get; set; } = float.MinValue;
-
-        public VoiceLayout(ABC.Voice v)
-        {
-            voice = v;
-        }
-
-        public void AdjustMinMax(Bounds b)
-        {
-            if (b.min.y < minY)
-                minY = b.min.y;
-
-            if (b.max.y > maxY)
-                maxY = b.max.y;
-        }
-
-        public float height { get { return maxY - minY; } }
-    }
-
     public class Layout : MonoBehaviour
     {
         [SerializeField]
         SpriteAtlas spriteAtlas; // set in editor
 
+        [SerializeField]
         float layoutScale = 0.5f;
-
-        public string AbcCode;
 
         private SpriteCache cache;
 
-        private ABC.Tune tune;
+        public ABC.Tune tune { get; private set; }
         private BoxCollider2D bounding;
 
-        public void Start()
+        public void Awake()
         {
             bounding = this.GetComponent<BoxCollider2D>();
             cache = new SpriteCache(spriteAtlas);
-
-            if (AbcCode.Length > 0)
-                LoadTune(AbcCode);
         }
 
-        public void LoadTune(string abc)
+        public void LoadString(string abc)
         {
             try
             {
-                tune = ABC.Tune.Load(AbcCode);
-                Create();
+                tune = ABC.Tune.Load(abc);
+                LayoutTune();
             }
             catch (ABC.ParseException e)
             {
@@ -64,7 +38,20 @@ namespace ABCUnity
             }
         }
 
-        Dictionary<ABC.Clef, ABC.Note.Value> cleffZero = new Dictionary<ABC.Clef, ABC.Note.Value>()
+        public void LoadStream(Stream stream)
+        {
+            try
+            {
+                tune = ABC.Tune.Load(stream);
+                LayoutTune();
+            }
+            catch (ABC.ParseException e)
+            {
+                Debug.Log(e.Message);
+            }
+        }
+
+        static Dictionary<ABC.Clef, ABC.Note.Value> cleffZero = new Dictionary<ABC.Clef, ABC.Note.Value>()
         {
             { ABC.Clef.Treble, ABC.Note.Value.F4}, { ABC.Clef.Bass, ABC.Note.Value.A2}
         };
@@ -76,88 +63,155 @@ namespace ABCUnity
         const float noteAdvance = 1.5f;
 
         Vector2 staffOffset;
-        Vector3 insertPos = Vector3.zero;
 
-        List<VoiceLayout> voiceLayouts = new List<VoiceLayout>();
-        VoiceLayout layout;
+        List<VoiceLayout> layouts = new List<VoiceLayout>();
 
-        GameObject currentStaff;
-        GameObject container;
+        private float horizontalMax;
 
-        void Create()
+        void LayoutTune()
         {
+            if (tune == null) return;
+            horizontalMax = bounding.size.x * 1.0f / layoutScale;
+
             staffOffset = new Vector2(-bounding.bounds.extents.x, bounding.bounds.extents.y);
 
             Vector3 scale = this.gameObject.transform.localScale;
             this.gameObject.transform.localScale = Vector3.one;
 
-            foreach (var voice in tune.voices)
+            // create the layout structures for each voice
+            for (int i =0 ; i < tune.voices.Count; i++)
             {
-                container = new GameObject();
-                layout = new VoiceLayout(voice);
+                var layout = new VoiceLayout(tune.voices[i]);
+                layouts.Add(layout);
+                LayoutStaff(layout);
+            }
 
-                insertPos = Vector3.zero;
+            int beatCount = 4; // TODO: parse the time signature.
 
-                LayoutStaff();
+            for (int measure = 0; measure < layouts[0].alignment.measures.Count; measure++)
+            {
+                foreach (var layout in layouts) // layout.NewMeasure()
+                    layout.NewMeasure();
 
-                foreach (var item in voice.items)
+                for (int beat = 1; beat <= beatCount; beat++)
                 {
-                    switch (item.type)
-                    {
-                        case ABC.Item.Type.Note:
-                            LayoutNote(item as ABC.NoteItem);
-                            break;
+                    float maxBeatX = float.MinValue;
 
-                        case ABC.Item.Type.Bar:
-                            LayoutBar(item as ABC.BarItem);
-                            break;
-                    };
+                    foreach (var layout in layouts)
+                    {
+                        var measureInfo = layout.alignment.measures[measure];
+                        var beatInfo = measureInfo.beatItems[layout.beatAlignmentIndex];
+
+                        // if this beat is the start of a new group of notes render them
+                        if (beatInfo.beatStart == beat)
+                        {
+                            foreach (var item in beatInfo.items)
+                            {
+                                switch (item.type)
+                                {
+                                    case ABC.NoteItem.Type.Note:
+                                        LayoutNote(item as ABC.NoteItem, layout);
+                                        break;
+                                }
+                            }
+
+                            if (layout.beatAlignmentIndex < measureInfo.beatItems.Count - 1)
+                                layout.beatAlignmentIndex += 1;
+                        }
+
+                        maxBeatX = Math.Max(maxBeatX, layout.measure.position.x);
+                    }
+
+                    // in order to preserve alignment, all layouts will advance to the furthest position of the current beat marker
+                    foreach (var layout in layouts)
+                        layout.measure.position.x = maxBeatX;
                 }
 
-                AdjustStaffScale();
+                bool newLineNeeded = false;
 
-                container.transform.parent = this.transform;
-                container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.maxY * layoutScale), 0.0f);
-                container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
+                // render the bar to end the measure and ensure they will all fit on new staff line
+                foreach (var layout in layouts)
+                {
+                    var measureInfo = layout.alignment.measures[measure];
+                    LayoutBar(measureInfo.bar, layout);
 
-                staffOffset.y -= (layout.height + staffMargin) * layoutScale;
+                    if (layout.staff.position.x + layout.measure.position.x > horizontalMax)
+                        newLineNeeded = true;
+                }
+
+                if (newLineNeeded)
+                {
+                    FinalizeStaffLines();
+
+                    foreach (var layout in layouts)
+                    {
+                        layout.NewStaffline();
+                        LayoutStaff(layout);
+                    }
+                }
+
+                // Add the measure to the staff line
+                foreach (var layout in layouts)
+                {
+                    layout.measure.container.transform.localPosition = layout.staff.position;
+                    layout.measure.container.transform.parent = layout.staff.container.transform;
+                    layout.staff.position.x += layout.measure.position.x;
+                    layout.UpdateStaffBounding();
+                }
             }
+
+            FinalizeStaffLines();
 
             this.gameObject.transform.localScale = scale;
         }
 
-        void AdjustStaffScale()
+        /// <summary>Calculates the final size of the staff and positions it correctly relative to the container.</summary>
+        void FinalizeStaffLines()
         {
-            var currentWidth = currentStaff.GetComponent<SpriteRenderer>().bounds.size.x;
-            var scaleX = (insertPos.x + noteAdvance) / currentWidth;
-            currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
-        }
-            
-        void LayoutBar(ABC.BarItem barItem)
-        {
-            var barObj = cache.GetSpriteObject("Bar_Line");
-            barObj.transform.parent = container.transform;
-            barObj.transform.localPosition = insertPos;
+            foreach (var layout in layouts)
+            {
+                AdjustStaffScale(layout);
 
-            insertPos.x += noteAdvance / 2.0f;
+                layout.staff.container.transform.parent = this.transform;
+                layout.staff.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.staff.maxY * layoutScale), 0.0f);
+                layout.staff.container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
+
+                staffOffset.y -= (layout.staff.height + staffMargin) * layoutScale;
+            }
         }
 
-        void LayoutStaff()
+        void LayoutStaff(VoiceLayout layout)
         {
             var staff = cache.GetSpriteObject("Staff");
-            currentStaff = staff.gameObject;
-            currentStaff.transform.parent = container.transform;
-            currentStaff.transform.localPosition = insertPos;
+            layout.currentStaff = staff.gameObject;
+            layout.currentStaff.transform.parent = layout.staff.container.transform;
+            layout.currentStaff.transform.localPosition = layout.staff.position;
 
-            layout.AdjustMinMax(staff.bounds);
-            insertPos.x += staffPadding;
+            layout.staff.UpdateBounds(staff.bounds);
+            layout.staff.position.x += staffPadding;
 
             var clef = cache.GetSpriteObject($"Clef_{layout.voice.clef.ToString()}");
-            clef.transform.parent = container.transform;
-            clef.transform.localPosition = insertPos;
+            clef.transform.parent = layout.staff.container.transform;
+            clef.transform.localPosition = layout.staff.position;
 
-            layout.AdjustMinMax(clef.bounds);
-            insertPos.x += clefAdvance;
+            layout.staff.UpdateBounds(clef.bounds);
+            layout.staff.position.x += clefAdvance;
+        }
+
+        void AdjustStaffScale(VoiceLayout layout)
+        {
+            var currentWidth = layout.currentStaff.GetComponent<SpriteRenderer>().bounds.size.x;
+            var scaleX = layout.staff.position.x / currentWidth;
+            layout.currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
+        }
+
+        void LayoutBar(ABC.BarItem barItem, VoiceLayout layout)
+        {
+            var barObj = cache.GetSpriteObject("Bar_Line");
+            barObj.transform.parent = layout.measure.container.transform;
+            barObj.transform.localPosition = layout.measure.position;
+
+            layout.measure.position.x += noteAdvance / 2.0f;
         }
 
         enum NoteDirection
@@ -169,8 +223,8 @@ namespace ABCUnity
         {
             None, Middle, Above, Below
         }
-
-        void LayoutNote(ABC.NoteItem noteItem)
+        
+        void LayoutNote(ABC.NoteItem noteItem, VoiceLayout layout)
         {
             int stepCount = noteItem.note.value - cleffZero[layout.voice.clef];
 
@@ -186,7 +240,7 @@ namespace ABCUnity
                 staffMarker = stepCount % 2 == 0 ? StaffMarker.Above : StaffMarker.Middle;
 
                 for (int sc = stepCount + 2; sc < -2; sc += 2)
-                    InsertStaffMark(sc);
+                    InsertStaffMark(sc, layout);
             }
 
             else if (stepCount > 8) // above the staff
@@ -194,22 +248,22 @@ namespace ABCUnity
                 staffMarker = stepCount % 2 == 0 ? StaffMarker.Below : StaffMarker.Middle;
 
                 for (int sc = stepCount - 2; sc > 8; sc -= 2)
-                    InsertStaffMark(sc);
+                    InsertStaffMark(sc, layout);
             }
 
             var note = cache.GetSpriteObject($"Note_{noteName}_{noteDirection.ToString()}_{staffMarker.ToString()}");
-            note.transform.parent = container.transform;
-            note.transform.localPosition = insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+            note.transform.parent = layout.measure.container.transform;
+            note.transform.localPosition = layout.measure.position + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
-            layout.AdjustMinMax(note.bounds);
-            insertPos.x += noteAdvance;
+            layout.measure.UpdateBounds(note.bounds);
+            layout.measure.position.x += noteAdvance;
         }
-
-        void InsertStaffMark(int stepCount)
+        
+        void InsertStaffMark(int stepCount, VoiceLayout layout)
         {
             var mark = cache.GetSpriteObject("Staff_Mark");
-            mark.transform.parent = container.transform;
-            mark.transform.localPosition = insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+            mark.transform.parent = layout.measure.container.transform;
+            mark.transform.localPosition = layout.measure.position + new Vector3(0.0f, noteStep * stepCount, 0.0f);
         }
     }
 }

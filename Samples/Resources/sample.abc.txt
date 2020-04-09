@@ -1,0 +1,9 @@
+X:1
+T:Deck The Halls
+M:C
+L:1/4
+V:1
+V:2 clef=bass
+
+[V:1] c B A G| F G A F | G A B G
+[V:2] F,2 F,2 | F,2 F,2 | B,2 B,2
