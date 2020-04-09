@@ -119,12 +119,12 @@ namespace ABCUnity
                                 layout.beatAlignmentIndex += 1;
                         }
 
-                        maxBeatX = Math.Max(maxBeatX, layout.measurePos.x);
+                        maxBeatX = Math.Max(maxBeatX, layout.measure.position.x);
                     }
 
                     // in order to preserve alignment, all layouts will advance to the furthest position of the current beat marker
                     foreach (var layout in layouts)
-                        layout.measurePos.x = maxBeatX;
+                        layout.measure.position.x = maxBeatX;
                 }
 
                 bool newLineNeeded = false;
@@ -135,7 +135,7 @@ namespace ABCUnity
                     var measureInfo = layout.alignment.measures[measure];
                     LayoutBar(measureInfo.bar, layout);
 
-                    if (layout.staffPos.x + layout.measurePos.x > horizontalMax)
+                    if (layout.staff.position.x + layout.measure.position.x > horizontalMax)
                         newLineNeeded = true;
                 }
 
@@ -153,9 +153,9 @@ namespace ABCUnity
                 // Add the measure to the staff line
                 foreach (var layout in layouts)
                 {
-                    layout.measureContainer.transform.localPosition = layout.staffPos;
-                    layout.measureContainer.transform.parent = layout.stafflineContainer.transform;
-                    layout.staffPos.x += layout.measurePos.x;
+                    layout.measure.container.transform.localPosition = layout.staff.position;
+                    layout.measure.container.transform.parent = layout.staff.container.transform;
+                    layout.staff.position.x += layout.measure.position.x;
                     layout.UpdateStaffBounding();
                 }
             }
@@ -172,11 +172,11 @@ namespace ABCUnity
             {
                 AdjustStaffScale(layout);
 
-                layout.stafflineContainer.transform.parent = this.transform;
-                layout.stafflineContainer.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.staffMaxY * layoutScale), 0.0f);
-                layout.stafflineContainer.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
+                layout.staff.container.transform.parent = this.transform;
+                layout.staff.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.staff.maxY * layoutScale), 0.0f);
+                layout.staff.container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
 
-                staffOffset.y -= (layout.height + staffMargin) * layoutScale;
+                staffOffset.y -= (layout.staff.height + staffMargin) * layoutScale;
             }
         }
 
@@ -184,34 +184,34 @@ namespace ABCUnity
         {
             var staff = cache.GetSpriteObject("Staff");
             layout.currentStaff = staff.gameObject;
-            layout.currentStaff.transform.parent = layout.stafflineContainer.transform;
-            layout.currentStaff.transform.localPosition = Vector3.zero; // validate me
+            layout.currentStaff.transform.parent = layout.staff.container.transform;
+            layout.currentStaff.transform.localPosition = layout.staff.position;
 
-            layout.UpdateStaffBounds(staff.bounds);
-            layout.staffPos.x += staffPadding;
+            layout.staff.UpdateBounds(staff.bounds);
+            layout.staff.position.x += staffPadding;
 
             var clef = cache.GetSpriteObject($"Clef_{layout.voice.clef.ToString()}");
-            clef.transform.parent = layout.stafflineContainer.transform;
-            clef.transform.localPosition = layout.staffPos;
+            clef.transform.parent = layout.staff.container.transform;
+            clef.transform.localPosition = layout.staff.position;
 
-            layout.UpdateStaffBounds(clef.bounds);
-            layout.staffPos.x += clefAdvance;
+            layout.staff.UpdateBounds(clef.bounds);
+            layout.staff.position.x += clefAdvance;
         }
 
         void AdjustStaffScale(VoiceLayout layout)
         {
             var currentWidth = layout.currentStaff.GetComponent<SpriteRenderer>().bounds.size.x;
-            var scaleX = layout.staffPos.x / currentWidth;
+            var scaleX = layout.staff.position.x / currentWidth;
             layout.currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
         }
 
         void LayoutBar(ABC.BarItem barItem, VoiceLayout layout)
         {
             var barObj = cache.GetSpriteObject("Bar_Line");
-            barObj.transform.parent = layout.measureContainer.transform;
-            barObj.transform.localPosition = layout.measurePos;
+            barObj.transform.parent = layout.measure.container.transform;
+            barObj.transform.localPosition = layout.measure.position;
 
-            layout.measurePos.x += noteAdvance / 2.0f;
+            layout.measure.position.x += noteAdvance / 2.0f;
         }
 
         enum NoteDirection
@@ -252,18 +252,18 @@ namespace ABCUnity
             }
 
             var note = cache.GetSpriteObject($"Note_{noteName}_{noteDirection.ToString()}_{staffMarker.ToString()}");
-            note.transform.parent = layout.measureContainer.transform;
-            note.transform.localPosition = layout.measurePos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+            note.transform.parent = layout.measure.container.transform;
+            note.transform.localPosition = layout.measure.position + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
-            layout.UpdateMeasureBounds(note.bounds);
-            layout.measurePos.x += noteAdvance;
+            layout.measure.UpdateBounds(note.bounds);
+            layout.measure.position.x += noteAdvance;
         }
         
         void InsertStaffMark(int stepCount, VoiceLayout layout)
         {
             var mark = cache.GetSpriteObject("Staff_Mark");
-            mark.transform.parent = layout.measureContainer.transform;
-            mark.transform.localPosition = layout.measurePos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+            mark.transform.parent = layout.measure.container.transform;
+            mark.transform.localPosition = layout.measure.position + new Vector3(0.0f, noteStep * stepCount, 0.0f);
         }
     }
 }
