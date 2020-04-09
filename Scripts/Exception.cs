@@ -6,4 +6,9 @@ namespace ABCUnity
     {
         public BeatAlignmentException(string message) : base(message) {}
     }
+
+    public class LayoutException : Exception
+    {
+        public LayoutException(string message) : base(message) { }
+    }
 }

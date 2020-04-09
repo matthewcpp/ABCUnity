@@ -28,16 +28,8 @@ namespace ABCUnity
         }
 
         public List<MeasureInfo> measures { get; private set; }
+        TimeSignature timeSignature;
 
-        //private int beatCount;
-        private float beatValue;
-
-        // Temp implementation
-        private void ParseTimeSignature(ABC.TimeSignatureItem timeSignature)
-        {
-            //beatCount = 4;
-            beatValue = 0.25f;
-        }
 
         public void Create(ABC.Voice voice)
         {
@@ -45,10 +37,11 @@ namespace ABCUnity
 
             if (voice.items.Count == 0) return;
 
-            if (voice.items[0].type != ABC.Item.Type.TimeSignature)
+            var timeSignatureItem = voice.items[0] as ABC.TimeSignatureItem;
+            if (timeSignatureItem == null)
                 throw new BeatAlignmentException("Voice does not initially declare a time signature.");
 
-            ParseTimeSignature(voice.items[0] as ABC.TimeSignatureItem);
+            timeSignature = TimeSignature.Parse(timeSignatureItem.timeSignature);
 
             float t = 0;
             int currentBeat = 1;
@@ -66,10 +59,10 @@ namespace ABCUnity
                         float noteTime = 1.0f / (float)noteItem.note.length;
                         t += noteTime;
 
-                        if (t >= beatValue) // current beat is filled
+                        if (t >= timeSignature.noteValue) // current beat is filled
                         {
                             measure.beatItems.Add(beatItem);
-                            currentBeat += (int)Math.Round(noteTime / beatValue);
+                            currentBeat += (int)Math.Round(noteTime / timeSignature.noteValue);
                             beatItem = new BeatItem(currentBeat);
                             t = 0.0f;
                         }
