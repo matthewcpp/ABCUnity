@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.U2D;
@@ -14,6 +15,8 @@ namespace ABCUnity
         public VoiceLayout(ABC.Voice v)
         {
             voice = v;
+            alignment = new BeatAlignment(v);
+            container = new GameObject();
         }
 
         public void AdjustMinMax(Bounds b)
@@ -26,6 +29,14 @@ namespace ABCUnity
         }
 
         public float height { get { return maxY - minY; } }
+
+        public BeatAlignment alignment { get; }
+        public int beatAlignmentIndex { get; set; } = 0;
+
+        public GameObject currentStaff { get; set; }
+        public GameObject container { get; set; }
+
+        public Vector3 insertPos = Vector3.zero;
     }
 
     public class Layout : MonoBehaviour
@@ -33,30 +44,26 @@ namespace ABCUnity
         [SerializeField]
         SpriteAtlas spriteAtlas; // set in editor
 
+        [SerializeField]
         float layoutScale = 0.5f;
-
-        public string AbcCode;
 
         private SpriteCache cache;
 
-        private ABC.Tune tune;
+        public ABC.Tune tune { get; private set; }
         private BoxCollider2D bounding;
 
-        public void Start()
+        public void Awake()
         {
             bounding = this.GetComponent<BoxCollider2D>();
             cache = new SpriteCache(spriteAtlas);
-
-            if (AbcCode.Length > 0)
-                LoadTune(AbcCode);
         }
 
-        public void LoadTune(string abc)
+        public void LoadString(string abc)
         {
             try
             {
-                tune = ABC.Tune.Load(AbcCode);
-                Create();
+                tune = ABC.Tune.Load(abc);
+                LayoutTune();
             }
             catch (ABC.ParseException e)
             {
@@ -64,7 +71,20 @@ namespace ABCUnity
             }
         }
 
-        Dictionary<ABC.Clef, ABC.Note.Value> cleffZero = new Dictionary<ABC.Clef, ABC.Note.Value>()
+        public void LoadStream(Stream stream)
+        {
+            try
+            {
+                tune = ABC.Tune.Load(stream);
+                LayoutTune();
+            }
+            catch (ABC.ParseException e)
+            {
+                Debug.Log(e.Message);
+            }
+        }
+
+        static Dictionary<ABC.Clef, ABC.Note.Value> cleffZero = new Dictionary<ABC.Clef, ABC.Note.Value>()
         {
             { ABC.Clef.Treble, ABC.Note.Value.F4}, { ABC.Clef.Bass, ABC.Note.Value.A2}
         };
@@ -78,47 +98,102 @@ namespace ABCUnity
         Vector2 staffOffset;
         Vector3 insertPos = Vector3.zero;
 
-        List<VoiceLayout> voiceLayouts = new List<VoiceLayout>();
-        VoiceLayout layout;
+        List<VoiceLayout> layouts = new List<VoiceLayout>();
 
-        GameObject currentStaff;
-        GameObject container;
-
-        void Create()
+        void LayoutStaff(VoiceLayout layout)
         {
+            var staff = cache.GetSpriteObject("Staff");
+            layout.currentStaff = staff.gameObject;
+            layout.currentStaff.transform.parent = layout.container.transform;
+            layout.currentStaff.transform.localPosition = layout.insertPos;
+
+            layout.AdjustMinMax(staff.bounds);
+            layout.insertPos.x += staffPadding;
+
+            var clef = cache.GetSpriteObject($"Clef_{layout.voice.clef.ToString()}");
+            clef.transform.parent = layout.container.transform;
+            clef.transform.localPosition = layout.insertPos;
+
+            layout.AdjustMinMax(clef.bounds);
+            layout.insertPos.x += clefAdvance;
+        }
+
+        void LayoutTune()
+        {
+            if (tune == null) return;
+
             staffOffset = new Vector2(-bounding.bounds.extents.x, bounding.bounds.extents.y);
 
             Vector3 scale = this.gameObject.transform.localScale;
             this.gameObject.transform.localScale = Vector3.one;
 
-            foreach (var voice in tune.voices)
+            // create the layout structures for each voice
+            for (int i =0 ; i < tune.voices.Count; i++)
             {
-                container = new GameObject();
-                layout = new VoiceLayout(voice);
+                var layout = new VoiceLayout(tune.voices[i]);
+                LayoutStaff(layout);
 
-                insertPos = Vector3.zero;
+                layouts.Add(layout);
+            }
 
-                LayoutStaff();
+            int beatCount = 4;
 
-                foreach (var item in voice.items)
+            for (int measure = 0; measure < layouts[0].alignment.measures.Count; measure++)
+            {
+                foreach (var layout in layouts)
+                    layout.beatAlignmentIndex = 0;
+
+                for (int beat = 1; beat <= beatCount; beat++)
                 {
-                    switch (item.type)
-                    {
-                        case ABC.Item.Type.Note:
-                            LayoutNote(item as ABC.NoteItem);
-                            break;
+                    float maxBeatX = float.MinValue;
 
-                        case ABC.Item.Type.Bar:
-                            LayoutBar(item as ABC.BarItem);
-                            break;
-                    };
+                    foreach (var layout in layouts)
+                    {
+                        var measureInfo = layout.alignment.measures[measure];
+                        var beatInfo = measureInfo.beatItems[layout.beatAlignmentIndex];
+
+                        // if this beat is the start of a new group of notes render them
+                        if (beatInfo.beatStart == beat)
+                        {
+                            foreach (var item in beatInfo.items)
+                            {
+                                switch (item.type)
+                                {
+                                    case ABC.NoteItem.Type.Note:
+                                        LayoutNote(item as ABC.NoteItem, layout);
+                                        break;
+                                }
+                            }
+
+                            if (layout.beatAlignmentIndex < measureInfo.beatItems.Count - 1)
+                                layout.beatAlignmentIndex += 1;
+                        }
+
+                        maxBeatX = Math.Max(maxBeatX, layout.insertPos.x);
+                    }
+
+                    // in order to preserve alignment, all layouts will advance to the furthest position of the current beat marker
+                    foreach (var layout in layouts)
+                        layout.insertPos.x = maxBeatX;
                 }
 
-                AdjustStaffScale();
+                // render the bar to end the measure
+                foreach (var layout in layouts)
+                {
+                    var measureInfo = layout.alignment.measures[measure];
+                    LayoutBar(measureInfo.bar, layout);
 
-                container.transform.parent = this.transform;
-                container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.maxY * layoutScale), 0.0f);
-                container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
+                }
+            }
+
+            // final sizing and positioning of staff
+            foreach (var layout in layouts)
+            {
+                AdjustStaffScale(layout);
+
+                layout.container.transform.parent = this.transform;
+                layout.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.maxY * layoutScale), 0.0f);
+                layout.container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
 
                 staffOffset.y -= (layout.height + staffMargin) * layoutScale;
             }
@@ -126,38 +201,20 @@ namespace ABCUnity
             this.gameObject.transform.localScale = scale;
         }
 
-        void AdjustStaffScale()
+        void AdjustStaffScale(VoiceLayout layout)
         {
-            var currentWidth = currentStaff.GetComponent<SpriteRenderer>().bounds.size.x;
-            var scaleX = (insertPos.x + noteAdvance) / currentWidth;
-            currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
+            var currentWidth = layout.currentStaff.GetComponent<SpriteRenderer>().bounds.size.x;
+            var scaleX = layout.insertPos.x / currentWidth;
+            layout.currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
         }
-            
-        void LayoutBar(ABC.BarItem barItem)
+
+        void LayoutBar(ABC.BarItem barItem, VoiceLayout layout)
         {
             var barObj = cache.GetSpriteObject("Bar_Line");
-            barObj.transform.parent = container.transform;
-            barObj.transform.localPosition = insertPos;
+            barObj.transform.parent = layout.container.transform;
+            barObj.transform.localPosition = layout.insertPos;
 
-            insertPos.x += noteAdvance / 2.0f;
-        }
-
-        void LayoutStaff()
-        {
-            var staff = cache.GetSpriteObject("Staff");
-            currentStaff = staff.gameObject;
-            currentStaff.transform.parent = container.transform;
-            currentStaff.transform.localPosition = insertPos;
-
-            layout.AdjustMinMax(staff.bounds);
-            insertPos.x += staffPadding;
-
-            var clef = cache.GetSpriteObject($"Clef_{layout.voice.clef.ToString()}");
-            clef.transform.parent = container.transform;
-            clef.transform.localPosition = insertPos;
-
-            layout.AdjustMinMax(clef.bounds);
-            insertPos.x += clefAdvance;
+            layout.insertPos.x += noteAdvance / 2.0f;
         }
 
         enum NoteDirection
@@ -169,8 +226,8 @@ namespace ABCUnity
         {
             None, Middle, Above, Below
         }
-
-        void LayoutNote(ABC.NoteItem noteItem)
+        
+        void LayoutNote(ABC.NoteItem noteItem, VoiceLayout layout)
         {
             int stepCount = noteItem.note.value - cleffZero[layout.voice.clef];
 
@@ -186,7 +243,7 @@ namespace ABCUnity
                 staffMarker = stepCount % 2 == 0 ? StaffMarker.Above : StaffMarker.Middle;
 
                 for (int sc = stepCount + 2; sc < -2; sc += 2)
-                    InsertStaffMark(sc);
+                    InsertStaffMark(sc, layout);
             }
 
             else if (stepCount > 8) // above the staff
@@ -194,22 +251,22 @@ namespace ABCUnity
                 staffMarker = stepCount % 2 == 0 ? StaffMarker.Below : StaffMarker.Middle;
 
                 for (int sc = stepCount - 2; sc > 8; sc -= 2)
-                    InsertStaffMark(sc);
+                    InsertStaffMark(sc, layout);
             }
 
             var note = cache.GetSpriteObject($"Note_{noteName}_{noteDirection.ToString()}_{staffMarker.ToString()}");
-            note.transform.parent = container.transform;
-            note.transform.localPosition = insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+            note.transform.parent = layout.container.transform;
+            note.transform.localPosition = layout.insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
             layout.AdjustMinMax(note.bounds);
-            insertPos.x += noteAdvance;
+            layout.insertPos.x += noteAdvance;
         }
-
-        void InsertStaffMark(int stepCount)
+        
+        void InsertStaffMark(int stepCount, VoiceLayout layout)
         {
             var mark = cache.GetSpriteObject("Staff_Mark");
-            mark.transform.parent = container.transform;
-            mark.transform.localPosition = insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+            mark.transform.parent = layout.container.transform;
+            mark.transform.localPosition = layout.insertPos + new Vector3(0.0f, noteStep * stepCount, 0.0f);
         }
     }
 }
