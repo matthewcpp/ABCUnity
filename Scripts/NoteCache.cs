@@ -20,6 +20,8 @@ namespace ABCUnity
         public SpriteRenderer GetSpriteObject(string name)
         {
             var sprite = GetSprite(name);
+            if (sprite == null)
+                Debug.Log($"Warning: could not locate: {name}");
 
             if (objectPool.Count > 0)
             {

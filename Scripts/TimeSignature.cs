@@ -37,5 +37,20 @@ namespace ABCUnity
                 throw new LayoutException($"Unsupported Time Signature: {timeSignature}");
             }
         }
+
+        public override bool Equals(object obj)
+        {
+            return obj is TimeSignature signature &&
+                   beatCount == signature.beatCount &&
+                   noteValue == signature.noteValue;
+        }
+
+        public override int GetHashCode()
+        {
+            int hashCode = 1857893462;
+            hashCode = hashCode * -1521134295 + beatCount.GetHashCode();
+            hashCode = hashCode * -1521134295 + noteValue.GetHashCode();
+            return hashCode;
+        }
     }
 }

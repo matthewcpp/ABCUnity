@@ -45,6 +45,7 @@ namespace ABCUnity
 
             float t = 0;
             int currentBeat = 1;
+            float noteTime;
 
             MeasureInfo measure = new MeasureInfo();
             BeatItem beatItem = new BeatItem(currentBeat);
@@ -53,10 +54,18 @@ namespace ABCUnity
             {
                 switch (voice.items[i].type)
                 {
+                    case ABC.Item.Type.Chord:
+                        beatItem.items.Add(voice.items[i]);
+                        var chordItem = voice.items[i] as ABC.ChordItem;
+                        noteTime = 1.0f / (float)chordItem.notes[0].length;
+                        goto ProcessNoteTime;
+
                     case ABC.Item.Type.Note:
                         beatItem.items.Add(voice.items[i]);
                         var noteItem = voice.items[i] as ABC.NoteItem;
-                        float noteTime = 1.0f / (float)noteItem.note.length;
+                        noteTime = 1.0f / (float)noteItem.note.length;
+
+                        ProcessNoteTime:
                         t += noteTime;
 
                         if (t >= timeSignature.noteValue) // current beat is filled
