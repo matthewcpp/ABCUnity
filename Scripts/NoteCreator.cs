@@ -119,13 +119,27 @@ namespace ABCUnity
 
             items.Add(CreateNote(sortedNotes[0], clef, container, offset, noteDirection));
 
+            bool needsAdjustment = false;
             for (int i = 1; i < sortedNotes.Length; i++)
             {
                 // If the note will not fit on the current line because there is a note right below it, then need to draw a chord dot
-                if (i % 2 == 1 && sortedNotes[i].value - sortedNotes[i-1].value == 1) 
+                if (i % 2 == 1 && sortedNotes[i].value - sortedNotes[i-1].value == 1)
+                {
                     items.Add(AddChordDot(sortedNotes[i], clef, noteDirection, container, offset));
+                    needsAdjustment = noteDirection == NoteDirection.Down;
+                }
                 else
+                {
                     items.Add(CreateNote(sortedNotes[i], clef, container, offset, noteDirection));
+                }
+            }
+
+            // note that when the stem direction is down then the dot will be placed too close to the previous note.
+            // In this case we will push the chord over such that its minx lines up with the caret.
+            if (needsAdjustment)
+            {
+                foreach (var item in items)
+                    item.transform.localPosition = item.transform.localPosition + new Vector3(chordDotOffset, 0.0f, 0.0f);
             }
             
             return items;
