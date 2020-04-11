@@ -248,7 +248,6 @@ namespace ABCUnity
                 chordBounds.Encapsulate(chord[i].bounds);
             }
 
-            Debug.Log(chordBounds.size.x);
             layout.measure.position.x += chordBounds.size.x + noteAdvance;
         }
         

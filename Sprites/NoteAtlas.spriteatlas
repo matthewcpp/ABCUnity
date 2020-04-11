@@ -47,7 +47,9 @@ SpriteAtlas:
     - {fileID: 2800000, guid: a4427ef2a55621a4cbbd41a9f15ab676, type: 3}
     - {fileID: 2800000, guid: e3a76b8c2a98f4e4badacc37d6b8d182, type: 3}
     - {fileID: 2800000, guid: 7ed9245991123f348b05174d3a5b19f9, type: 3}
-    totalSpriteSurfaceArea: 451436
+    - {fileID: 2800000, guid: 1e2afd7fa89f0452583229794ceaff27, type: 3}
+    - {fileID: 2800000, guid: 61e5123fdd34c461fb5ab16ff9fa9773, type: 3}
+    totalSpriteSurfaceArea: 460027
     bindAsDefault: 1
   m_MasterAtlas: {fileID: 0}
   m_PackedSprites:
@@ -67,6 +69,8 @@ SpriteAtlas:
   - {fileID: 21300000, guid: e3a76b8c2a98f4e4badacc37d6b8d182, type: 3}
   - {fileID: 21300000, guid: dd84830ef07e5cf4192887bc6ae2f0e6, type: 3}
   - {fileID: 21300000, guid: d0aa5f8effbcdcf419c38667b5bde60a, type: 3}
+  - {fileID: 21300000, guid: 61e5123fdd34c461fb5ab16ff9fa9773, type: 3}
+  - {fileID: 21300000, guid: 1e2afd7fa89f0452583229794ceaff27, type: 3}
   - {fileID: 21300000, guid: 8c1fbbdfd8bb8e54e85ce71c092af8a0, type: 3}
   m_PackedSpriteNamesToIndex:
   - Clef_Bass
@@ -85,6 +89,8 @@ SpriteAtlas:
   - Note_Half_Up_Middle
   - Note_Quarter_Down_None
   - Clef_Treble
+  - Chord_Half
+  - Chord_Quarter
   - Note_Quarter_Down_Middle
   m_Tag: NoteAtlas
   m_IsVariant: 0
