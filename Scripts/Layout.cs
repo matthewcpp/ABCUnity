@@ -15,6 +15,7 @@ namespace ABCUnity
         float layoutScale = 0.5f;
 
         private SpriteCache cache;
+        private NoteCreator notes;
 
         public ABC.Tune tune { get; private set; }
         private BoxCollider2D bounding;
@@ -23,6 +24,7 @@ namespace ABCUnity
         {
             bounding = this.GetComponent<BoxCollider2D>();
             cache = new SpriteCache(spriteAtlas);
+            notes = new NoteCreator(cache);
         }
 
         public void LoadString(string abc)
@@ -50,17 +52,11 @@ namespace ABCUnity
                 Debug.Log(e.Message);
             }
         }
-
-        static Dictionary<ABC.Clef, ABC.Note.Value> cleffZero = new Dictionary<ABC.Clef, ABC.Note.Value>()
-        {
-            { ABC.Clef.Treble, ABC.Note.Value.F4}, { ABC.Clef.Bass, ABC.Note.Value.A2}
-        };
-
-        const float noteStep = 0.28f;
+        
         const float staffPadding = 0.3f;
         const float staffMargin = 0.2f;
         const float clefAdvance = 2.0f;
-        const float noteAdvance = 1.5f;
+        const float noteAdvance = 0.75f;
 
         Vector2 staffOffset;
 
@@ -71,6 +67,8 @@ namespace ABCUnity
         void LayoutTune()
         {
             if (tune == null) return;
+            var timeSignature = GetTimeSignature();
+
             horizontalMax = bounding.size.x * 1.0f / layoutScale;
 
             staffOffset = new Vector2(-bounding.bounds.extents.x, bounding.bounds.extents.y);
@@ -86,14 +84,12 @@ namespace ABCUnity
                 LayoutStaff(layout);
             }
 
-            int beatCount = 4; // TODO: parse the time signature.
-
             for (int measure = 0; measure < layouts[0].alignment.measures.Count; measure++)
             {
-                foreach (var layout in layouts) // layout.NewMeasure()
+                foreach (var layout in layouts)
                     layout.NewMeasure();
 
-                for (int beat = 1; beat <= beatCount; beat++)
+                for (int beat = 1; beat <= timeSignature.beatCount; beat++)
                 {
                     float maxBeatX = float.MinValue;
 
@@ -109,8 +105,12 @@ namespace ABCUnity
                             {
                                 switch (item.type)
                                 {
-                                    case ABC.NoteItem.Type.Note:
+                                    case ABC.Item.Type.Note:
                                         LayoutNote(item as ABC.NoteItem, layout);
+                                        break;
+
+                                    case ABC.Item.Type.Chord:
+                                        LayoutChord(item as ABC.ChordItem, layout);
                                         break;
                                 }
                             }
@@ -165,6 +165,28 @@ namespace ABCUnity
             this.gameObject.transform.localScale = scale;
         }
 
+        TimeSignature GetTimeSignature()
+        {
+            TimeSignature result = null;
+
+            for (int i = 0; i < tune.voices.Count; i++)
+            {
+                var timeSignatureItem = tune.voices[i].items[0] as ABC.TimeSignatureItem;
+                if (timeSignatureItem == null)
+                    throw new BeatAlignmentException($"Voice {i} does not initially declare a time signature.");
+
+                var timeSignature = TimeSignature.Parse(timeSignatureItem.timeSignature);
+
+                if (result == null)
+                    result = timeSignature;
+                else if (!timeSignature.Equals(result))
+                    throw new LayoutException("All voices should have the same time signature");
+
+            }
+
+            return result;
+        }
+
         /// <summary>Calculates the final size of the staff and positions it correctly relative to the container.</summary>
         void FinalizeStaffLines()
         {
@@ -214,56 +236,27 @@ namespace ABCUnity
             layout.measure.position.x += noteAdvance / 2.0f;
         }
 
-        enum NoteDirection
+        void LayoutChord(ABC.ChordItem chordItem, VoiceLayout layout)
         {
-            Down, Up
-        }
+            var chord = notes.CreateChord(chordItem.notes, layout.voice.clef, layout.measure.container, layout.measure.position);
 
-        enum StaffMarker
-        {
-            None, Middle, Above, Below
+            Bounds chordBounds = chord[0].bounds;
+
+            for (int i = 1; i < chord.Count; i++)
+            {
+                layout.measure.UpdateBounds(chord[i].bounds);
+                chordBounds.Encapsulate(chord[i].bounds);
+            }
+
+            Debug.Log(chordBounds.size.x);
+            layout.measure.position.x += chordBounds.size.x + noteAdvance;
         }
         
         void LayoutNote(ABC.NoteItem noteItem, VoiceLayout layout)
         {
-            int stepCount = noteItem.note.value - cleffZero[layout.voice.clef];
-
-            var noteName = noteItem.note.length.ToString();
-            var noteDirection = NoteDirection.Up;
-            var staffMarker = StaffMarker.None;
-
-            if (stepCount > 3)
-                noteDirection = NoteDirection.Down;
-
-            if (stepCount < -2)  // below the staff
-            {
-                staffMarker = stepCount % 2 == 0 ? StaffMarker.Above : StaffMarker.Middle;
-
-                for (int sc = stepCount + 2; sc < -2; sc += 2)
-                    InsertStaffMark(sc, layout);
-            }
-
-            else if (stepCount > 8) // above the staff
-            {
-                staffMarker = stepCount % 2 == 0 ? StaffMarker.Below : StaffMarker.Middle;
-
-                for (int sc = stepCount - 2; sc > 8; sc -= 2)
-                    InsertStaffMark(sc, layout);
-            }
-
-            var note = cache.GetSpriteObject($"Note_{noteName}_{noteDirection.ToString()}_{staffMarker.ToString()}");
-            note.transform.parent = layout.measure.container.transform;
-            note.transform.localPosition = layout.measure.position + new Vector3(0.0f, noteStep * stepCount, 0.0f);
-
+            var note = notes.CreateNote(noteItem.note, layout.voice.clef, layout.measure.container, layout.measure.position);
             layout.measure.UpdateBounds(note.bounds);
-            layout.measure.position.x += noteAdvance;
-        }
-        
-        void InsertStaffMark(int stepCount, VoiceLayout layout)
-        {
-            var mark = cache.GetSpriteObject("Staff_Mark");
-            mark.transform.parent = layout.measure.container.transform;
-            mark.transform.localPosition = layout.measure.position + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+            layout.measure.position.x += note.bounds.size.x + noteAdvance;
         }
     }
 }
