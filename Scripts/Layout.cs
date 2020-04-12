@@ -248,14 +248,14 @@ namespace ABCUnity
                 chordBounds.Encapsulate(chord[i].bounds);
             }
 
-            layout.measure.position.x += chordBounds.size.x + noteAdvance;
+            layout.measure.position.x = chordBounds.max.x + noteAdvance;
         }
         
         void LayoutNote(ABC.NoteItem noteItem, VoiceLayout layout)
         {
             var note = notes.CreateNote(noteItem.note, layout.voice.clef, layout.measure.container, layout.measure.position);
             layout.measure.UpdateBounds(note.bounds);
-            layout.measure.position.x += note.bounds.size.x + noteAdvance;
+            layout.measure.position.x = note.bounds.max.x + noteAdvance;
         }
     }
 }

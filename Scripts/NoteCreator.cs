@@ -69,14 +69,26 @@ namespace ABCUnity
             return false;
         }
 
+        const float accidentalOffset = 0.25f;
+
         public SpriteRenderer CreateNote(ABC.Note note, ABC.Clef clef, GameObject container, Vector3 offset)
         {
             int stepCount = note.value - clefZero[clef];
-
             var noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
-            bool addedMarkers = AddNoteStaffMarkers(stepCount, container, offset, 1.0f);
-
             var notePosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+
+            if (note.accidental != ABC.Note.Accidental.Unspecified)
+            {
+                offset = offset + new Vector3(accidentalOffset, 0.0f, 0.0f);
+                notePosition = notePosition + new Vector3(accidentalOffset, 0.0f, 0.0f);
+
+                var accidental = spriteCache.GetSpriteObject($"Accidental_{note.accidental}");
+                var accidentalPos = notePosition + new Vector3(-0.55f, 0.0f, 0.0f);
+                accidental.transform.parent = container.transform;
+                accidental.transform.localPosition = accidentalPos;
+            }
+
+            bool addedMarkers = AddNoteStaffMarkers(stepCount, container, offset, 1.0f);
 
             if (addedMarkers)
                 notePosition = notePosition + new Vector3(notePadding, 0.0f, 0.0f);
