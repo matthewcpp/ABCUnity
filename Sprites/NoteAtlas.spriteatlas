@@ -58,13 +58,13 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 1e2afd7fa89f0452583229794ceaff27, type: 3}
   m_PackedSpriteNamesToIndex:
   - Clef_Bass
-  - Note_Half_Down_None
+  - Note_Half_Down
   - Bar_Line
-  - Note_Half_Up_None
+  - Note_Half_Up
   - Staff
   - Staff_Mark
-  - Note_Quarter_Up_None
-  - Note_Quarter_Down_None
+  - Note_Quarter_Up
+  - Note_Quarter_Down
   - Clef_Treble
   - Chord_Half
   - Chord_Quarter

@@ -81,7 +81,7 @@ namespace ABCUnity
             if (addedMarkers)
                 notePosition = notePosition + new Vector3(notePadding, 0.0f, 0.0f);
 
-            var noteObj = spriteCache.GetSpriteObject($"Note_{note.length.ToString()}_{noteDirection.ToString()}_None");
+            var noteObj = spriteCache.GetSpriteObject($"Note_{note.length}_{noteDirection}");
             noteObj.transform.parent = container.transform;
             noteObj.transform.localPosition = notePosition;
 
@@ -93,7 +93,7 @@ namespace ABCUnity
             int stepCount = note.value - clefZero[clef];
             var notePosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
-            var noteObj = spriteCache.GetSpriteObject($"Note_{note.length.ToString()}_{noteDirection.ToString()}_None");
+            var noteObj = spriteCache.GetSpriteObject($"Note_{note.length}_{noteDirection}");
             noteObj.transform.parent = container.transform;
             noteObj.transform.localPosition = notePosition;
 
