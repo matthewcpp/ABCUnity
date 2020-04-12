@@ -32,25 +32,24 @@ namespace ABCUnity
 
         const float noteStep = 0.28f;
 
-        StaffMarker ResolveStaffMarkers(int stepCount, GameObject container, Vector3 offset)
+        void ResolveStaffMarkers(int stepCount, GameObject container, Vector3 offset)
         {
             if (stepCount < -2)  // below the staff
             {
-                for (int sc = stepCount + 2; sc < -2; sc += 2)
+                int stepOffset = stepCount % 2 == 0 ? 1 : 0;
+                for (int sc = stepCount + 2 + stepOffset; sc < -2; sc += 2)
                     CreateStaffMark(sc, container, offset);
 
-                return stepCount % 2 == 0 ? StaffMarker.Above : StaffMarker.Middle;
+                CreateStaffMark(stepCount + stepOffset, container, offset);
             }
 
             else if (stepCount > 8) // above the staff
             {
                 for (int sc = stepCount - 2; sc > 8; sc -= 2)
                     CreateStaffMark(sc, container, offset);
-
-                return stepCount % 2 == 0 ? StaffMarker.Below : StaffMarker.Middle;
+                
+                CreateStaffMark(stepCount % 2 == 0 ? stepCount - 1 : stepCount, container, offset);
             }
-
-            return StaffMarker.None;
         }
 
         public SpriteRenderer CreateNote(ABC.Note note, ABC.Clef clef, GameObject container, Vector3 offset, NoteDirection directionOverride = NoteDirection.Default)
@@ -59,12 +58,12 @@ namespace ABCUnity
 
             var noteName = note.length.ToString();
             var noteDirection = directionOverride;
-            var staffMarker = ResolveStaffMarkers(stepCount, container, offset);
+            ResolveStaffMarkers(stepCount, container, offset);
 
             if (noteDirection == NoteDirection.Default)
                 noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
 
-            var noteObj = spriteCache.GetSpriteObject($"Note_{noteName}_{noteDirection.ToString()}_{staffMarker.ToString()}");
+            var noteObj = spriteCache.GetSpriteObject($"Note_{noteName}_{noteDirection.ToString()}_None");
             noteObj.transform.parent = container.transform;
             noteObj.transform.localPosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
@@ -72,11 +71,12 @@ namespace ABCUnity
         }
 
         const float chordDotOffset = 0.67f;
+        const float notePadding = 0.1f;
 
         SpriteRenderer AddChordDot(ABC.Note note, ABC.Clef clef, NoteDirection noteDirection, GameObject container, Vector3 offset)
         {
             int stepCount = note.value - clefZero[clef];
-            var staffMarker = ResolveStaffMarkers(stepCount, container, offset);
+            ResolveStaffMarkers(stepCount, container, offset);
 
             var notePos = new Vector3(noteDirection == NoteDirection.Up ? chordDotOffset : -chordDotOffset, noteStep * stepCount, 0.0f);
 
@@ -145,11 +145,13 @@ namespace ABCUnity
             return items;
         }
 
-        void CreateStaffMark(int stepCount, GameObject container, Vector3 offset)
+        SpriteRenderer CreateStaffMark(int stepCount, GameObject container, Vector3 offset)
         {
             var mark = spriteCache.GetSpriteObject("Staff_Mark");
             mark.transform.parent = container.transform;
             mark.transform.localPosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+
+            return mark;
         }
     }
 }
