@@ -94,7 +94,8 @@ namespace ABCUnity
             if (addedMarkers)
                 notePosition = notePosition + new Vector3(notePadding, 0.0f, 0.0f);
 
-            var noteObj = spriteCache.GetSpriteObject($"Note_{note.length}_{noteDirection}");
+            var spriteName = note.length == ABC.Note.Length.Whole ? "Note_Whole" : $"Note_{note.length}_{noteDirection}";
+            var noteObj = spriteCache.GetSpriteObject(spriteName);
             noteObj.transform.parent = container.transform;
             noteObj.transform.localPosition = notePosition;
 
@@ -106,7 +107,8 @@ namespace ABCUnity
             int stepCount = note.value - clefZero[clef];
             var notePosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
-            var noteObj = spriteCache.GetSpriteObject($"Note_{note.length}_{noteDirection}");
+            var spriteName = note.length == ABC.Note.Length.Whole ? "Note_Whole" : $"Note_{note.length}_{noteDirection}";
+            var noteObj = spriteCache.GetSpriteObject(spriteName);
             noteObj.transform.parent = container.transform;
             noteObj.transform.localPosition = notePosition;
 
@@ -119,8 +121,8 @@ namespace ABCUnity
 
             var notePos = new Vector3(noteDirection == NoteDirection.Up ? chordDotOffset : -chordDotOffset, noteStep * stepCount, 0.0f);
 
-            var noteName = note.length.ToString();
-            var dot = spriteCache.GetSpriteObject($"Chord_{noteName}");
+            var spriteName = note.length == ABC.Note.Length.Whole ? "Note_Whole" : $"Chord_{note.length}";
+            var dot = spriteCache.GetSpriteObject(spriteName);
             dot.transform.parent = container.transform;
             dot.transform.localPosition = offset + notePos;
 
