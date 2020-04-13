@@ -70,6 +70,7 @@ namespace ABCUnity
         }
 
         const float accidentalOffset = 0.25f;
+        const float accidentalWidth = 0.55f;
 
         public SpriteRenderer CreateNote(ABC.Note note, ABC.Clef clef, GameObject container, Vector3 offset)
         {
@@ -83,7 +84,7 @@ namespace ABCUnity
                 notePosition = notePosition + new Vector3(accidentalOffset, 0.0f, 0.0f);
 
                 var accidental = spriteCache.GetSpriteObject($"Accidental_{note.accidental}");
-                var accidentalPos = notePosition + new Vector3(-0.55f, 0.0f, 0.0f);
+                var accidentalPos = notePosition + new Vector3(-accidentalWidth, 0.0f, 0.0f);
                 accidental.transform.parent = container.transform;
                 accidental.transform.localPosition = accidentalPos;
             }
@@ -157,15 +158,89 @@ namespace ABCUnity
             return false;
         }
 
+        const int chordAccidentalSize = 6;
+
+        public static List<List<ABC.Note>> ComputeChordAccidentalLevels(ABC.Note[] notes, ABC.Note.Value clefZero)
+        {
+            List<int> stepLevels = null;
+            List<List<ABC.Note>> notesInLevel = null;
+
+            foreach (var note in notes)
+            {
+                if (note.accidental == ABC.Note.Accidental.Unspecified)
+                    continue;
+
+                if (stepLevels == null)
+                {
+                    stepLevels = new List<int>();
+                    notesInLevel = new List<List<ABC.Note>>();
+                }
+
+                int stepCount = note.value - clefZero;
+
+                // place this accidental into the first level it will fit
+                for (int i = 0; i < stepLevels.Count; i++)
+                {
+                    if (stepCount - stepLevels[i] > chordAccidentalSize)
+                    {
+                        stepLevels[i] = stepCount;
+                        notesInLevel[i].Add(note);
+
+                        goto NoteProcessed;
+                    }
+                }
+
+                //Could not fit in an existing level, create a new one
+                var newLevelNotes = new List<ABC.Note>();
+                newLevelNotes.Add(note);
+                notesInLevel.Add(newLevelNotes);
+
+                stepLevels.Add(stepCount);
+
+                //proceed to next note
+                NoteProcessed:;
+            }
+
+            return notesInLevel;
+        }
+
+        private void CreateChordAccidentals(ABC.Note[] notes, ABC.Clef clef, ref Vector3 offset, GameObject container, List<SpriteRenderer> items)
+        {
+            var accidentalLevels = ComputeChordAccidentalLevels(notes, clefZero[clef]);
+
+            if (accidentalLevels == null)
+                return;
+
+            offset = offset + new Vector3(-accidentalWidth, 0.0f, 0.0f);
+
+            for (int i = accidentalLevels.Count - 1; i >= 0; i--)
+            {
+                foreach (var note in accidentalLevels[i])
+                {
+                    int stepCount = note.value - clefZero[clef];
+
+                    var accidental = spriteCache.GetSpriteObject($"Accidental_{note.accidental}");
+                    accidental.transform.parent = container.transform;
+                    accidental.transform.localPosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+                    items.Add(accidental);
+                }
+
+                offset = offset + new Vector3(accidentalWidth, 0.0f, 0.0f);
+            }
+        }
+
         public List<SpriteRenderer> CreateChord(ABC.Note[] notes, ABC.Clef clef, GameObject container, Vector3 offset)
         {
             var sortedNotes = new ABC.Note[notes.Length];
             Array.Copy(notes, sortedNotes, notes.Length);
             Array.Sort(sortedNotes);
 
+            var items = new List<SpriteRenderer>();
+
             var noteDirection = DetermineChordNoteDirection(sortedNotes, clef);
             float staffMarkerScale = 1.0f;
 
+            CreateChordAccidentals(notes, clef, ref offset, container, items);
 
             if (ChordHasDots(notes))
             {
@@ -183,8 +258,6 @@ namespace ABCUnity
 
             if (hasMarkers)
                 offset = offset + new Vector3(notePadding, 0.0f, 0.0f);
-
-            var items = new List<SpriteRenderer>();
 
             items.Add(AddChordNote(sortedNotes[0], noteDirection, clef, container, offset));
 
