@@ -63,6 +63,7 @@ namespace ABCUnity
         }
         
         const float staffPadding = 0.3f;
+        const float measurePadding = 0.5f;
         const float staffMargin = 0.2f;
         const float clefAdvance = 2.0f;
         const float noteAdvance = 0.75f;
@@ -97,7 +98,11 @@ namespace ABCUnity
             for (int measure = 0; measure < layouts[0].alignment.measures.Count; measure++)
             {
                 foreach (var layout in layouts)
+                {
                     layout.NewMeasure();
+                    layout.measure.position.x = measurePadding;
+                }
+                    
 
                 for (int beat = 1; beat <= timeSignature.beatCount; beat++)
                 {
@@ -242,8 +247,6 @@ namespace ABCUnity
             var barObj = cache.GetSpriteObject("Bar_Line");
             barObj.transform.parent = layout.measure.container.transform;
             barObj.transform.localPosition = layout.measure.position;
-
-            layout.measure.position.x += noteAdvance / 2.0f;
         }
 
         void LayoutChord(ABC.ChordItem chordItem, VoiceLayout layout)
