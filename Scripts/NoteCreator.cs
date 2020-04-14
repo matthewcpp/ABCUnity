@@ -22,7 +22,7 @@ namespace ABCUnity
 
         public enum NoteDirection
         {
-            Default, Down, Up
+            Down, Up
         }
 
         /// <summary> The distance between note values on the staff. </summary>
@@ -94,33 +94,35 @@ namespace ABCUnity
             if (addedMarkers)
                 notePosition = notePosition + new Vector3(notePadding, 0.0f, 0.0f);
 
-            var noteObj = spriteCache.GetSpriteObject($"Note_{note.length}_{noteDirection}");
+            var spriteName = note.length == ABC.Note.Length.Whole ? "Note_Whole" : $"Note_{note.length}_{noteDirection}";
+            var noteObj = spriteCache.GetSpriteObject(spriteName);
             noteObj.transform.parent = container.transform;
             noteObj.transform.localPosition = notePosition;
 
             return noteObj;
         }
 
-        private SpriteRenderer AddChordNote(ABC.Note note, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset)
+        private SpriteRenderer AddChordNote(ABC.Note.Value value, ABC.Note.Length length, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset)
         {
-            int stepCount = note.value - clefZero[clef];
+            int stepCount = value - clefZero[clef];
             var notePosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
-            var noteObj = spriteCache.GetSpriteObject($"Note_{note.length}_{noteDirection}");
+            var spriteName = length == ABC.Note.Length.Whole ? "Note_Whole" : $"Note_{length}_{noteDirection}";
+            var noteObj = spriteCache.GetSpriteObject(spriteName);
             noteObj.transform.parent = container.transform;
             noteObj.transform.localPosition = notePosition;
 
             return noteObj;
         }
 
-        private SpriteRenderer AddChordDot(ABC.Note note, ABC.Clef clef, NoteDirection noteDirection, GameObject container, Vector3 offset)
+        private SpriteRenderer AddChordDot(ABC.Note.Value value, ABC.Note.Length length, ABC.Clef clef, NoteDirection noteDirection, GameObject container, Vector3 offset)
         {
-            int stepCount = note.value - clefZero[clef];
+            int stepCount = value - clefZero[clef];
 
             var notePos = new Vector3(noteDirection == NoteDirection.Up ? chordDotOffset : -chordDotOffset, noteStep * stepCount, 0.0f);
 
-            var noteName = note.length.ToString();
-            var dot = spriteCache.GetSpriteObject($"Chord_{noteName}");
+            var spriteName = length == ABC.Note.Length.Whole ? "Note_Whole" : $"Chord_{length}";
+            var dot = spriteCache.GetSpriteObject(spriteName);
             dot.transform.parent = container.transform;
             dot.transform.localPosition = offset + notePos;
 
@@ -259,17 +261,42 @@ namespace ABCUnity
             if (hasMarkers)
                 offset = offset + new Vector3(notePadding, 0.0f, 0.0f);
 
-            items.Add(AddChordNote(sortedNotes[0], noteDirection, clef, container, offset));
+            AddChordItems(sortedNotes, noteDirection, clef, container, offset, items);
 
-            for (int i = 1; i < sortedNotes.Length; i++)
-            {
-                if (i % 2 == 1 && sortedNotes[i].value - sortedNotes[i-1].value == 1)
-                    items.Add(AddChordDot(sortedNotes[i], clef, noteDirection, container, offset));
-                else
-                    items.Add(AddChordNote(sortedNotes[i], noteDirection, clef, container, offset));
-            }
-            
             return items;
+        }
+
+        private void AddChordItems(ABC.Note[] sortedNotes, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset, List<SpriteRenderer> items)
+        {
+            var dotValue = sortedNotes[0].length < ABC.Note.Length.Quarter ? sortedNotes[0].length : ABC.Note.Length.Quarter;
+            var noteValue = sortedNotes[0].length;
+
+            if (noteDirection == NoteDirection.Down)
+            {
+                for (int i = 0; i < sortedNotes.Length; i++)
+                {
+                    if (i > 0 && sortedNotes[i].value - sortedNotes[i - 1].value == 1)
+                        items.Add(AddChordDot(sortedNotes[i].value, dotValue, clef, noteDirection, container, offset));
+                    else
+                    {
+                        items.Add(AddChordNote(sortedNotes[i].value, noteValue, noteDirection, clef, container, offset));
+                        noteValue = dotValue;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = sortedNotes.Length - 1; i >= 0; i--)
+                {
+                    if (i > 0 && sortedNotes[i].value - sortedNotes[i - 1].value == 1)
+                        items.Add(AddChordDot(sortedNotes[i].value, dotValue, clef, noteDirection, container, offset));
+                    else
+                    {
+                        items.Add(AddChordNote(sortedNotes[i].value, noteValue, noteDirection, clef, container, offset));
+                        noteValue = dotValue;
+                    }
+                }
+            }
         }
 
         private SpriteRenderer CreateStaffMark(int stepCount, GameObject container, Vector3 offset, float localScaleX)
