@@ -12,6 +12,8 @@ namespace ABCUnity
         Dictionary<string, Sprite> spriteCache = new Dictionary<string, Sprite>();
         List<GameObject> objectPool = new List<GameObject>();
 
+        public Color color { get; set; } = Color.black;
+
         public SpriteCache(SpriteAtlas spriteAtlas)
         {
             this.spriteAtlas = spriteAtlas;
@@ -47,6 +49,7 @@ namespace ABCUnity
             var staffObj = new GameObject();
             var spriteRenderer = staffObj.AddComponent<SpriteRenderer>();
             spriteRenderer.sprite = sprite;
+            spriteRenderer.color = color;
 
             return spriteRenderer;
         }

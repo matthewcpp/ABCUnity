@@ -13,6 +13,9 @@ namespace ABCUnity
 
         [SerializeField]
         float layoutScale = 0.5f;
+        
+        [SerializeField]
+        public Color color = Color.black;
 
         private SpriteCache cache;
         private NoteCreator notes;
@@ -73,6 +76,7 @@ namespace ABCUnity
         void LayoutTune()
         {
             if (tune == null) return;
+            cache.color = color;
             var timeSignature = GetTimeSignature();
 
             horizontalMax = bounding.size.x * 1.0f / layoutScale;

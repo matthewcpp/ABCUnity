@@ -11,19 +11,19 @@ SpriteAtlas:
     serializedVersion: 2
     textureSettings:
       serializedVersion: 2
-      anisoLevel: 1
+      anisoLevel: 2
       compressionQuality: 50
       maxTextureSize: 2048
       textureCompression: 0
       filterMode: 1
-      generateMipMaps: 0
+      generateMipMaps: 1
       readable: 0
       crunchedCompression: 0
       sRGB: 1
     platformSettings: []
     packingSettings:
       serializedVersion: 2
-      padding: 4
+      padding: 8
       blockOffset: 1
       allowAlphaSplitting: 0
       enableRotation: 1
