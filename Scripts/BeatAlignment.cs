@@ -60,6 +60,12 @@ namespace ABCUnity
                         noteTime = 1.0f / (float)chordItem.notes[0].length;
                         goto ProcessNoteTime;
 
+                    case ABC.Item.Type.Rest:
+                        beatItem.items.Add(voice.items[i]);
+                        var restItem = voice.items[i] as ABC.RestItem;
+                        noteTime = 1.0f / (float)restItem.rest.length;
+                        goto ProcessNoteTime;
+
                     case ABC.Item.Type.Note:
                         beatItem.items.Add(voice.items[i]);
                         var noteItem = voice.items[i] as ABC.NoteItem;
