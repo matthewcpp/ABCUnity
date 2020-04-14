@@ -491,7 +491,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spriteAtlas: {fileID: 4343727234628468602, guid: c135832626606554697bc5e6d39f5867,
     type: 2}
-  layoutScale: 0.2
+  layoutScale: 0.5
   color: {r: 0, g: 0, b: 0, a: 1}
 --- !u!61 &364536234
 BoxCollider2D:
