@@ -20,6 +20,10 @@ namespace ABCUnity
         public ABC.Tune tune { get; private set; }
         private BoxCollider2D bounding;
 
+        public delegate void OnLoaded(ABC.Tune tune);
+
+        public OnLoaded onLoaded;
+
         public void Awake()
         {
             bounding = this.GetComponent<BoxCollider2D>();
@@ -33,6 +37,7 @@ namespace ABCUnity
             {
                 tune = ABC.Tune.Load(abc);
                 LayoutTune();
+                onLoaded?.Invoke(tune);
             }
             catch (ABC.ParseException e)
             {
@@ -46,6 +51,7 @@ namespace ABCUnity
             {
                 tune = ABC.Tune.Load(stream);
                 LayoutTune();
+                onLoaded?.Invoke(tune);
             }
             catch (ABC.ParseException e)
             {
