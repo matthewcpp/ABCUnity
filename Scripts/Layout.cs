@@ -127,6 +127,10 @@ namespace ABCUnity
                                     case ABC.Item.Type.Chord:
                                         LayoutChord(item as ABC.ChordItem, layout);
                                         break;
+
+                                    case ABC.Item.Type.Rest:
+                                        LayoutRest(item as ABC.RestItem, layout);
+                                        break;
                                 }
                             }
 
@@ -269,6 +273,13 @@ namespace ABCUnity
             var note = notes.CreateNote(noteItem.note, layout.voice.clef, layout.measure.container, layout.measure.position);
             layout.measure.UpdateBounds(note.bounds);
             layout.measure.position.x = note.bounds.max.x + noteAdvance;
+        }
+
+        void LayoutRest(ABC.RestItem restItem, VoiceLayout layout)
+        {
+            var rest = notes.CreateRest(restItem.rest, layout.measure.container, layout.measure.position);
+            layout.measure.UpdateBounds(rest.bounds);
+            layout.measure.position.x = rest.bounds.max.x + noteAdvance;
         }
     }
 }

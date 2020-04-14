@@ -15,9 +15,9 @@ namespace ABCUnity
             this.spriteCache = spriteCache;
         }
 
-        static Dictionary<ABC.Clef, ABC.Note.Value> clefZero = new Dictionary<ABC.Clef, ABC.Note.Value>()
+        static readonly Dictionary<ABC.Clef, ABC.Note.Pitch> clefZero = new Dictionary<ABC.Clef, ABC.Note.Pitch>()
         {
-            { ABC.Clef.Treble, ABC.Note.Value.F4}, { ABC.Clef.Bass, ABC.Note.Value.A2}
+            { ABC.Clef.Treble, ABC.Note.Pitch.F4}, { ABC.Clef.Bass, ABC.Note.Pitch.A2}
         };
 
         public enum NoteDirection
@@ -74,7 +74,7 @@ namespace ABCUnity
 
         public SpriteRenderer CreateNote(ABC.Note note, ABC.Clef clef, GameObject container, Vector3 offset)
         {
-            int stepCount = note.value - clefZero[clef];
+            int stepCount = note.pitch - clefZero[clef];
             var noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
             var notePosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
@@ -94,7 +94,7 @@ namespace ABCUnity
             if (addedMarkers)
                 notePosition = notePosition + new Vector3(notePadding, 0.0f, 0.0f);
 
-            var spriteName = note.length == ABC.Note.Length.Whole ? "Note_Whole" : $"Note_{note.length}_{noteDirection}";
+            var spriteName = note.length == ABC.Length.Whole ? "Note_Whole" : $"Note_{note.length}_{noteDirection}";
             var noteObj = spriteCache.GetSpriteObject(spriteName);
             noteObj.transform.parent = container.transform;
             noteObj.transform.localPosition = notePosition;
@@ -102,12 +102,12 @@ namespace ABCUnity
             return noteObj;
         }
 
-        private SpriteRenderer AddChordNote(ABC.Note.Value value, ABC.Note.Length length, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset)
+        private SpriteRenderer AddChordNote(ABC.Note.Pitch value, ABC.Length length, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset)
         {
             int stepCount = value - clefZero[clef];
             var notePosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
-            var spriteName = length == ABC.Note.Length.Whole ? "Note_Whole" : $"Note_{length}_{noteDirection}";
+            var spriteName = length == ABC.Length.Whole ? "Note_Whole" : $"Note_{length}_{noteDirection}";
             var noteObj = spriteCache.GetSpriteObject(spriteName);
             noteObj.transform.parent = container.transform;
             noteObj.transform.localPosition = notePosition;
@@ -115,13 +115,13 @@ namespace ABCUnity
             return noteObj;
         }
 
-        private SpriteRenderer AddChordDot(ABC.Note.Value value, ABC.Note.Length length, ABC.Clef clef, NoteDirection noteDirection, GameObject container, Vector3 offset)
+        private SpriteRenderer AddChordDot(ABC.Note.Pitch value, ABC.Length length, ABC.Clef clef, NoteDirection noteDirection, GameObject container, Vector3 offset)
         {
             int stepCount = value - clefZero[clef];
 
             var notePos = new Vector3(noteDirection == NoteDirection.Up ? chordDotOffset : -chordDotOffset, noteStep * stepCount, 0.0f);
 
-            var spriteName = length == ABC.Note.Length.Whole ? "Note_Whole" : $"Chord_{length}";
+            var spriteName = length == ABC.Length.Whole ? "Note_Whole" : $"Chord_{length}";
             var dot = spriteCache.GetSpriteObject(spriteName);
             dot.transform.parent = container.transform;
             dot.transform.localPosition = offset + notePos;
@@ -139,8 +139,8 @@ namespace ABCUnity
             var direction = NoteDirection.Down;
 
             var clefCenter = clefZero[clef] + 3;
-            int lowDistance = Math.Abs(sortedNotes[0].value - clefCenter);
-            int highDistance = Math.Abs(sortedNotes[sortedNotes.Length - 1].value - clefCenter);
+            int lowDistance = Math.Abs(sortedNotes[0].pitch - clefCenter);
+            int highDistance = Math.Abs(sortedNotes[sortedNotes.Length - 1].pitch - clefCenter);
 
             if (lowDistance > highDistance)
                 direction = NoteDirection.Up;
@@ -153,7 +153,7 @@ namespace ABCUnity
             for (int i = 1; i < sortedNotes.Length; i++)
             {
                 // If the note will not fit on the current line because there is a note right below it, then need to draw a chord dot
-                if (i % 2 == 1 && sortedNotes[i].value - sortedNotes[i - 1].value == 1)
+                if (i % 2 == 1 && sortedNotes[i].pitch - sortedNotes[i - 1].pitch == 1)
                     return true;
             }
 
@@ -162,7 +162,7 @@ namespace ABCUnity
 
         const int chordAccidentalSize = 6;
 
-        public static List<List<ABC.Note>> ComputeChordAccidentalLevels(ABC.Note[] notes, ABC.Note.Value clefZero)
+        public static List<List<ABC.Note>> ComputeChordAccidentalLevels(ABC.Note[] notes, ABC.Note.Pitch clefZero)
         {
             List<int> stepLevels = null;
             List<List<ABC.Note>> notesInLevel = null;
@@ -178,7 +178,7 @@ namespace ABCUnity
                     notesInLevel = new List<List<ABC.Note>>();
                 }
 
-                int stepCount = note.value - clefZero;
+                int stepCount = note.pitch - clefZero;
 
                 // place this accidental into the first level it will fit
                 for (int i = 0; i < stepLevels.Count; i++)
@@ -199,8 +199,8 @@ namespace ABCUnity
 
                 stepLevels.Add(stepCount);
 
-                //proceed to next note
-                NoteProcessed:;
+            //proceed to next note
+            NoteProcessed:;
             }
 
             return notesInLevel;
@@ -219,7 +219,7 @@ namespace ABCUnity
             {
                 foreach (var note in accidentalLevels[i])
                 {
-                    int stepCount = note.value - clefZero[clef];
+                    int stepCount = note.pitch - clefZero[clef];
 
                     var accidental = spriteCache.GetSpriteObject($"Accidental_{note.accidental}");
                     accidental.transform.parent = container.transform;
@@ -252,11 +252,11 @@ namespace ABCUnity
                 // In this case we will push the chord over such that its min x value lines up with the caret.
                 if (noteDirection == NoteDirection.Down)
                     offset = offset + new Vector3(chordDotOffset, 0.0f, 0.0f);
-            } 
+            }
 
             // TODO: if both below only need to do lowest
-            bool hasMarkers = AddNoteStaffMarkers(notes[0].value - clefZero[clef], container, offset, staffMarkerScale) || 
-                AddNoteStaffMarkers(notes[notes.Length - 1].value - clefZero[clef], container, offset, staffMarkerScale);
+            bool hasMarkers = AddNoteStaffMarkers(notes[0].pitch - clefZero[clef], container, offset, staffMarkerScale) ||
+                AddNoteStaffMarkers(notes[notes.Length - 1].pitch - clefZero[clef], container, offset, staffMarkerScale);
 
             if (hasMarkers)
                 offset = offset + new Vector3(notePadding, 0.0f, 0.0f);
@@ -268,18 +268,18 @@ namespace ABCUnity
 
         private void AddChordItems(ABC.Note[] sortedNotes, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset, List<SpriteRenderer> items)
         {
-            var dotValue = sortedNotes[0].length < ABC.Note.Length.Quarter ? sortedNotes[0].length : ABC.Note.Length.Quarter;
+            var dotValue = sortedNotes[0].length < ABC.Length.Quarter ? sortedNotes[0].length : ABC.Length.Quarter;
             var noteValue = sortedNotes[0].length;
 
             if (noteDirection == NoteDirection.Down)
             {
                 for (int i = 0; i < sortedNotes.Length; i++)
                 {
-                    if (i > 0 && sortedNotes[i].value - sortedNotes[i - 1].value == 1)
-                        items.Add(AddChordDot(sortedNotes[i].value, dotValue, clef, noteDirection, container, offset));
+                    if (i > 0 && sortedNotes[i].pitch - sortedNotes[i - 1].pitch == 1)
+                        items.Add(AddChordDot(sortedNotes[i].pitch, dotValue, clef, noteDirection, container, offset));
                     else
                     {
-                        items.Add(AddChordNote(sortedNotes[i].value, noteValue, noteDirection, clef, container, offset));
+                        items.Add(AddChordNote(sortedNotes[i].pitch, noteValue, noteDirection, clef, container, offset));
                         noteValue = dotValue;
                     }
                 }
@@ -288,11 +288,11 @@ namespace ABCUnity
             {
                 for (int i = sortedNotes.Length - 1; i >= 0; i--)
                 {
-                    if (i > 0 && sortedNotes[i].value - sortedNotes[i - 1].value == 1)
-                        items.Add(AddChordDot(sortedNotes[i].value, dotValue, clef, noteDirection, container, offset));
+                    if (i > 0 && sortedNotes[i].pitch - sortedNotes[i - 1].pitch == 1)
+                        items.Add(AddChordDot(sortedNotes[i].pitch, dotValue, clef, noteDirection, container, offset));
                     else
                     {
-                        items.Add(AddChordNote(sortedNotes[i].value, noteValue, noteDirection, clef, container, offset));
+                        items.Add(AddChordNote(sortedNotes[i].pitch, noteValue, noteDirection, clef, container, offset));
                         noteValue = dotValue;
                     }
                 }
@@ -308,5 +308,20 @@ namespace ABCUnity
 
             return mark;
         }
+
+        static readonly Dictionary<ABC.Length, float> restHeight = new Dictionary<ABC.Length, float>()
+        {
+            { ABC.Length.Whole, 1.41f }, { ABC.Length.Half, 1.16f }, { ABC.Length.Quarter, 0.3f}, { ABC.Length.Eighth, 0.0f}, { ABC.Length.Sixteenth, 0.0f }
+        };
+
+        public SpriteRenderer CreateRest(ABC.Rest rest, GameObject container, Vector3 offset)
+        {
+            var restSprite = rest.length == ABC.Length.Whole ? "Rest_Half" : $"Rest_{rest.length}";
+            var restObj = spriteCache.GetSpriteObject(restSprite);
+            restObj.transform.parent = container.transform;
+            restObj.transform.localPosition = offset + new Vector3(0.0f, restHeight[rest.length], 0.0f);
+
+            return restObj;
+        }
     }
-}
+    }
