@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using ABC;
 using UnityEngine;
 using UnityEngine.U2D;
 
@@ -9,7 +10,7 @@ namespace ABCUnity
     public class Layout : MonoBehaviour
     {
         [SerializeField]
-        SpriteAtlas spriteAtlas; // set in editor
+        private SpriteAtlas spriteAtlas; // set in editor
 
         [SerializeField]
         float layoutScale = 0.5f;
@@ -60,6 +61,40 @@ namespace ABCUnity
             {
                 Debug.Log(e.Message);
             }
+        }
+
+        public Dictionary<ABC.Item, GameObject> gameObjectMap { get; } = new Dictionary<ABC.Item, GameObject>();
+        public Dictionary<GameObject, ABC.Item> itemMap { get; } = new Dictionary<GameObject, Item>();
+
+        public GameObject FindItemRootObject(GameObject obj)
+        {
+            while (!itemMap.ContainsKey(obj))
+                obj = obj.transform.parent.gameObject;
+
+            return obj;
+        }
+
+        public bool SetItemColor(ABC.Item item, Color color)
+        {
+            if (gameObjectMap.TryGetValue(item, out GameObject obj))
+            {
+                SetObjectColor(obj, color);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void SetObjectColor(GameObject target, Color noteColor)
+        {
+            var targetTransform = target.transform;
+
+            for (int i = 0; i < targetTransform.childCount - 1; i++)
+                targetTransform.GetChild(i).GetComponent<SpriteRenderer>().color = noteColor;
+
+            var lastChild = targetTransform.GetChild(targetTransform.childCount - 1);
+            if (lastChild.childCount  == 0)
+                lastChild.GetComponent<SpriteRenderer>().color = noteColor;
         }
         
         const float staffPadding = 0.3f;
@@ -255,7 +290,13 @@ namespace ABCUnity
 
         void LayoutChord(ABC.ChordItem chordItem, VoiceLayout layout)
         {
-            var chord = notes.CreateChord(chordItem.notes, layout.voice.clef, layout.measure.container, layout.measure.position);
+            var container = new GameObject("Chord");
+            container.transform.parent = layout.measure.container.transform;
+            
+            gameObjectMap[chordItem] = container;
+            itemMap[container] = chordItem;
+            
+            var chord = notes.CreateChord(chordItem.notes, layout.voice.clef, container, layout.measure.position);
 
             Bounds chordBounds = chord[0].bounds;
 
@@ -270,14 +311,26 @@ namespace ABCUnity
         
         void LayoutNote(ABC.NoteItem noteItem, VoiceLayout layout)
         {
-            var note = notes.CreateNote(noteItem.note, layout.voice.clef, layout.measure.container, layout.measure.position);
+            var container = new GameObject("Note");
+            container.transform.parent = layout.measure.container.transform;
+            
+            gameObjectMap[noteItem] = container;
+            itemMap[container] = noteItem;
+            
+            var note = notes.CreateNote(noteItem.note, layout.voice.clef, container, layout.measure.position);
             layout.measure.UpdateBounds(note.bounds);
             layout.measure.position.x = note.bounds.max.x + noteAdvance;
         }
 
         void LayoutRest(ABC.RestItem restItem, VoiceLayout layout)
         {
-            var rest = notes.CreateRest(restItem.rest, layout.measure.container, layout.measure.position);
+            var container = new GameObject("Rest");
+            container.transform.parent = layout.measure.container.transform;
+
+            gameObjectMap[restItem] = container;
+            itemMap[container] = restItem;
+            
+            var rest = notes.CreateRest(restItem.rest, container, layout.measure.position);
             layout.measure.UpdateBounds(rest.bounds);
             layout.measure.position.x = rest.bounds.max.x + noteAdvance;
         }

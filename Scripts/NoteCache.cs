@@ -30,13 +30,14 @@ namespace ABCUnity
                 var obj = objectPool[objectPool.Count - 1];
                 objectPool.RemoveAt(objectPool.Count - 1);
 
+                obj.name = name;
                 var spriteRenderer = obj.GetComponent<SpriteRenderer>();
                 spriteRenderer.sprite = sprite;
 
                 return spriteRenderer;
             }
 
-            return CreateSpriteObject(sprite);
+            return CreateSpriteObject(sprite, name);
         }
 
         public void ReturnObject(GameObject obj)
@@ -44,10 +45,10 @@ namespace ABCUnity
             objectPool.Add(obj);
         }
 
-        SpriteRenderer CreateSpriteObject(Sprite sprite)
+        SpriteRenderer CreateSpriteObject(Sprite sprite, string name)
         {
-            var staffObj = new GameObject();
-            var spriteRenderer = staffObj.AddComponent<SpriteRenderer>();
+            var spriteObj = new GameObject(name);
+            var spriteRenderer = spriteObj.AddComponent<SpriteRenderer>();
             spriteRenderer.sprite = sprite;
             spriteRenderer.color = color;
 

@@ -2,7 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.U2D;
+using System.Runtime.CompilerServices;
 
 namespace ABCUnity
 {
@@ -35,6 +35,12 @@ namespace ABCUnity
 
         /// <summary> The distance to offset notes by if they have a mark.  This will ensure they are centered. </summary>
         const float notePadding = 0.14f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool NeedsStaffMarkers(int stepCount)
+        {
+            return stepCount < -2 || stepCount > 8;
+        }
 
         /// <summary>
         /// Draws all required staff markers for a note  with a given stepcount from the Staff's zero value.
@@ -89,15 +95,24 @@ namespace ABCUnity
                 accidental.transform.localPosition = accidentalPos;
             }
 
-            bool addedMarkers = AddNoteStaffMarkers(stepCount, container, offset, 1.0f);
+            GameObject staffMarkers = null;
+            if (NeedsStaffMarkers(stepCount))
+            {
+                staffMarkers = new GameObject();
+                AddNoteStaffMarkers(stepCount, staffMarkers, offset, 1.0f);
+            }
+            
 
-            if (addedMarkers)
+            if (staffMarkers != null) // this ensures that the note appears centered w.r.t the markers
                 notePosition = notePosition + new Vector3(notePadding, 0.0f, 0.0f);
 
             var spriteName = note.length == ABC.Length.Whole ? "Note_Whole" : $"Note_{note.length}_{noteDirection}";
             var noteObj = spriteCache.GetSpriteObject(spriteName);
             noteObj.transform.parent = container.transform;
             noteObj.transform.localPosition = notePosition;
+
+            if (staffMarkers != null)
+                staffMarkers.transform.parent = container.transform;
 
             return noteObj;
         }
@@ -254,14 +269,23 @@ namespace ABCUnity
                     offset = offset + new Vector3(chordDotOffset, 0.0f, 0.0f);
             }
 
-            // TODO: if both below only need to do lowest
-            bool hasMarkers = AddNoteStaffMarkers(notes[0].pitch - clefZero[clef], container, offset, staffMarkerScale) ||
-                AddNoteStaffMarkers(notes[notes.Length - 1].pitch - clefZero[clef], container, offset, staffMarkerScale);
+            GameObject staffMarkers = null;
+            if (NeedsStaffMarkers(notes[0].pitch - clefZero[clef]) || NeedsStaffMarkers(notes[notes.Length - 1].pitch - clefZero[clef]))
+            {
+                staffMarkers = new GameObject();
+                
+                AddNoteStaffMarkers(notes[0].pitch - clefZero[clef], staffMarkers, offset, staffMarkerScale);
+                AddNoteStaffMarkers(notes[notes.Length - 1].pitch - clefZero[clef], staffMarkers, offset,
+                    staffMarkerScale);
+            }
 
-            if (hasMarkers)
+            if (staffMarkers != null) // this ensures that the note appears centered w.r.t the markers
                 offset = offset + new Vector3(notePadding, 0.0f, 0.0f);
 
             AddChordItems(sortedNotes, noteDirection, clef, container, offset, items);
+            
+            if (staffMarkers != null)
+                staffMarkers.transform.parent = container.transform;
 
             return items;
         }
