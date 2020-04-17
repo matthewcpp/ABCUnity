@@ -19,7 +19,7 @@ namespace ABCUnity
         public class MeasureInfo
         {
             public List<BeatItem> beatItems { get; } = new List<BeatItem>();
-            public ABC.BarItem bar;
+            public ABC.Bar bar;
         }
 
         public BeatAlignment(ABC.Voice voice)
@@ -37,11 +37,11 @@ namespace ABCUnity
 
             if (voice.items.Count == 0) return;
 
-            var timeSignatureItem = voice.items[0] as ABC.TimeSignatureItem;
+            var timeSignatureItem = voice.items[0] as ABC.TimeSignature;
             if (timeSignatureItem == null)
                 throw new BeatAlignmentException("Voice does not initially declare a time signature.");
 
-            timeSignature = TimeSignature.Parse(timeSignatureItem.timeSignature);
+            timeSignature = TimeSignature.Parse(timeSignatureItem.value);
 
             float t = 0;
             int currentBeat = 1;
@@ -56,20 +56,20 @@ namespace ABCUnity
                 {
                     case ABC.Item.Type.Chord:
                         beatItem.items.Add(voice.items[i]);
-                        var chordItem = voice.items[i] as ABC.ChordItem;
-                        noteTime = 1.0f / (float)chordItem.notes[0].length;
+                        var chordItem = voice.items[i] as ABC.Chord;
+                        noteTime = chordItem.duration;
                         goto ProcessNoteTime;
 
                     case ABC.Item.Type.Rest:
                         beatItem.items.Add(voice.items[i]);
-                        var restItem = voice.items[i] as ABC.RestItem;
-                        noteTime = 1.0f / (float)restItem.rest.length;
+                        var restItem = voice.items[i] as ABC.Rest;
+                        noteTime = restItem.duration;
                         goto ProcessNoteTime;
 
                     case ABC.Item.Type.Note:
                         beatItem.items.Add(voice.items[i]);
-                        var noteItem = voice.items[i] as ABC.NoteItem;
-                        noteTime = 1.0f / (float)noteItem.note.length;
+                        var noteItem = voice.items[i] as ABC.Note;
+                        noteTime = noteItem.duration;
 
                         ProcessNoteTime:
                         t += noteTime;

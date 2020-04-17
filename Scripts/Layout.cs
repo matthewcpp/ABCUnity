@@ -156,15 +156,15 @@ namespace ABCUnity
                                 switch (item.type)
                                 {
                                     case ABC.Item.Type.Note:
-                                        LayoutNote(item as ABC.NoteItem, layout);
+                                        LayoutNote(item as ABC.Note, layout);
                                         break;
 
                                     case ABC.Item.Type.Chord:
-                                        LayoutChord(item as ABC.ChordItem, layout);
+                                        LayoutChord(item as ABC.Chord, layout);
                                         break;
 
                                     case ABC.Item.Type.Rest:
-                                        LayoutRest(item as ABC.RestItem, layout);
+                                        LayoutRest(item as ABC.Rest, layout);
                                         break;
                                 }
                             }
@@ -225,11 +225,11 @@ namespace ABCUnity
 
             for (int i = 0; i < tune.voices.Count; i++)
             {
-                var timeSignatureItem = tune.voices[i].items[0] as ABC.TimeSignatureItem;
+                var timeSignatureItem = tune.voices[i].items[0] as ABC.TimeSignature;
                 if (timeSignatureItem == null)
                     throw new BeatAlignmentException($"Voice {i} does not initially declare a time signature.");
 
-                var timeSignature = TimeSignature.Parse(timeSignatureItem.timeSignature);
+                var timeSignature = TimeSignature.Parse(timeSignatureItem.value);
 
                 if (result == null)
                     result = timeSignature;
@@ -281,14 +281,14 @@ namespace ABCUnity
             layout.currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
         }
 
-        void LayoutBar(ABC.BarItem barItem, VoiceLayout layout)
+        void LayoutBar(ABC.Bar barItem, VoiceLayout layout)
         {
             var barObj = cache.GetSpriteObject("Bar_Line");
             barObj.transform.parent = layout.measure.container.transform;
             barObj.transform.localPosition = layout.measure.position;
         }
 
-        void LayoutChord(ABC.ChordItem chordItem, VoiceLayout layout)
+        void LayoutChord(ABC.Chord chordItem, VoiceLayout layout)
         {
             var container = new GameObject("Chord");
             container.transform.parent = layout.measure.container.transform;
@@ -296,7 +296,7 @@ namespace ABCUnity
             gameObjectMap[chordItem] = container;
             itemMap[container] = chordItem;
             
-            var chord = notes.CreateChord(chordItem.notes, layout.voice.clef, container, layout.measure.position);
+            var chord = notes.CreateChord(chordItem, layout.voice.clef, container, layout.measure.position);
 
             Bounds chordBounds = chord[0].bounds;
 
@@ -309,7 +309,7 @@ namespace ABCUnity
             layout.measure.position.x = chordBounds.max.x + noteAdvance;
         }
         
-        void LayoutNote(ABC.NoteItem noteItem, VoiceLayout layout)
+        void LayoutNote(ABC.Note noteItem, VoiceLayout layout)
         {
             var container = new GameObject("Note");
             container.transform.parent = layout.measure.container.transform;
@@ -317,12 +317,12 @@ namespace ABCUnity
             gameObjectMap[noteItem] = container;
             itemMap[container] = noteItem;
             
-            var note = notes.CreateNote(noteItem.note, layout.voice.clef, container, layout.measure.position);
+            var note = notes.CreateNote(noteItem, layout.voice.clef, container, layout.measure.position);
             layout.measure.UpdateBounds(note.bounds);
             layout.measure.position.x = note.bounds.max.x + noteAdvance;
         }
 
-        void LayoutRest(ABC.RestItem restItem, VoiceLayout layout)
+        void LayoutRest(ABC.Rest restItem, VoiceLayout layout)
         {
             var container = new GameObject("Rest");
             container.transform.parent = layout.measure.container.transform;
@@ -330,7 +330,7 @@ namespace ABCUnity
             gameObjectMap[restItem] = container;
             itemMap[container] = restItem;
             
-            var rest = notes.CreateRest(restItem.rest, container, layout.measure.position);
+            var rest = notes.CreateRest(restItem, container, layout.measure.position);
             layout.measure.UpdateBounds(rest.bounds);
             layout.measure.position.x = rest.bounds.max.x + noteAdvance;
         }

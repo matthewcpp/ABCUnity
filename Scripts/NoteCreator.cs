@@ -15,9 +15,9 @@ namespace ABCUnity
             this.spriteCache = spriteCache;
         }
 
-        static readonly Dictionary<ABC.Clef, ABC.Note.Pitch> clefZero = new Dictionary<ABC.Clef, ABC.Note.Pitch>()
+        static readonly Dictionary<ABC.Clef, ABC.Pitch> clefZero = new Dictionary<ABC.Clef, ABC.Pitch>()
         {
-            { ABC.Clef.Treble, ABC.Note.Pitch.F4}, { ABC.Clef.Bass, ABC.Note.Pitch.A2}
+            { ABC.Clef.Treble, ABC.Pitch.F4}, { ABC.Clef.Bass, ABC.Pitch.A2}
         };
 
         public enum NoteDirection
@@ -84,7 +84,7 @@ namespace ABCUnity
             var noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
             var notePosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
-            if (note.accidental != ABC.Note.Accidental.Unspecified)
+            if (note.accidental != ABC.Accidental.Unspecified)
             {
                 offset = offset + new Vector3(accidentalOffset, 0.0f, 0.0f);
                 notePosition = notePosition + new Vector3(accidentalOffset, 0.0f, 0.0f);
@@ -117,7 +117,7 @@ namespace ABCUnity
             return noteObj;
         }
 
-        private SpriteRenderer AddChordNote(ABC.Note.Pitch value, ABC.Length length, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset)
+        private SpriteRenderer AddChordNote(ABC.Pitch value, ABC.Length length, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset)
         {
             int stepCount = value - clefZero[clef];
             var notePosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
@@ -130,7 +130,7 @@ namespace ABCUnity
             return noteObj;
         }
 
-        private SpriteRenderer AddChordDot(ABC.Note.Pitch value, ABC.Length length, ABC.Clef clef, NoteDirection noteDirection, GameObject container, Vector3 offset)
+        private SpriteRenderer AddChordDot(ABC.Pitch value, ABC.Length length, ABC.Clef clef, NoteDirection noteDirection, GameObject container, Vector3 offset)
         {
             int stepCount = value - clefZero[clef];
 
@@ -149,7 +149,7 @@ namespace ABCUnity
         /// The direction is chosen by examining the extreme notes of the chord and picking the direction based on the note which is farthest away from the value of the middle staffline.
         /// Precondition: notes array should be sorted in ascending order.
         /// </summary>
-        private NoteDirection DetermineChordNoteDirection(ABC.Note[] sortedNotes, ABC.Clef clef)
+        private NoteDirection DetermineChordNoteDirection(ABC.Chord.Element[] sortedNotes, ABC.Clef clef)
         {
             var direction = NoteDirection.Down;
 
@@ -163,7 +163,7 @@ namespace ABCUnity
             return direction;
         }
 
-        private bool ChordHasDots(ABC.Note[] sortedNotes)
+        private bool ChordHasDots(ABC.Chord.Element[] sortedNotes)
         {
             for (int i = 1; i < sortedNotes.Length; i++)
             {
@@ -177,20 +177,20 @@ namespace ABCUnity
 
         const int chordAccidentalSize = 6;
 
-        public static List<List<ABC.Note>> ComputeChordAccidentalLevels(ABC.Note[] notes, ABC.Note.Pitch clefZero)
+        public static List<List<ABC.Chord.Element>> ComputeChordAccidentalLevels(ABC.Chord.Element[] notes, ABC.Pitch clefZero)
         {
             List<int> stepLevels = null;
-            List<List<ABC.Note>> notesInLevel = null;
+            List<List<ABC.Chord.Element>> notesInLevel = null;
 
             foreach (var note in notes)
             {
-                if (note.accidental == ABC.Note.Accidental.Unspecified)
+                if (note.accidental == ABC.Accidental.Unspecified)
                     continue;
 
                 if (stepLevels == null)
                 {
                     stepLevels = new List<int>();
-                    notesInLevel = new List<List<ABC.Note>>();
+                    notesInLevel = new List<List<ABC.Chord.Element>>();
                 }
 
                 int stepCount = note.pitch - clefZero;
@@ -208,7 +208,7 @@ namespace ABCUnity
                 }
 
                 //Could not fit in an existing level, create a new one
-                var newLevelNotes = new List<ABC.Note>();
+                var newLevelNotes = new List<ABC.Chord.Element>();
                 newLevelNotes.Add(note);
                 notesInLevel.Add(newLevelNotes);
 
@@ -221,7 +221,7 @@ namespace ABCUnity
             return notesInLevel;
         }
 
-        private void CreateChordAccidentals(ABC.Note[] notes, ABC.Clef clef, ref Vector3 offset, GameObject container, List<SpriteRenderer> items)
+        private void CreateChordAccidentals(ABC.Chord.Element[] notes, ABC.Clef clef, ref Vector3 offset, GameObject container, List<SpriteRenderer> items)
         {
             var accidentalLevels = ComputeChordAccidentalLevels(notes, clefZero[clef]);
 
@@ -246,10 +246,10 @@ namespace ABCUnity
             }
         }
 
-        public List<SpriteRenderer> CreateChord(ABC.Note[] notes, ABC.Clef clef, GameObject container, Vector3 offset)
+        public List<SpriteRenderer> CreateChord(ABC.Chord chord, ABC.Clef clef, GameObject container, Vector3 offset)
         {
-            var sortedNotes = new ABC.Note[notes.Length];
-            Array.Copy(notes, sortedNotes, notes.Length);
+            var sortedNotes = new ABC.Chord.Element[chord.notes.Length];
+            Array.Copy(chord.notes, sortedNotes, chord.notes.Length);
             Array.Sort(sortedNotes);
 
             var items = new List<SpriteRenderer>();
@@ -257,9 +257,9 @@ namespace ABCUnity
             var noteDirection = DetermineChordNoteDirection(sortedNotes, clef);
             float staffMarkerScale = 1.0f;
 
-            CreateChordAccidentals(notes, clef, ref offset, container, items);
+            CreateChordAccidentals(chord.notes, clef, ref offset, container, items);
 
-            if (ChordHasDots(notes))
+            if (ChordHasDots(chord.notes))
             {
                 staffMarkerScale = 2.0f;
 
@@ -270,19 +270,19 @@ namespace ABCUnity
             }
 
             GameObject staffMarkers = null;
-            if (NeedsStaffMarkers(notes[0].pitch - clefZero[clef]) || NeedsStaffMarkers(notes[notes.Length - 1].pitch - clefZero[clef]))
+            if (NeedsStaffMarkers(sortedNotes[0].pitch - clefZero[clef]) || NeedsStaffMarkers(sortedNotes[sortedNotes.Length - 1].pitch - clefZero[clef]))
             {
                 staffMarkers = new GameObject();
                 
-                AddNoteStaffMarkers(notes[0].pitch - clefZero[clef], staffMarkers, offset, staffMarkerScale);
-                AddNoteStaffMarkers(notes[notes.Length - 1].pitch - clefZero[clef], staffMarkers, offset,
+                AddNoteStaffMarkers(sortedNotes[0].pitch - clefZero[clef], staffMarkers, offset, staffMarkerScale);
+                AddNoteStaffMarkers(sortedNotes[sortedNotes.Length - 1].pitch - clefZero[clef], staffMarkers, offset,
                     staffMarkerScale);
             }
 
             if (staffMarkers != null) // this ensures that the note appears centered w.r.t the markers
                 offset = offset + new Vector3(notePadding, 0.0f, 0.0f);
 
-            AddChordItems(sortedNotes, noteDirection, clef, container, offset, items);
+            AddChordItems(sortedNotes, chord.length, noteDirection, clef, container, offset, items);
             
             if (staffMarkers != null)
                 staffMarkers.transform.parent = container.transform;
@@ -290,10 +290,10 @@ namespace ABCUnity
             return items;
         }
 
-        private void AddChordItems(ABC.Note[] sortedNotes, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset, List<SpriteRenderer> items)
+        private void AddChordItems(ABC.Chord.Element[] sortedNotes, ABC.Length length, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset, List<SpriteRenderer> items)
         {
-            var dotValue = sortedNotes[0].length < ABC.Length.Quarter ? sortedNotes[0].length : ABC.Length.Quarter;
-            var noteValue = sortedNotes[0].length;
+            var dotValue = length > ABC.Length.Quarter ? length : ABC.Length.Quarter;
+            var noteValue = length;
 
             if (noteDirection == NoteDirection.Down)
             {
