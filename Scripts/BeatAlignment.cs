@@ -55,29 +55,16 @@ namespace ABCUnity
                 switch (voice.items[i].type)
                 {
                     case ABC.Item.Type.Chord:
-                        beatItem.items.Add(voice.items[i]);
-                        var chordItem = voice.items[i] as ABC.Chord;
-                        noteTime = chordItem.duration;
-                        goto ProcessNoteTime;
-
                     case ABC.Item.Type.Rest:
-                        beatItem.items.Add(voice.items[i]);
-                        var restItem = voice.items[i] as ABC.Rest;
-                        noteTime = restItem.duration;
-                        goto ProcessNoteTime;
-
                     case ABC.Item.Type.Note:
                         beatItem.items.Add(voice.items[i]);
-                        var noteItem = voice.items[i] as ABC.Note;
-                        noteTime = noteItem.duration;
-
-                        ProcessNoteTime:
-                        t += noteTime;
+                        var noteItem = voice.items[i] as ABC.Duration;
+                        t += noteItem.duration;
 
                         if (t >= timeSignature.noteValue) // current beat is filled
                         {
                             measure.beatItems.Add(beatItem);
-                            currentBeat += (int)Math.Round(noteTime / timeSignature.noteValue);
+                            currentBeat += (int)Math.Round(noteItem.duration / timeSignature.noteValue);
                             beatItem = new BeatItem(currentBeat);
                             t = 0.0f;
                         }
