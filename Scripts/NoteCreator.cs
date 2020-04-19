@@ -15,7 +15,7 @@ namespace ABCUnity
             this.spriteCache = spriteCache;
         }
 
-        static readonly Dictionary<ABC.Clef, ABC.Pitch> clefZero = new Dictionary<ABC.Clef, ABC.Pitch>()
+        public static readonly Dictionary<ABC.Clef, ABC.Pitch> clefZero = new Dictionary<ABC.Clef, ABC.Pitch>()
         {
             { ABC.Clef.Treble, ABC.Pitch.F4}, { ABC.Clef.Bass, ABC.Pitch.A2}
         };
@@ -78,10 +78,23 @@ namespace ABCUnity
         const float accidentalOffset = 0.25f;
         const float accidentalWidth = 0.55f;
 
+        public SpriteRenderer CreateNote(ABC.Note note, Beam beam, GameObject container, Vector3 offset)
+        {
+            int stepCount = note.pitch - clefZero[beam.clef];
+            return CreateNote(note, stepCount, beam.noteDirection, container, offset);
+        }
+
         public SpriteRenderer CreateNote(ABC.Note note, ABC.Clef clef, GameObject container, Vector3 offset)
         {
             int stepCount = note.pitch - clefZero[clef];
             var noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
+
+            return CreateNote(note, stepCount, noteDirection, container, offset);
+
+        }
+
+        private SpriteRenderer CreateNote(ABC.Note note, int stepCount, NoteDirection noteDirection, GameObject container, Vector3 offset)
+        {
             var notePosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
             if (note.accidental != ABC.Accidental.Unspecified)
@@ -101,12 +114,11 @@ namespace ABCUnity
                 staffMarkers = new GameObject();
                 AddNoteStaffMarkers(stepCount, staffMarkers, offset, 1.0f);
             }
-            
 
             if (staffMarkers != null) // this ensures that the note appears centered w.r.t the markers
                 notePosition = notePosition + new Vector3(notePadding, 0.0f, 0.0f);
 
-            var spriteName = note.length == ABC.Length.Whole ? "Note_Whole" : $"Note_{note.length}_{noteDirection}";
+            var spriteName = GetNoteSpriteName(note, noteDirection);
             var noteObj = spriteCache.GetSpriteObject(spriteName);
             noteObj.transform.parent = container.transform;
             noteObj.transform.localPosition = notePosition;
@@ -115,6 +127,14 @@ namespace ABCUnity
                 staffMarkers.transform.parent = container.transform;
 
             return noteObj;
+        }
+
+        private string GetNoteSpriteName(ABC.Note note, NoteDirection noteDirection)
+        {
+            if (note.beam != 0)
+                return $"Note_Quarter_{noteDirection}";
+            else
+                return note.length == ABC.Length.Whole ? "Note_Whole" : $"Note_{note.length}_{noteDirection}";
         }
 
         private SpriteRenderer AddChordNote(ABC.Pitch value, ABC.Length length, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset)

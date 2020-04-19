@@ -53,7 +53,9 @@ SpriteAtlas:
     - {fileID: 2800000, guid: fd4c8d6a857762f4c9408bfa7bdf5060, type: 3}
     - {fileID: 21300000, guid: 4d7a7c66572c8c7408501fa7c935d980, type: 3}
     - {fileID: 2800000, guid: 1eeb50072b04d574e8a47aeb5109c855, type: 3}
-    totalSpriteSurfaceArea: 309567
+    - {fileID: 2800000, guid: ac60059c9248421418964fd4504260a2, type: 3}
+    - {fileID: 2800000, guid: 608ea78db957b7e4cad5007697dc3d01, type: 3}
+    totalSpriteSurfaceArea: 315167
     bindAsDefault: 1
   m_MasterAtlas: {fileID: 0}
   m_PackedSprites:
@@ -72,7 +74,9 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 85ee6faa8608b0d45af2cb91849e19f7, type: 3}
   - {fileID: 21300000, guid: 01944aea3f67cdc42a5a2b8d3e99c15f, type: 3}
   - {fileID: 21300000, guid: 9ba701bbe2a76af4aa5cbf4b04f974d6, type: 3}
+  - {fileID: 21300000, guid: ac60059c9248421418964fd4504260a2, type: 3}
   - {fileID: 21300000, guid: e7c078dc210efda4f935a75101013a9c, type: 3}
+  - {fileID: 21300000, guid: 608ea78db957b7e4cad5007697dc3d01, type: 3}
   - {fileID: 21300000, guid: f8632aedeccf8284f9c677b8b97c9b45, type: 3}
   - {fileID: 21300000, guid: dd84830ef07e5cf4192887bc6ae2f0e6, type: 3}
   - {fileID: 21300000, guid: d0aa5f8effbcdcf419c38667b5bde60a, type: 3}
@@ -96,7 +100,9 @@ SpriteAtlas:
   - Note_Whole
   - Note_Quarter_Up
   - Accidental_Flat
+  - Note_Bar_Up
   - Rest_Half
+  - Note_Bar_Down
   - Rest_Quarter
   - Note_Quarter_Down
   - Clef_Treble

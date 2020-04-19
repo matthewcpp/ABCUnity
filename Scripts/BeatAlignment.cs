@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ABCUnity
 {
-    public class BeatAlignment
+    class BeatAlignment
     {
         public class BeatItem
         {
@@ -30,6 +30,7 @@ namespace ABCUnity
         public List<MeasureInfo> measures { get; private set; }
         TimeSignature timeSignature;
 
+        public Dictionary<int, Beam> beams { get; } = new Dictionary<int, Beam>();
 
         public void Create(ABC.Voice voice)
         {
@@ -64,10 +65,24 @@ namespace ABCUnity
                         if (t >= timeSignature.noteValue) // current beat is filled
                         {
                             measure.beatItems.Add(beatItem);
-                            currentBeat += (int)Math.Round(noteItem.duration / timeSignature.noteValue);
+                            currentBeat += (int)Math.Round(t / timeSignature.noteValue);
                             beatItem = new BeatItem(currentBeat);
                             t = 0.0f;
                         }
+
+                        // add this note to a beam if necessary
+                        if (noteItem.beam != 0)
+                        {
+                            beams.TryGetValue(noteItem.beam, out Beam beam);
+                            if (beam == null)
+                            {
+                                beam = new Beam(noteItem.beam, voice.clef);
+                                beams[noteItem.beam] = beam;
+                            }
+
+                            beam.items.Add(noteItem);
+                        }
+
                         break;
 
                     case ABC.Item.Type.Bar:
@@ -89,6 +104,9 @@ namespace ABCUnity
 
             if (measure.beatItems.Count > 0)
                 measures.Add(measure);
+
+            foreach (var beam in beams)
+                beam.Value.Analyze();
         }
     }
 }

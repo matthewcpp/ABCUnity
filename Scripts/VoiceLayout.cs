@@ -28,7 +28,6 @@ namespace ABCUnity
 
         public Metrics staff { get; private set; }
         public Metrics measure { get; private set; }
-        
 
         public VoiceLayout(ABC.Voice v)
         {

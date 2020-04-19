@@ -316,8 +316,18 @@ namespace ABCUnity
             
             gameObjectMap[noteItem] = container;
             itemMap[container] = noteItem;
+
+            SpriteRenderer note = null;
+            if (layout.alignment.beams.TryGetValue(noteItem.beam, out Beam beam))
+            {
+                note = notes.CreateNote(noteItem, beam, container, layout.measure.position);
+                beam.Update(note, cache, layout.measure.container);
+            }
+            else
+            {
+                note = notes.CreateNote(noteItem, layout.voice.clef, container, layout.measure.position);
+            }
             
-            var note = notes.CreateNote(noteItem, layout.voice.clef, container, layout.measure.position);
             layout.measure.UpdateBounds(note.bounds);
             layout.measure.position.x = note.bounds.max.x + noteAdvance;
         }
