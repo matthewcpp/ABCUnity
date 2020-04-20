@@ -77,7 +77,7 @@ namespace ABCUnity
 
         SpriteRenderer first;
 
-        public void Update(SpriteRenderer sprite, SpriteCache cache, GameObject container)
+        public void Update(SpriteRenderer sprite, SpriteCache cache, VoiceLayout layout)
         {
             if (index == 0)
                 first = sprite;
@@ -86,26 +86,62 @@ namespace ABCUnity
 
             if (index == items.Count)
             {
-                var bar = cache.GetSpriteObject($"Note_Bar_{noteDirection}");
-                bar.transform.parent = container.transform;
-
-                float distX;
-                if (noteDirection == NoteCreator.NoteDirection.Up)
-                {
-                    var barPos = first.bounds.max;
-                    bar.transform.position = barPos;
-
-                    distX = sprite.bounds.max.x - barPos.x;
-                }
+                if (IsStrightBeam())
+                    CreateStraightBeam(sprite, cache, layout.measure.container);
                 else
-                {
-                    var barPos = first.bounds.min;
-                    bar.transform.position = barPos;
+                    CreateAngledBeam(sprite, layout.measureVertices);
+            }
+        }
 
-                    distX = sprite.bounds.min.x - barPos.x;
-                }
+        bool IsStrightBeam()
+        {
+            var firstNote = items[0] as ABC.Note;
+            var lastNote = items[items.Count - 1] as ABC.Note;
 
-                bar.transform.localScale = new Vector3(distX, 1.0f, 1.0f);
+            return firstNote != null && lastNote != null && firstNote.pitch == lastNote.pitch;
+        }
+
+        private void CreateStraightBeam(SpriteRenderer sprite, SpriteCache cache, GameObject container)
+        {
+            var bar = cache.GetSpriteObject($"Note_Bar_{noteDirection}");
+            bar.transform.parent = container.transform;
+
+            float distX;
+            if (noteDirection == NoteCreator.NoteDirection.Up)
+            {
+                var barPos = first.bounds.max;
+                bar.transform.position = barPos;
+
+                distX = sprite.bounds.max.x - barPos.x;
+            }
+            else
+            {
+                var barPos = first.bounds.min;
+                bar.transform.position = barPos;
+
+                distX = sprite.bounds.min.x - barPos.x;
+            }
+
+            bar.transform.localScale = new Vector3(distX, 1.0f, 1.0f);
+        }
+
+        const float barHeight = 0.28f;
+
+        private void CreateAngledBeam(SpriteRenderer sprite, List<Vector3> meshVertices)
+        {
+            if (noteDirection == NoteCreator.NoteDirection.Up)
+            {
+                meshVertices.Add(new Vector3(first.bounds.max.x, first.bounds.max.y, 0.0f));
+                meshVertices.Add(new Vector3(sprite.bounds.max.x, sprite.bounds.max.y, 0.0f));
+                meshVertices.Add(new Vector3(first.bounds.max.x, first.bounds.max.y - barHeight, 0.0f));
+                meshVertices.Add(new Vector3(sprite.bounds.max.x, sprite.bounds.max.y - barHeight, 0.0f));
+            }
+            else
+            {
+                meshVertices.Add(new Vector3(first.bounds.min.x, first.bounds.min.y + barHeight, 0.0f));
+                meshVertices.Add(new Vector3(sprite.bounds.min.x, sprite.bounds.min.y + barHeight, 0.0f));
+                meshVertices.Add(new Vector3(first.bounds.min.x, first.bounds.min.y, 0.0f));
+                meshVertices.Add(new Vector3(sprite.bounds.min.x, sprite.bounds.min.y, 0.0f));
             }
         }
     }

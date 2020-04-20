@@ -18,6 +18,9 @@ namespace ABCUnity
         [SerializeField]
         public Color color = Color.black;
 
+        [SerializeField]
+        public Material NoteMaterial;
+
         private SpriteCache cache;
         private NoteCreator notes;
 
@@ -33,6 +36,8 @@ namespace ABCUnity
             bounding = this.GetComponent<BoxCollider2D>();
             cache = new SpriteCache(spriteAtlas);
             notes = new NoteCreator(cache);
+            NoteMaterial = GameObject.Instantiate(NoteMaterial);
+            NoteMaterial.color = color;
         }
 
         public void LoadString(string abc)
@@ -207,6 +212,34 @@ namespace ABCUnity
                 // Add the measure to the staff line
                 foreach (var layout in layouts)
                 {
+                    if (layout.measureVertices.Count > 0)
+                    {
+                        var mesh = new Mesh();
+                        mesh.vertices = layout.measureVertices.ToArray();
+
+                        var triangles = new List<int>();
+                        for (int i = 0; i < layout.measureVertices.Count; i += 4)
+                        {
+                            triangles.Add(i);
+                            triangles.Add(i + 1);
+                            triangles.Add(i + 2);
+                            triangles.Add(i + 2);
+                            triangles.Add(i + 1);
+                            triangles.Add(i + 3);
+                        }
+
+                        mesh.triangles = triangles.ToArray();
+
+                        var item = new GameObject();
+                        var meshRenderer = item.AddComponent<MeshRenderer>();
+                        meshRenderer.sharedMaterial = NoteMaterial;
+
+                        var meshFilter = item.AddComponent<MeshFilter>();
+                        meshFilter.mesh = mesh;
+
+                        item.transform.parent = layout.measure.container.transform;
+                    }
+
                     layout.measure.container.transform.localPosition = layout.staff.position;
                     layout.measure.container.transform.parent = layout.staff.container.transform;
                     layout.staff.position.x += layout.measure.position.x;
@@ -321,7 +354,7 @@ namespace ABCUnity
             if (layout.alignment.beams.TryGetValue(noteItem.beam, out Beam beam))
             {
                 note = notes.CreateNote(noteItem, beam, container, layout.measure.position);
-                beam.Update(note, cache, layout.measure.container);
+                beam.Update(note, cache, layout);
             }
             else
             {

@@ -36,6 +36,7 @@ namespace ABCUnity
 
             staff = new Metrics();
             staff.container = new GameObject();
+            measureVertices = new List<Vector3>();
 
             measure = new Metrics();
         }
@@ -49,12 +50,15 @@ namespace ABCUnity
         /// <summary>The staff object on the current line.</summary>
         public GameObject currentStaff { get; set; }
 
+        public List<Vector3> measureVertices { get; private set; }
+
         /// <summary>Prepares this measure to render the next measure.</summary>
         public void NewMeasure()
         {
             beatAlignmentIndex = 0;
             measure = new Metrics();
             measure.container = new GameObject();
+            measureVertices = new List<Vector3>();
         }
 
         public void NewStaffline()
