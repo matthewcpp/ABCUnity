@@ -26,7 +26,7 @@ namespace ABCUnity
         }
 
         /// <summary> The distance between note values on the staff. </summary>
-        const float noteStep = 0.28f;
+        public const float noteStep = 0.28f;
 
         /// <summary> The distance to offset the Chord dot from its root note.  
         /// If the stem direction is down this value will need to be negated. 
@@ -78,24 +78,24 @@ namespace ABCUnity
         const float accidentalOffset = 0.25f;
         const float accidentalWidth = 0.55f;
 
-        public SpriteRenderer CreateNote(ABC.Note note, Beam beam, GameObject container, Vector3 offset)
+        public Bounds CreateNote(ABC.Note note, Beam beam, GameObject container, Vector3 offset)
         {
             int stepCount = note.pitch - clefZero[beam.clef];
-            return CreateNote(note, stepCount, beam.noteDirection, container, offset);
+            return CreateNote(note, stepCount, beam.stemHeight, beam.noteDirection, container, offset);
         }
 
-        public SpriteRenderer CreateNote(ABC.Note note, ABC.Clef clef, GameObject container, Vector3 offset)
+        public Bounds CreateNote(ABC.Note note, ABC.Clef clef, GameObject container, Vector3 offset)
         {
             int stepCount = note.pitch - clefZero[clef];
             var noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
 
-            return CreateNote(note, stepCount, noteDirection, container, offset);
+            return CreateNote(note, stepCount, 0.0f, noteDirection, container, offset);
 
         }
 
-        private SpriteRenderer CreateNote(ABC.Note note, int stepCount, NoteDirection noteDirection, GameObject container, Vector3 offset)
+        private Bounds CreateNote(ABC.Note note, int noteStepCount, float stemHeight, NoteDirection noteDirection, GameObject container, Vector3 offset)
         {
-            var notePosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
+            var notePosition = offset + new Vector3(0.0f, noteStep * noteStepCount, 0.0f);
 
             if (note.accidental != ABC.Accidental.Unspecified)
             {
@@ -109,24 +109,46 @@ namespace ABCUnity
             }
 
             GameObject staffMarkers = null;
-            if (NeedsStaffMarkers(stepCount))
+            if (NeedsStaffMarkers(noteStepCount))
             {
                 staffMarkers = new GameObject();
-                AddNoteStaffMarkers(stepCount, staffMarkers, offset, 1.0f);
+                AddNoteStaffMarkers(noteStepCount, staffMarkers, offset, 1.0f);
             }
 
             if (staffMarkers != null) // this ensures that the note appears centered w.r.t the markers
                 notePosition = notePosition + new Vector3(notePadding, 0.0f, 0.0f);
 
-            var spriteName = GetNoteSpriteName(note, noteDirection);
-            var noteObj = spriteCache.GetSpriteObject(spriteName);
-            noteObj.transform.parent = container.transform;
-            noteObj.transform.localPosition = notePosition;
+            Bounds bounds;
+            if (stemHeight != 0.0f)
+            {
+
+                var noteHead = spriteCache.GetSpriteObject("Chord_Quarter");
+                noteHead.transform.parent = container.transform;
+                noteHead.transform.localPosition = notePosition;
+                bounds = noteHead.bounds;
+
+                var noteObj = spriteCache.GetSpriteObject($"Note_Stem_{noteDirection}");
+                noteObj.transform.parent = container.transform;
+
+                var stemPos = notePosition + (noteDirection == NoteDirection.Up ? Beam.stemUpOffset : Beam.stemDownOffset);
+                noteObj.transform.localPosition = stemPos;
+                noteObj.transform.localScale = new Vector3(1.0f, Mathf.Abs(stemHeight - stemPos.y), 1.0f);
+                bounds.Encapsulate(noteObj.bounds);
+            }
+            else
+            {
+                var spriteName = GetNoteSpriteName(note, noteDirection);
+                var noteObj = spriteCache.GetSpriteObject(spriteName);
+                noteObj.transform.parent = container.transform;
+                noteObj.transform.localPosition = notePosition;
+
+                bounds = noteObj.bounds;
+            }
 
             if (staffMarkers != null)
                 staffMarkers.transform.parent = container.transform;
 
-            return noteObj;
+            return bounds;
         }
 
         private string GetNoteSpriteName(ABC.Note note, NoteDirection noteDirection)

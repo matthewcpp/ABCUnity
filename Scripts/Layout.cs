@@ -350,19 +350,19 @@ namespace ABCUnity
             gameObjectMap[noteItem] = container;
             itemMap[container] = noteItem;
 
-            SpriteRenderer note = null;
+            Bounds noteBounds;
             if (layout.alignment.beams.TryGetValue(noteItem.beam, out Beam beam))
             {
-                note = notes.CreateNote(noteItem, beam, container, layout.measure.position);
-                beam.Update(note, cache, layout);
+                noteBounds = notes.CreateNote(noteItem, beam, container, layout.measure.position);
+                beam.Update(noteBounds, cache, layout);
             }
             else
             {
-                note = notes.CreateNote(noteItem, layout.voice.clef, container, layout.measure.position);
+                noteBounds = notes.CreateNote(noteItem, layout.voice.clef, container, layout.measure.position);
             }
             
-            layout.measure.UpdateBounds(note.bounds);
-            layout.measure.position.x = note.bounds.max.x + noteAdvance;
+            layout.measure.UpdateBounds(noteBounds);
+            layout.measure.position.x = noteBounds.max.x + noteAdvance;
         }
 
         void LayoutRest(ABC.Rest restItem, VoiceLayout layout)

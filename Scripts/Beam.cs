@@ -9,16 +9,22 @@ namespace ABCUnity
         const float accidentOffset = -0.493f;
         static Vector3 beamOffset = new Vector3(0.0f, 0.366f, 0.0f);
 
-        static Vector3 stemUpOffset = new Vector3(0.65f, -0.35f, 0.0f);
+        public static Vector3 stemUpOffset = new Vector3(0.65f, 0.35f, 0.0f);
         static Vector3 eighthBeamUpOffset = new Vector3(0.706f, 2.13f, 0.0f);
         
-        static Vector3 stemDownOffset = new Vector3(0.0f, 0.262f, 0.0f);
+        public static Vector3 stemDownOffset = new Vector3(0.0f, 0.262f, 0.0f);
         static Vector3 eighthBeamDownOffset = new Vector3(0.055f, -1.516f, 0.0f);
 
         public NoteCreator.NoteDirection noteDirection { get; private set; }
         public enum Type {
-            /// <summary> All the notes contain the same pitch need to render a straight bar</summary>
-            Uniform
+            /// <summary> All the notes contain the same pitch need to render a straight bar.</summary>
+            Basic,
+
+            /// <summary> All Notes are either increasing or decreasing in pitch.</summary>
+            Angle,
+
+            /// <summary> Notes are connected by a straight beam.</summary>
+            Straight
         }
 
         public List<ABC.Item> items { get; } = new List<ABC.Item>();
@@ -28,6 +34,8 @@ namespace ABCUnity
         int id { get; }
 
         public ABC.Clef clef { get; }
+
+        public float stemHeight { get; set; } = 0.0f;
 
         private int index = 0;
 
@@ -41,7 +49,46 @@ namespace ABCUnity
         public void Analyze()
         {
             DetermineNoteDirection();
-            type = Type.Uniform;
+
+            if (IsBasic())
+                type = Type.Basic;
+            else if (IsAngled())
+                type = Type.Angle;
+            else
+            {
+                type = Type.Straight;
+                DetermineStemHeight();
+            }
+        }
+
+        void DetermineStemHeight()
+        {
+            if (noteDirection == NoteCreator.NoteDirection.Up)
+            {
+                ABC.Pitch pitch = ABC.Pitch.A0;
+                foreach (var item in items)
+                {
+                    var note = item as ABC.Note;
+                    if (note.pitch > pitch)
+                        pitch = note.pitch;
+                }
+
+                int stepCount = pitch - NoteCreator.clefZero[clef];
+                stemHeight = NoteCreator.noteStep * stepCount + defaultStemHeight;
+            }
+            else
+            {
+                ABC.Pitch pitch = ABC.Pitch.C8;
+                foreach (var item in items)
+                {
+                    var note = item as ABC.Note;
+                    if (note.pitch < pitch)
+                        pitch = note.pitch;
+                }
+
+                int stepCount = pitch - NoteCreator.clefZero[clef];
+                stemHeight = NoteCreator.noteStep * stepCount - defaultStemHeight;
+            }
         }
 
         private void DetermineNoteDirection()
@@ -75,33 +122,86 @@ namespace ABCUnity
             noteDirection = (averagePitch > (float)NoteCreator.clefZero[clef] + 3) ? NoteCreator.NoteDirection.Down : NoteCreator.NoteDirection.Up;
         }
 
-        SpriteRenderer first;
+        Bounds first;
 
-        public void Update(SpriteRenderer sprite, SpriteCache cache, VoiceLayout layout)
+        public void Update(Bounds bounds, SpriteCache cache, VoiceLayout layout)
         {
             if (index == 0)
-                first = sprite;
+                first = bounds;
 
             index += 1;
 
             if (index == items.Count)
             {
-                if (IsStrightBeam())
-                    CreateStraightBeam(sprite, cache, layout.measure.container);
-                else
-                    CreateAngledBeam(sprite, layout.measureVertices);
+                switch(type)
+                {
+                    case Type.Basic:
+                    case Type.Straight:
+                        CreateBasicBeam(bounds, cache, layout.measure.container);
+                        break;
+
+                    case Type.Angle:
+                        CreateAngledBeam(bounds, layout.measureVertices);
+                        break;
+                }
             }
         }
 
-        bool IsStrightBeam()
+        bool IsBasic()
         {
             var firstNote = items[0] as ABC.Note;
-            var lastNote = items[items.Count - 1] as ABC.Note;
 
-            return firstNote != null && lastNote != null && firstNote.pitch == lastNote.pitch;
+            for (int i = 0; i < items.Count; i++)
+            {
+                var currentNote = items[i] as ABC.Note;
+
+                if (currentNote.pitch != firstNote.pitch)
+                    return false;
+            }
+
+            return true;
         }
 
-        private void CreateStraightBeam(SpriteRenderer sprite, SpriteCache cache, GameObject container)
+        bool IsAngled()
+        {
+            var previousNote = items[0] as ABC.Note;
+            var currentNote = items[1] as ABC.Note;
+
+            if (currentNote.pitch > previousNote.pitch)
+            {
+                previousNote = currentNote;
+
+                for (int i = 2; i < items.Count; i++)
+                {
+                    currentNote = items[i] as ABC.Note;
+
+                    if (currentNote.pitch <= previousNote.pitch)
+                        return false;
+
+                    previousNote = currentNote;
+                }
+
+                return true;
+            }
+            else if (currentNote.pitch < previousNote.pitch)
+            {
+                previousNote = currentNote;
+
+                for (int i = 2; i < items.Count; i++)
+                {
+                    currentNote = items[i] as ABC.Note;
+
+                    if (currentNote.pitch >= previousNote.pitch)
+                        return false;
+
+                    previousNote = currentNote;
+                }
+            }
+
+            return false;
+        }
+
+        private void CreateBasicBeam(Bounds sprite, SpriteCache cache, GameObject container)
         {
             var bar = cache.GetSpriteObject($"Note_Bar_{noteDirection}");
             bar.transform.parent = container.transform;
@@ -109,17 +209,17 @@ namespace ABCUnity
             float distX;
             if (noteDirection == NoteCreator.NoteDirection.Up)
             {
-                var barPos = first.bounds.max;
+                var barPos = first.max;
                 bar.transform.position = barPos;
 
-                distX = sprite.bounds.max.x - barPos.x;
+                distX = sprite.max.x - barPos.x;
             }
             else
             {
-                var barPos = first.bounds.min;
+                var barPos = first.min;
                 bar.transform.position = barPos;
 
-                distX = sprite.bounds.min.x - barPos.x;
+                distX = sprite.min.x - barPos.x;
             }
 
             bar.transform.localScale = new Vector3(distX, 1.0f, 1.0f);
@@ -127,21 +227,21 @@ namespace ABCUnity
 
         const float barHeight = 0.28f;
 
-        private void CreateAngledBeam(SpriteRenderer sprite, List<Vector3> meshVertices)
+        private void CreateAngledBeam(Bounds sprite, List<Vector3> meshVertices)
         {
             if (noteDirection == NoteCreator.NoteDirection.Up)
             {
-                meshVertices.Add(new Vector3(first.bounds.max.x, first.bounds.max.y, 0.0f));
-                meshVertices.Add(new Vector3(sprite.bounds.max.x, sprite.bounds.max.y, 0.0f));
-                meshVertices.Add(new Vector3(first.bounds.max.x, first.bounds.max.y - barHeight, 0.0f));
-                meshVertices.Add(new Vector3(sprite.bounds.max.x, sprite.bounds.max.y - barHeight, 0.0f));
+                meshVertices.Add(new Vector3(first.max.x, first.max.y, 0.0f));
+                meshVertices.Add(new Vector3(sprite.max.x, sprite.max.y, 0.0f));
+                meshVertices.Add(new Vector3(first.max.x, first.max.y - barHeight, 0.0f));
+                meshVertices.Add(new Vector3(sprite.max.x, sprite.max.y - barHeight, 0.0f));
             }
             else
             {
-                meshVertices.Add(new Vector3(first.bounds.min.x, first.bounds.min.y + barHeight, 0.0f));
-                meshVertices.Add(new Vector3(sprite.bounds.min.x, sprite.bounds.min.y + barHeight, 0.0f));
-                meshVertices.Add(new Vector3(first.bounds.min.x, first.bounds.min.y, 0.0f));
-                meshVertices.Add(new Vector3(sprite.bounds.min.x, sprite.bounds.min.y, 0.0f));
+                meshVertices.Add(new Vector3(first.min.x, first.min.y + barHeight, 0.0f));
+                meshVertices.Add(new Vector3(sprite.min.x, sprite.min.y + barHeight, 0.0f));
+                meshVertices.Add(new Vector3(first.min.x, first.min.y, 0.0f));
+                meshVertices.Add(new Vector3(sprite.min.x, sprite.min.y, 0.0f));
             }
         }
     }
