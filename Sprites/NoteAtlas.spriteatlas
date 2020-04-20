@@ -106,9 +106,9 @@ SpriteAtlas:
   - Note_Whole
   - Note_Quarter_Up
   - Accidental_Flat
-  - Note_Bar_Up
+  - Note_Beam_Up
   - Rest_Half
-  - Note_Bar_Down
+  - Note_Beam_Down
   - Rest_Quarter
   - Note_Quarter_Down
   - Clef_Treble

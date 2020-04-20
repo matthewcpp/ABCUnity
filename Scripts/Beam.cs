@@ -6,14 +6,12 @@ namespace ABCUnity
     class Beam
     {
         const float defaultStemHeight = 1.92f;
-        const float accidentOffset = -0.493f;
-        static Vector3 beamOffset = new Vector3(0.0f, 0.366f, 0.0f);
-
         public static Vector3 stemUpOffset = new Vector3(0.65f, 0.35f, 0.0f);
-        static Vector3 eighthBeamUpOffset = new Vector3(0.706f, 2.13f, 0.0f);
-        
         public static Vector3 stemDownOffset = new Vector3(0.0f, 0.262f, 0.0f);
-        static Vector3 eighthBeamDownOffset = new Vector3(0.055f, -1.516f, 0.0f);
+
+        const float beamHeight = 0.28f;
+        static Vector3 beamOffset = new Vector3(0.0f, 0.366f, 0.0f);
+        const float defaultBeamSpacer = 0.2f;
 
         public NoteCreator.NoteDirection noteDirection { get; private set; }
         public enum Type {
@@ -61,6 +59,10 @@ namespace ABCUnity
             }
         }
 
+        /// <summary> 
+        /// Determines the stem height to use for a straight beam.
+        /// The Height is calculated as the default terminus of the highest note's stem
+        /// </summary>
         void DetermineStemHeight()
         {
             if (noteDirection == NoteCreator.NoteDirection.Up)
@@ -87,10 +89,14 @@ namespace ABCUnity
                 }
 
                 int stepCount = pitch - NoteCreator.clefZero[clef];
-                stemHeight = NoteCreator.noteStep * stepCount - defaultStemHeight;
+                stemHeight = NoteCreator.noteStep * (stepCount + 1) - defaultStemHeight;
             }
         }
 
+        /// <summary>
+        /// Determines the direction of the beam stem.
+        /// If the average of all notes is above the middle staff value they will be down else, up.
+        /// </summary>
         private void DetermineNoteDirection()
         {
             int sum = 0;
@@ -124,6 +130,10 @@ namespace ABCUnity
 
         Bounds first;
 
+        /// <summary>
+        /// This method is called every time an item in the beam has been laid out.  
+        /// When the final item is laid out the beam will be added to the scene.
+        /// </summary>
         public void Update(Bounds bounds, SpriteCache cache, VoiceLayout layout)
         {
             if (index == 0)
@@ -201,47 +211,70 @@ namespace ABCUnity
             return false;
         }
 
+        /// <summary>
+        /// Creates a basic straight beam connecting the first and last item in this beam.
+        /// Note that this method should be used when the first and last items have the same max Y bounding value.
+        /// </summary>
         private void CreateBasicBeam(Bounds sprite, SpriteCache cache, GameObject container)
         {
-            var bar = cache.GetSpriteObject($"Note_Bar_{noteDirection}");
-            bar.transform.parent = container.transform;
+            float offsetY = 0.0f;
+            ABC.Length length = (items[0] as ABC.Duration).length;
 
-            float distX;
-            if (noteDirection == NoteCreator.NoteDirection.Up)
+            for (ABC.Length l = ABC.Length.Eighth; l >= length; l--)
             {
-                var barPos = first.max;
-                bar.transform.position = barPos;
+                var beam = cache.GetSpriteObject($"Note_Beam_{noteDirection}");
+                beam.transform.parent = container.transform;
 
-                distX = sprite.max.x - barPos.x;
+                float distX;
+                if (noteDirection == NoteCreator.NoteDirection.Up)
+                {
+                    var beamPos = first.max;
+                    beam.transform.position = new Vector3(beamPos.x, beamPos.y - offsetY, 0.0f);
+
+                    distX = sprite.max.x - beamPos.x;
+                }
+                else
+                {
+                    var beamPos = first.min;
+                    beam.transform.position = new Vector3(beamPos.x, beamPos.y + offsetY, 0.0f); ;
+
+                    distX = sprite.min.x - beamPos.x;
+                }
+
+                beam.transform.localScale = new Vector3(distX, 1.0f, 1.0f);
+
+                offsetY += beamHeight + defaultBeamSpacer;
             }
-            else
-            {
-                var barPos = first.min;
-                bar.transform.position = barPos;
-
-                distX = sprite.min.x - barPos.x;
-            }
-
-            bar.transform.localScale = new Vector3(distX, 1.0f, 1.0f);
         }
 
-        const float barHeight = 0.28f;
-
+        /// <summary>
+        /// Creates a beam connecting the first and last item in this beam.
+        /// This method should be used when the max values for these items are not at the same height.
+        /// Mesh vertices are generated as opposed to a sprite as in the straight beam.
+        /// </summary>
         private void CreateAngledBeam(Bounds sprite, List<Vector3> meshVertices)
         {
-            if (noteDirection == NoteCreator.NoteDirection.Up)
+            float offsetY = 0.0f;
+            ABC.Length length = (items[0] as ABC.Duration).length;
+
+            for (ABC.Length l = ABC.Length.Eighth; l >= length; l--)
             {
-                meshVertices.Add(new Vector3(first.max.x, first.max.y, 0.0f));
-                meshVertices.Add(new Vector3(sprite.max.x, sprite.max.y, 0.0f));
-                meshVertices.Add(new Vector3(first.max.x, first.max.y - barHeight, 0.0f));
-                meshVertices.Add(new Vector3(sprite.max.x, sprite.max.y - barHeight, 0.0f));
-            }
-            else
-            {
-                meshVertices.Add(new Vector3(first.min.x, first.min.y + barHeight, 0.0f));
-                meshVertices.Add(new Vector3(sprite.min.x, sprite.min.y + barHeight, 0.0f));
-                meshVertices.Add(new Vector3(first.min.x, first.min.y, 0.0f));
-                meshVertices.Add(new Vector3(sprite.min.x, sprite.min.y, 0.0f));
+                if (noteDirection == NoteCreator.NoteDirection.Up)
+                {
+                    meshVertices.Add(new Vector3(first.max.x, first.max.y - offsetY, 0.0f));
+                    meshVertices.Add(new Vector3(sprite.max.x, sprite.max.y - offsetY, 0.0f));
+                    meshVertices.Add(new Vector3(first.max.x, first.max.y - offsetY - beamHeight, 0.0f));
+                    meshVertices.Add(new Vector3(sprite.max.x, sprite.max.y - offsetY - beamHeight, 0.0f));
+                }
+                else
+                {
+                    meshVertices.Add(new Vector3(first.min.x, first.min.y + offsetY + beamHeight, 0.0f));
+                    meshVertices.Add(new Vector3(sprite.min.x, sprite.min.y + offsetY + beamHeight, 0.0f));
+                    meshVertices.Add(new Vector3(first.min.x, first.min.y + offsetY, 0.0f));
+                    meshVertices.Add(new Vector3(sprite.min.x, sprite.min.y + offsetY, 0.0f));
+                }
+
+                offsetY += beamHeight + defaultBeamSpacer;
             }
         }
     }
