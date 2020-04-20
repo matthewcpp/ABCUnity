@@ -334,6 +334,8 @@ namespace ABCUnity
 
         private void AddChordItems(ABC.Chord.Element[] sortedNotes, ABC.Length length, NoteDirection noteDirection, ABC.Clef clef, GameObject container, Vector3 offset, List<SpriteRenderer> items)
         {
+            bool[] stems = new bool[sortedNotes.Length];
+
             var dotValue = length > ABC.Length.Quarter ? length : ABC.Length.Quarter;
             var noteValue = length;
 
@@ -341,11 +343,12 @@ namespace ABCUnity
             {
                 for (int i = 0; i < sortedNotes.Length; i++)
                 {
-                    if (i > 0 && sortedNotes[i].pitch - sortedNotes[i - 1].pitch == 1)
+                    if (i > 0 && stems[i - 1] == true && sortedNotes[i].pitch - sortedNotes[i - 1].pitch == 1)
                         items.Add(AddChordDot(sortedNotes[i].pitch, dotValue, clef, noteDirection, container, offset));
                     else
                     {
                         items.Add(AddChordNote(sortedNotes[i].pitch, noteValue, noteDirection, clef, container, offset));
+                        stems[i] = true;
                         noteValue = dotValue;
                     }
                 }
@@ -354,11 +357,12 @@ namespace ABCUnity
             {
                 for (int i = sortedNotes.Length - 1; i >= 0; i--)
                 {
-                    if (i > 0 && sortedNotes[i].pitch - sortedNotes[i - 1].pitch == 1)
+                    if (i != sortedNotes.Length - 1 && stems[i + 1] == true && sortedNotes[i + 1].pitch - sortedNotes[i].pitch == 1)
                         items.Add(AddChordDot(sortedNotes[i].pitch, dotValue, clef, noteDirection, container, offset));
                     else
                     {
                         items.Add(AddChordNote(sortedNotes[i].pitch, noteValue, noteDirection, clef, container, offset));
+                        stems[i] = true;
                         noteValue = dotValue;
                     }
                 }
