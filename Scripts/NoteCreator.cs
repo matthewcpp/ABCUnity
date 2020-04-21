@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Runtime.CompilerServices;
 using System.ComponentModel;
 using TMPro;
+using ABC;
 
 namespace ABCUnity
 {
@@ -37,6 +38,21 @@ namespace ABCUnity
 
         /// <summary> The distance to offset notes by if they have a mark.  This will ensure they are centered. </summary>
         const float notePadding = 0.14f;
+
+        /// <summary> Distance between dots </summary>
+        const float dotAdvance = 0.2f;
+
+        public struct NoteInfo
+        {
+            public NoteInfo(SpriteRenderer root, Bounds bounding)
+            {
+                this.root = root;
+                this.bounding = bounding;
+            }
+
+            public SpriteRenderer root;
+            public Bounds bounding;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool NeedsStaffMarkers(int stepCount)
@@ -158,7 +174,7 @@ namespace ABCUnity
 
             for (int i = 0; i < note.dotCount; i++)
             {
-                Vector3 dotOffset = new Vector3(rootItem.bounds.max.x + 0.2f, 0.0f, 0.0f);
+                Vector3 dotOffset = new Vector3(bounds.max.x + dotAdvance, 0.0f, 0.0f);
                 var dot = CreateNoteDot(noteStepCount, container, dotOffset);
                 bounds.Encapsulate(dot.bounds);
             }
@@ -210,7 +226,7 @@ namespace ABCUnity
             return rootItem;
         }
 
-        private SpriteRenderer AddChordDot(ABC.Pitch value, ABC.Length length, ABC.Clef clef, NoteDirection noteDirection, GameObject container, Vector3 offset)
+        private SpriteRenderer AddChordNoteHead(ABC.Pitch value, ABC.Length length, ABC.Clef clef, NoteDirection noteDirection, GameObject container, Vector3 offset)
         {
             int stepCount = value - clefZero[clef];
 
@@ -326,18 +342,6 @@ namespace ABCUnity
             }
         }
 
-        public struct NoteInfo
-        {
-            public NoteInfo(SpriteRenderer root, Bounds bounding)
-            {
-                this.root = root;
-                this.bounding = bounding;
-            }
-
-            public SpriteRenderer root;
-            public Bounds bounding;
-        }
-
         Bounds CalculateBoundsForItems(List<SpriteRenderer> items)
         {
             Bounds b = items[0].bounds;
@@ -400,38 +404,66 @@ namespace ABCUnity
             {
                 for (int i = 0; i < chord.notes.Length; i++)
                 {
+                    SpriteRenderer sprite = null;
+
                     if (i > 0 && stems[i - 1] == true && chord.notes[i].pitch - chord.notes[i - 1].pitch == 1)
-                        items.Add(AddChordDot(chord.notes[i].pitch, dotValue, clef, noteDirection, container, offset));
+                    {
+                        sprite = AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, noteDirection, container, offset);
+                        items.Add(sprite);
+                    }
                     else
                     {
-                        var root = AddChordNote(chord.notes[i].pitch, noteValue, noteDirection, stemHeight, chord.beam != 0, clef, container, offset, items);
+                        sprite = AddChordNote(chord.notes[i].pitch, noteValue, noteDirection, stemHeight, chord.beam != 0, clef, container, offset, items);
                         stems[i] = true;
                         noteValue = dotValue;
 
                         if (rootItem == null)
-                            rootItem = root;
+                            rootItem = sprite;
                     }
+
+                    AddChordDots(chord.notes[i], chord.dotCount, clef, sprite, container, items);
                 }
             }
             else
             {
                 for (int i = chord.notes.Length - 1; i >= 0; i--)
                 {
+                    SpriteRenderer sprite = null;
+
                     if (i != chord.notes.Length - 1 && stems[i + 1] == true && chord.notes[i + 1].pitch - chord.notes[i].pitch == 1)
-                        items.Add(AddChordDot(chord.notes[i].pitch, dotValue, clef, noteDirection, container, offset));
+                    {
+                        sprite = AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, noteDirection, container, offset);
+                        items.Add(sprite);
+                    }
                     else
                     {
-                        var root = AddChordNote(chord.notes[i].pitch, noteValue, noteDirection, stemHeight, chord.beam != 0, clef, container, offset, items);
+                        sprite = AddChordNote(chord.notes[i].pitch, noteValue, noteDirection, stemHeight, chord.beam != 0, clef, container, offset, items);
                         stems[i] = true;
                         noteValue = dotValue;
 
                         if (rootItem == null)
-                            rootItem = items[items.Count - 1];
+                            rootItem = sprite;
                     }
+
+                    AddChordDots(chord.notes[i], chord.dotCount, clef, sprite, container, items);
                 }
             }
 
             return rootItem;
+        }
+
+        void AddChordDots(ABC.Chord.Element note, int dotCount, ABC.Clef clef, SpriteRenderer rootItem, GameObject container, List<SpriteRenderer> items)
+        {
+            int stepCount = note.pitch - clefZero[clef];
+            Bounds anchor = rootItem.bounds;
+
+            for (int i = 0; i < dotCount; i++)
+            {
+                Vector3 dotOffset = new Vector3(anchor.max.x + dotAdvance, 0.0f, 0.0f);
+                var dot = CreateNoteDot(stepCount, container, dotOffset);
+                anchor = dot.bounds;
+                items.Add(dot);
+            }
         }
 
         private SpriteRenderer CreateStaffMark(int stepCount, GameObject container, Vector3 offset, float localScaleX)
