@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace ABCUnity
 {
@@ -43,6 +44,27 @@ namespace ABCUnity
             this.clef = clef;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ABC.Pitch GetPitchForItem(ABC.Item item)
+        {
+            switch(item.type)
+            {
+                case ABC.Item.Type.Note:
+                    var note = item as ABC.Note;
+                    return note.pitch;
+
+                case ABC.Item.Type.Chord:
+                    var chord = item as ABC.Chord;
+                    if (noteDirection == NoteCreator.NoteDirection.Down)
+                        return chord.notes[0].pitch;
+                    else
+                        return chord.notes[chord.notes.Length - 1].pitch;
+
+                default:
+                    throw new LayoutException($"Invalid item in beam: {id}");
+            }
+        }
+
         /// <summary> Analyzes the items in the beam and determines relevant info that will control layout. </summary>
         public void Analyze()
         {
@@ -70,9 +92,9 @@ namespace ABCUnity
                 ABC.Pitch pitch = ABC.Pitch.A0;
                 foreach (var item in items)
                 {
-                    var note = item as ABC.Note;
-                    if (note.pitch > pitch)
-                        pitch = note.pitch;
+                    var itemPitch = GetPitchForItem(item);
+                    if (itemPitch > pitch)
+                        pitch = itemPitch;
                 }
 
                 int stepCount = pitch - NoteCreator.clefZero[clef];
@@ -83,9 +105,9 @@ namespace ABCUnity
                 ABC.Pitch pitch = ABC.Pitch.C8;
                 foreach (var item in items)
                 {
-                    var note = item as ABC.Note;
-                    if (note.pitch < pitch)
-                        pitch = note.pitch;
+                    var itemPitch = GetPitchForItem(item);
+                    if (itemPitch < pitch)
+                        pitch = itemPitch;
                 }
 
                 int stepCount = pitch - NoteCreator.clefZero[clef];
@@ -99,32 +121,31 @@ namespace ABCUnity
         /// </summary>
         private void DetermineNoteDirection()
         {
-            int sum = 0;
-            int count = 0;
+            int total = 0;
             foreach (var item in items)
             {
                 switch (item.type)
                 {
                     case ABC.Item.Type.Note:
-                        var noteItem = item as ABC.Note;
-                        sum += (int)noteItem.pitch;
-                        count += 1;
+                        var note = item as ABC.Note;
+                        total += (int)note.pitch;
                         break;
 
                     case ABC.Item.Type.Chord:
-                        var chordItem = item as ABC.Chord;
-                        foreach (var note in chordItem.notes)
-                            sum += (int)note.pitch;
+                        var chord = item as ABC.Chord;
+                        int sum = 0;
+                        foreach (var chordNote in chord.notes)
+                            sum += (int)chordNote.pitch;
 
-                        count += chordItem.notes.Length;
+                        total += (int)Mathf.Round(sum / (float)chord.notes.Length);
                         break;
 
                     default:
-                        throw new LayoutException($"Unexpected item of type: {item.type} found in beam {id}");
+                        throw new LayoutException($"Invalid item in beam: {id}");
                 }
             }
 
-            float averagePitch = sum / (float)count;
+            float averagePitch = total / (float)items.Count;
             noteDirection = (averagePitch > (float)NoteCreator.clefZero[clef] + 3) ? NoteCreator.NoteDirection.Down : NoteCreator.NoteDirection.Up;
         }
 
@@ -159,13 +180,11 @@ namespace ABCUnity
 
         bool IsBasic()
         {
-            var firstNote = items[0] as ABC.Note;
+            var firstNote = GetPitchForItem(items[0]);
 
             for (int i = 0; i < items.Count; i++)
             {
-                var currentNote = items[i] as ABC.Note;
-
-                if (currentNote.pitch != firstNote.pitch)
+                if (GetPitchForItem(items[i]) != firstNote)
                     return false;
             }
 
@@ -174,18 +193,18 @@ namespace ABCUnity
 
         bool IsAngled()
         {
-            var previousNote = items[0] as ABC.Note;
-            var currentNote = items[1] as ABC.Note;
+            var previousNote = GetPitchForItem(items[0]);
+            var currentNote = GetPitchForItem(items[1]);
 
-            if (currentNote.pitch > previousNote.pitch)
+            if (currentNote > previousNote)
             {
                 previousNote = currentNote;
 
                 for (int i = 2; i < items.Count; i++)
                 {
-                    currentNote = items[i] as ABC.Note;
+                    currentNote = GetPitchForItem(items[i]);
 
-                    if (currentNote.pitch <= previousNote.pitch)
+                    if (currentNote <= previousNote)
                         return false;
 
                     previousNote = currentNote;
@@ -193,15 +212,15 @@ namespace ABCUnity
 
                 return true;
             }
-            else if (currentNote.pitch < previousNote.pitch)
+            else if (currentNote < previousNote)
             {
                 previousNote = currentNote;
 
                 for (int i = 2; i < items.Count; i++)
                 {
-                    currentNote = items[i] as ABC.Note;
+                    currentNote = GetPitchForItem(items[i]);
 
-                    if (currentNote.pitch >= previousNote.pitch)
+                    if (currentNote >= previousNote)
                         return false;
 
                     previousNote = currentNote;

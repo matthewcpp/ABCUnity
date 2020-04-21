@@ -328,18 +328,20 @@ namespace ABCUnity
             
             gameObjectMap[chordItem] = container;
             itemMap[container] = chordItem;
-            
-            var chord = notes.CreateChord(chordItem, layout.voice.clef, container, layout.measure.position);
 
-            Bounds chordBounds = chord[0].bounds;
-
-            for (int i = 1; i < chord.Count; i++)
+            var chordInfo = new NoteCreator.NoteInfo();
+            if (layout.alignment.beams.TryGetValue(chordItem.beam, out Beam beam))
             {
-                layout.measure.UpdateBounds(chord[i].bounds);
-                chordBounds.Encapsulate(chord[i].bounds);
+                chordInfo = notes.CreateChord(chordItem, beam, container, layout.measure.position);
+                beam.Update(chordInfo.root.bounds, cache, layout);
+            }
+            else
+            {
+                chordInfo = notes.CreateChord(chordItem, layout.voice.clef, container, layout.measure.position);
             }
 
-            layout.measure.position.x = chordBounds.max.x + noteAdvance;
+            layout.measure.UpdateBounds(chordInfo.bounding);
+            layout.measure.position.x = chordInfo.bounding.max.x + noteAdvance;
         }
         
         void LayoutNote(ABC.Note noteItem, VoiceLayout layout)
@@ -350,19 +352,19 @@ namespace ABCUnity
             gameObjectMap[noteItem] = container;
             itemMap[container] = noteItem;
 
-            Bounds noteBounds;
+            var layoutItem = new NoteCreator.NoteInfo();
             if (layout.alignment.beams.TryGetValue(noteItem.beam, out Beam beam))
             {
-                noteBounds = notes.CreateNote(noteItem, beam, container, layout.measure.position);
-                beam.Update(noteBounds, cache, layout);
+                layoutItem = notes.CreateNote(noteItem, beam, container, layout.measure.position);
+                beam.Update(layoutItem.bounding, cache, layout);
             }
             else
             {
-                noteBounds = notes.CreateNote(noteItem, layout.voice.clef, container, layout.measure.position);
+                layoutItem = notes.CreateNote(noteItem, layout.voice.clef, container, layout.measure.position);
             }
             
-            layout.measure.UpdateBounds(noteBounds);
-            layout.measure.position.x = noteBounds.max.x + noteAdvance;
+            layout.measure.UpdateBounds(layoutItem.bounding);
+            layout.measure.position.x = layoutItem.bounding.max.x + noteAdvance;
         }
 
         void LayoutRest(ABC.Rest restItem, VoiceLayout layout)
