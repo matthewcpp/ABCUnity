@@ -75,7 +75,7 @@ namespace ABCUnity
             {
                 int stepOffset = stepCount % 2 == 0 ? 1 : 0;
 
-                // if step offset is zero then the mark is though the middle of the note
+                // if the step count is odd then the mark belongs in the middle, else below
                 CreateStaffMark(stepCount + stepOffset, container, offset, stepOffset == 0 ? 1.0f : localScaleX);
 
                 for (int sc = stepCount + 2 + stepOffset; sc < -2; sc += 2)
@@ -85,13 +85,13 @@ namespace ABCUnity
             }
             else if (stepCount > 8) // above the staff
             {
-                if (stepCount % 2 == 0) // mark belongs above
-                    CreateStaffMark(stepCount - 1, container, offset, localScaleX);
-                else // mark in middle
-                    CreateStaffMark(stepCount, container, offset, 1.0f);
+                int stepOffset = stepCount % 2 == 0 ? 1 : 0;
 
-                for (int sc = stepCount - 2; sc > 8; sc -= 2)
-                    CreateStaffMark(sc, container, offset, localScaleX);
+                // if the step count is odd then the mark belongs in the middle, else above
+                CreateStaffMark(stepCount + stepOffset, container, offset, 1.0f);
+
+                for (int sc = stepCount + stepOffset - 2; sc > 8; sc -= 2)
+                    CreateStaffMark(sc, container, offset, stepOffset == 0 ? 1.0f : localScaleX);
 
                 return true;
             }
