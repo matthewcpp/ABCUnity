@@ -38,6 +38,9 @@ SpriteAtlas:
     - {fileID: 2800000, guid: 1e2afd7fa89f0452583229794ceaff27, type: 3}
     - {fileID: 2800000, guid: bae87d7032c5cc740bd40821d95511b4, type: 3}
     - {fileID: 2800000, guid: d0aa5f8effbcdcf419c38667b5bde60a, type: 3}
+    - {fileID: 2800000, guid: 608ea78db957b7e4cad5007697dc3d01, type: 3}
+    - {fileID: 2800000, guid: ac60059c9248421418964fd4504260a2, type: 3}
+    - {fileID: 2800000, guid: 2861bd15868f8d34389b90aa710227cb, type: 3}
     - {fileID: 2800000, guid: 718a59936202d8e4eae4a419f43d31a2, type: 3}
     - {fileID: 2800000, guid: 890aa6f2c4123ce4f901cf5febc2c960, type: 3}
     - {fileID: 2800000, guid: f9efa9d0911ad854db5bba23dd905bc8, type: 3}
@@ -46,6 +49,8 @@ SpriteAtlas:
     - {fileID: 2800000, guid: dd84830ef07e5cf4192887bc6ae2f0e6, type: 3}
     - {fileID: 2800000, guid: 1ed4b509da945452aad2de16dea3ad2a, type: 3}
     - {fileID: 2800000, guid: dc59fbafdeb4949aca2ed8536cd2545e, type: 3}
+    - {fileID: 2800000, guid: 142edb644b62fd145aa545b4e51f15de, type: 3}
+    - {fileID: 2800000, guid: 0ef1e4195af300f4ea8f532883cc6768, type: 3}
     - {fileID: 2800000, guid: 85ee6faa8608b0d45af2cb91849e19f7, type: 3}
     - {fileID: 2800000, guid: 39de9bb5df37c54409143d3124387f98, type: 3}
     - {fileID: 2800000, guid: e7c078dc210efda4f935a75101013a9c, type: 3}
@@ -53,11 +58,7 @@ SpriteAtlas:
     - {fileID: 2800000, guid: fd4c8d6a857762f4c9408bfa7bdf5060, type: 3}
     - {fileID: 21300000, guid: 4d7a7c66572c8c7408501fa7c935d980, type: 3}
     - {fileID: 2800000, guid: 1eeb50072b04d574e8a47aeb5109c855, type: 3}
-    - {fileID: 2800000, guid: ac60059c9248421418964fd4504260a2, type: 3}
-    - {fileID: 2800000, guid: 608ea78db957b7e4cad5007697dc3d01, type: 3}
-    - {fileID: 2800000, guid: 0ef1e4195af300f4ea8f532883cc6768, type: 3}
-    - {fileID: 2800000, guid: 142edb644b62fd145aa545b4e51f15de, type: 3}
-    totalSpriteSurfaceArea: 316367
+    totalSpriteSurfaceArea: 316873
     bindAsDefault: 1
   m_MasterAtlas: {fileID: 0}
   m_PackedSprites:
@@ -68,6 +69,7 @@ SpriteAtlas:
   - {fileID: 21300000, guid: a4427ef2a55621a4cbbd41a9f15ab676, type: 3}
   - {fileID: 21300000, guid: 718a59936202d8e4eae4a419f43d31a2, type: 3}
   - {fileID: 21300000, guid: 142edb644b62fd145aa545b4e51f15de, type: 3}
+  - {fileID: 21300000, guid: 2861bd15868f8d34389b90aa710227cb, type: 3}
   - {fileID: 21300000, guid: 39de9bb5df37c54409143d3124387f98, type: 3}
   - {fileID: 21300000, guid: 4d7a7c66572c8c7408501fa7c935d980, type: 3}
   - {fileID: 21300000, guid: 1eeb50072b04d574e8a47aeb5109c855, type: 3}
@@ -96,6 +98,7 @@ SpriteAtlas:
   - Note_Half_Up
   - Note_Eighth_Up
   - Note_Stem_Down
+  - Note_Dot
   - Rest_Eighth
   - Staff
   - Staff_Mark
