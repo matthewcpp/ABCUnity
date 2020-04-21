@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace ABCUnity
 {
@@ -65,9 +66,9 @@ namespace ABCUnity
                         if (t >= timeSignature.noteValue) // current beat is filled
                         {
                             measure.beatItems.Add(beatItem);
-                            currentBeat += (int)Math.Round(t / timeSignature.noteValue);
+                            currentBeat += (int)Mathf.Floor(t / timeSignature.noteValue);
                             beatItem = new BeatItem(currentBeat);
-                            t = 0.0f;
+                            t -= timeSignature.noteValue;
                         }
 
                         // add this note to a beam if necessary

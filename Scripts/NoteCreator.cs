@@ -3,6 +3,8 @@ using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.CompilerServices;
+using System.ComponentModel;
+using TMPro;
 
 namespace ABCUnity
 {
@@ -154,11 +156,19 @@ namespace ABCUnity
                 bounds = rootItem.bounds;
             }
 
+            for (int i = 0; i < note.dotCount; i++)
+            {
+                Vector3 dotOffset = new Vector3(rootItem.bounds.max.x + 0.2f, 0.0f, 0.0f);
+                var dot = CreateNoteDot(noteStepCount, container, dotOffset);
+                bounds.Encapsulate(dot.bounds);
+            }
+
             if (staffMarkers != null)
                 staffMarkers.transform.parent = container.transform;
 
             return new NoteInfo(rootItem, bounds);
         }
+
 
         private string GetNoteSpriteName(ABC.Length note, bool beam, NoteDirection noteDirection)
         {
@@ -432,6 +442,15 @@ namespace ABCUnity
             mark.transform.localScale = new Vector3(localScaleX, 1.0f, 1.0f);
 
             return mark;
+        }
+
+        private SpriteRenderer CreateNoteDot(int stepCount, GameObject container, Vector3 offset)
+        {
+            var dot = spriteCache.GetSpriteObject("Note_Dot");
+            dot.transform.parent = container.transform;
+            dot.transform.localPosition = offset + new Vector3(0.0f, noteStep * (stepCount + 1), 0.0f);
+
+            return dot;
         }
 
         static readonly Dictionary<ABC.Length, float> restHeight = new Dictionary<ABC.Length, float>()
