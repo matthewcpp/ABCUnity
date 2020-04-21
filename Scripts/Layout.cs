@@ -18,6 +18,9 @@ namespace ABCUnity
         [SerializeField]
         public Color color = Color.black;
 
+        [SerializeField]
+        public Material NoteMaterial;
+
         private SpriteCache cache;
         private NoteCreator notes;
 
@@ -33,6 +36,8 @@ namespace ABCUnity
             bounding = this.GetComponent<BoxCollider2D>();
             cache = new SpriteCache(spriteAtlas);
             notes = new NoteCreator(cache);
+            NoteMaterial = GameObject.Instantiate(NoteMaterial);
+            NoteMaterial.color = color;
         }
 
         public void LoadString(string abc)
@@ -207,6 +212,34 @@ namespace ABCUnity
                 // Add the measure to the staff line
                 foreach (var layout in layouts)
                 {
+                    if (layout.measureVertices.Count > 0)
+                    {
+                        var mesh = new Mesh();
+                        mesh.vertices = layout.measureVertices.ToArray();
+
+                        var triangles = new List<int>();
+                        for (int i = 0; i < layout.measureVertices.Count; i += 4)
+                        {
+                            triangles.Add(i);
+                            triangles.Add(i + 1);
+                            triangles.Add(i + 2);
+                            triangles.Add(i + 2);
+                            triangles.Add(i + 1);
+                            triangles.Add(i + 3);
+                        }
+
+                        mesh.triangles = triangles.ToArray();
+
+                        var item = new GameObject();
+                        var meshRenderer = item.AddComponent<MeshRenderer>();
+                        meshRenderer.sharedMaterial = NoteMaterial;
+
+                        var meshFilter = item.AddComponent<MeshFilter>();
+                        meshFilter.mesh = mesh;
+
+                        item.transform.parent = layout.measure.container.transform;
+                    }
+
                     layout.measure.container.transform.localPosition = layout.staff.position;
                     layout.measure.container.transform.parent = layout.staff.container.transform;
                     layout.staff.position.x += layout.measure.position.x;
@@ -295,18 +328,20 @@ namespace ABCUnity
             
             gameObjectMap[chordItem] = container;
             itemMap[container] = chordItem;
-            
-            var chord = notes.CreateChord(chordItem, layout.voice.clef, container, layout.measure.position);
 
-            Bounds chordBounds = chord[0].bounds;
-
-            for (int i = 1; i < chord.Count; i++)
+            var chordInfo = new NoteCreator.NoteInfo();
+            if (layout.alignment.beams.TryGetValue(chordItem.beam, out Beam beam))
             {
-                layout.measure.UpdateBounds(chord[i].bounds);
-                chordBounds.Encapsulate(chord[i].bounds);
+                chordInfo = notes.CreateChord(chordItem, beam, container, layout.measure.position);
+                beam.Update(chordInfo.root.bounds, cache, layout);
+            }
+            else
+            {
+                chordInfo = notes.CreateChord(chordItem, layout.voice.clef, container, layout.measure.position);
             }
 
-            layout.measure.position.x = chordBounds.max.x + noteAdvance;
+            layout.measure.UpdateBounds(chordInfo.bounding);
+            layout.measure.position.x = chordInfo.bounding.max.x + noteAdvance;
         }
         
         void LayoutNote(ABC.Note noteItem, VoiceLayout layout)
@@ -316,10 +351,20 @@ namespace ABCUnity
             
             gameObjectMap[noteItem] = container;
             itemMap[container] = noteItem;
+
+            var layoutItem = new NoteCreator.NoteInfo();
+            if (layout.alignment.beams.TryGetValue(noteItem.beam, out Beam beam))
+            {
+                layoutItem = notes.CreateNote(noteItem, beam, container, layout.measure.position);
+                beam.Update(layoutItem.bounding, cache, layout);
+            }
+            else
+            {
+                layoutItem = notes.CreateNote(noteItem, layout.voice.clef, container, layout.measure.position);
+            }
             
-            var note = notes.CreateNote(noteItem, layout.voice.clef, container, layout.measure.position);
-            layout.measure.UpdateBounds(note.bounds);
-            layout.measure.position.x = note.bounds.max.x + noteAdvance;
+            layout.measure.UpdateBounds(layoutItem.bounding);
+            layout.measure.position.x = layoutItem.bounding.max.x + noteAdvance;
         }
 
         void LayoutRest(ABC.Rest restItem, VoiceLayout layout)
