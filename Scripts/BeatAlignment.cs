@@ -47,7 +47,6 @@ namespace ABCUnity
 
             float t = 0;
             int currentBeat = 1;
-            float noteTime;
 
             MeasureInfo measure = new MeasureInfo();
             BeatItem beatItem = new BeatItem(currentBeat);
@@ -66,9 +65,10 @@ namespace ABCUnity
                         if (t >= timeSignature.noteValue) // current beat is filled
                         {
                             measure.beatItems.Add(beatItem);
-                            currentBeat += (int)Mathf.Floor(t / timeSignature.noteValue);
+                            float beatCount = Mathf.Floor(t / timeSignature.noteValue);
+                            currentBeat += (int)beatCount;
                             beatItem = new BeatItem(currentBeat);
-                            t -= timeSignature.noteValue;
+                            t -= beatCount * timeSignature.noteValue;
                         }
 
                         // add this note to a beam if necessary
