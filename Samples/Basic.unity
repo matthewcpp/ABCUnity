@@ -174,6 +174,8 @@ MonoBehaviour:
   layoutScale: 0.35
   color: {r: 0, g: 0, b: 0, a: 1}
   NoteMaterial: {fileID: 2100000, guid: 45ad52670051e204a831e584dcff4feb, type: 2}
+  textPrefab: {fileID: 6477534108993699429, guid: 5a04610f96d954d629c68779a84e25cf,
+    type: 3}
 --- !u!1 &498530488
 GameObject:
   m_ObjectHideFlags: 0

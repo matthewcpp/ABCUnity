@@ -2,21 +2,41 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.U2D;
+using TMPro;
 
 namespace ABCUnity
 {
     class SpriteCache
     {
         SpriteAtlas spriteAtlas;
+        private TextMeshPro textPrefab;
 
         Dictionary<string, Sprite> spriteCache = new Dictionary<string, Sprite>();
         List<GameObject> objectPool = new List<GameObject>();
+        private List<TextMeshPro> textPool = new List<TextMeshPro>();
 
         public Color color { get; set; } = Color.black;
 
-        public SpriteCache(SpriteAtlas spriteAtlas)
+        public SpriteCache(SpriteAtlas spriteAtlas, TextMeshPro textPrefab)
         {
             this.spriteAtlas = spriteAtlas;
+            this.textPrefab = textPrefab;
+        }
+
+        public TextMeshPro GetTextObject()
+        {
+            if (textPool.Count > 0)
+            {
+                var text = textPool[textPool.Count - 1];
+                textPool.RemoveAt(textPool.Count - 1);
+                return text;
+            }
+            else
+            {
+                var text = GameObject.Instantiate(textPrefab);
+                text.color = color;
+                return text;
+            }
         }
 
         public SpriteRenderer GetSpriteObject(string name)
