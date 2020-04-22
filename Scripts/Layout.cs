@@ -25,15 +25,16 @@ namespace ABCUnity
         private NoteCreator notes;
 
         public ABC.Tune tune { get; private set; }
-        private BoxCollider2D bounding;
 
         public delegate void OnLoaded(ABC.Tune tune);
 
         public OnLoaded onLoaded;
 
+        public RectTransform rectTransform { get; private set; }
+
         public void Awake()
         {
-            bounding = this.GetComponent<BoxCollider2D>();
+            rectTransform = GetComponent<RectTransform>();
             cache = new SpriteCache(spriteAtlas);
             notes = new NoteCreator(cache);
             NoteMaterial = GameObject.Instantiate(NoteMaterial);
@@ -120,9 +121,10 @@ namespace ABCUnity
             cache.color = color;
             var timeSignature = GetTimeSignature();
 
-            horizontalMax = bounding.size.x * 1.0f / layoutScale;
+            var rect = rectTransform.rect;
+            horizontalMax = rect.size.x * 1.0f / layoutScale;
 
-            staffOffset = new Vector2(-bounding.bounds.extents.x, bounding.bounds.extents.y);
+            staffOffset = new Vector2(-rect.size.x / 2.0f, 0);
 
             Vector3 scale = this.gameObject.transform.localScale;
             this.gameObject.transform.localScale = Vector3.one;
