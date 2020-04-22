@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using ABC;
+using TMPro;
 using UnityEngine;
 using UnityEngine.U2D;
 
@@ -21,6 +22,8 @@ namespace ABCUnity
         [SerializeField]
         public Material NoteMaterial;
 
+        [SerializeField] public TextMeshPro textPrefab;
+
         private SpriteCache cache;
         private NoteCreator notes;
 
@@ -35,8 +38,8 @@ namespace ABCUnity
         public void Awake()
         {
             rectTransform = GetComponent<RectTransform>();
-            cache = new SpriteCache(spriteAtlas);
-            notes = new NoteCreator(cache);
+            cache = new SpriteCache(spriteAtlas, textPrefab);
+
             NoteMaterial = GameObject.Instantiate(NoteMaterial);
             NoteMaterial.color = color;
         }
@@ -106,7 +109,6 @@ namespace ABCUnity
         const float staffPadding = 0.3f;
         const float measurePadding = 0.5f;
         const float staffMargin = 0.2f;
-        const float clefAdvance = 2.0f;
         const float noteAdvance = 0.75f;
 
         Vector2 staffOffset;
@@ -118,7 +120,10 @@ namespace ABCUnity
         void LayoutTune()
         {
             if (tune == null) return;
+            
+            notes = new NoteCreator(cache, tune);
             cache.color = color;
+            
             var timeSignature = GetTimeSignature();
 
             var rect = rectTransform.rect;
@@ -145,7 +150,6 @@ namespace ABCUnity
                     layout.NewMeasure();
                     layout.measure.position.x = measurePadding;
                 }
-                    
 
                 for (int beat = 1; beat <= timeSignature.beatCount; beat++)
                 {
@@ -375,15 +379,15 @@ namespace ABCUnity
             if (layout.alignment.beams.TryGetValue(chordItem.beam, out Beam beam))
             {
                 chordInfo = notes.CreateChord(chordItem, beam, container, layout.measure.position);
-                beam.Update(chordInfo.root.bounds, cache, layout);
+                beam.Update(chordInfo.rootBounding, cache, layout);
             }
             else
             {
                 chordInfo = notes.CreateChord(chordItem, layout.voice.clef, container, layout.measure.position);
             }
 
-            layout.measure.UpdateBounds(chordInfo.bounding);
-            layout.measure.position.x = chordInfo.bounding.max.x + noteAdvance;
+            layout.measure.UpdateBounds(chordInfo.totalBounding);
+            layout.measure.position.x = chordInfo.totalBounding.max.x + noteAdvance;
         }
         
         void LayoutNote(ABC.Note noteItem, VoiceLayout layout)
@@ -398,15 +402,15 @@ namespace ABCUnity
             if (layout.alignment.beams.TryGetValue(noteItem.beam, out Beam beam))
             {
                 layoutItem = notes.CreateNote(noteItem, beam, container, layout.measure.position);
-                beam.Update(layoutItem.bounding, cache, layout);
+                beam.Update(layoutItem.rootBounding, cache, layout);
             }
             else
             {
                 layoutItem = notes.CreateNote(noteItem, layout.voice.clef, container, layout.measure.position);
             }
             
-            layout.measure.UpdateBounds(layoutItem.bounding);
-            layout.measure.position.x = layoutItem.bounding.max.x + noteAdvance;
+            layout.measure.UpdateBounds(layoutItem.totalBounding);
+            layout.measure.position.x = layoutItem.totalBounding.max.x + noteAdvance;
         }
 
         void LayoutRest(ABC.Rest restItem, VoiceLayout layout)
