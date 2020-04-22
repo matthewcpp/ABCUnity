@@ -3,5 +3,16 @@ T:Deck The Halls
 M:C
 L:1/4
 V:1
+V:2 clef=bass
 
-[CDE]/2[DEF]/2[EFG]/2
+[V:1] c>_BAG | FGAF | G/2A/2_B/2G/2 A>G| F E F2 |
+[V:2] [F,A,]4 | [F,A,]4 | [G,_B,]2 [F,A,]2| z2 [F,A,]2 |
+
+[V:1] c>_BAG | FGAF | G/2A/2_B/2G/2 A>G| F E F2 |
+[V:2] [F,A,]4 | [F,A,]4 | [G,_B,]2 [F,A,]2| z2 [F,A,]2 |
+
+[V:1] z4       | z4		| z2 D/2E/2 F | E D c2 | c>BAG|
+[V:2] G,A,_B,G, |A,>B,CF, | A,/2=B,/2 C z2 | z [F,G,] [G,C,]2 | [F,A,]4 |
+
+[V:1] GABG | D/2D/2D/2D/2 C>z| z [CE] G2 |
+[V:2] [F,A,]4 | z2 z>_B,| A, G, [F,A,]2|
