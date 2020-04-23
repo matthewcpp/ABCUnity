@@ -201,6 +201,7 @@ namespace ABCUnity
                     var measureInfo = layout.alignment.measures[measure];
                     LayoutBar(measureInfo.bar, layout);
 
+                    // TODO: This calculation probably needs adjusting to be totally correct.
                     if (layout.staff.position.x + layout.measure.position.x > horizontalMax)
                         newLineNeeded = true;
                 }
@@ -219,33 +220,7 @@ namespace ABCUnity
                 // Add the measure to the staff line
                 foreach (var layout in layouts)
                 {
-                    if (layout.measureVertices.Count > 0)
-                    {
-                        var mesh = new Mesh();
-                        mesh.vertices = layout.measureVertices.ToArray();
-
-                        var triangles = new List<int>();
-                        for (int i = 0; i < layout.measureVertices.Count; i += 4)
-                        {
-                            triangles.Add(i);
-                            triangles.Add(i + 1);
-                            triangles.Add(i + 2);
-                            triangles.Add(i + 2);
-                            triangles.Add(i + 1);
-                            triangles.Add(i + 3);
-                        }
-
-                        mesh.triangles = triangles.ToArray();
-
-                        var item = new GameObject();
-                        var meshRenderer = item.AddComponent<MeshRenderer>();
-                        meshRenderer.sharedMaterial = NoteMaterial;
-
-                        var meshFilter = item.AddComponent<MeshFilter>();
-                        meshFilter.mesh = mesh;
-
-                        item.transform.parent = layout.measure.container.transform;
-                    }
+                    CreateMeshForMeasure(layout);
 
                     layout.measure.container.transform.localPosition = layout.staff.position;
                     layout.measure.container.transform.parent = layout.staff.container.transform;
@@ -257,6 +232,37 @@ namespace ABCUnity
             FinalizeStaffLines();
 
             this.gameObject.transform.localScale = scale;
+        }
+
+        void CreateMeshForMeasure(VoiceLayout layout)
+        {
+            if (layout.measureVertices.Count > 0)
+            {
+                var mesh = new Mesh();
+                mesh.vertices = layout.measureVertices.ToArray();
+
+                var triangles = new List<int>();
+                for (int i = 0; i < layout.measureVertices.Count; i += 4)
+                {
+                    triangles.Add(i);
+                    triangles.Add(i + 1);
+                    triangles.Add(i + 2);
+                    triangles.Add(i + 2);
+                    triangles.Add(i + 1);
+                    triangles.Add(i + 3);
+                }
+
+                mesh.triangles = triangles.ToArray();
+
+                var item = new GameObject();
+                var meshRenderer = item.AddComponent<MeshRenderer>();
+                meshRenderer.sharedMaterial = NoteMaterial;
+
+                var meshFilter = item.AddComponent<MeshFilter>();
+                meshFilter.mesh = mesh;
+
+                item.transform.parent = layout.measure.container.transform;
+            }
         }
 
         TimeSignature GetTimeSignature()
@@ -289,10 +295,10 @@ namespace ABCUnity
                 AdjustStaffScale(layout);
 
                 layout.staff.container.transform.parent = this.transform;
-                layout.staff.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.staff.maxY * layoutScale), 0.0f);
+                layout.staff.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.staff.bounds.max.y * layoutScale), 0.0f);
                 layout.staff.container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
 
-                staffOffset.y -= (layout.staff.height + staffMargin) * layoutScale;
+                staffOffset.y -= (layout.staff.bounds.size.y + staffMargin) * layoutScale;
             }
         }
 

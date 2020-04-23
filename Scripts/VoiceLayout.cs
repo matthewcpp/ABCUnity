@@ -8,15 +8,23 @@ namespace ABCUnity
     {
         public class Metrics
         {
-            public float minY { get; set; } = float.MaxValue;
-            public float maxY { get; set; } = float.MinValue;
+            Bounds boundingBox;
 
-            public float height { get { return maxY - minY; } }
+            public Bounds bounds => boundingBox;
+
+            public Metrics()
+            {
+                boundingBox.SetMinMax(Vector3.one, Vector3.zero);
+            }
 
             public void UpdateBounds(Bounds b)
             {
-                minY = Mathf.Min(minY, b.min.y);
-                maxY = Mathf.Max(maxY, b.max.y);
+                if (boundingBox.max.x < boundingBox.min.x)
+                    boundingBox = b;
+                else
+                {
+                    boundingBox.Encapsulate(b);
+                }
             }
 
             public Vector3 position = Vector3.zero;
@@ -69,8 +77,7 @@ namespace ABCUnity
 
         public void UpdateStaffBounding()
         {
-            staff.minY = Mathf.Min(staff.minY, measure.minY);
-            staff.maxY = Mathf.Max(staff.maxY, measure.maxY);
+            staff.UpdateBounds(measure.bounds);
         }
     }
 }
