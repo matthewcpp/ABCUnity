@@ -201,6 +201,7 @@ namespace ABCUnity
                     var measureInfo = layout.alignment.measures[measure];
                     LayoutBar(measureInfo.bar, layout);
 
+                    // TODO: This calculation probably needs adjusting to be totally correct.
                     if (layout.staff.position.x + layout.measure.position.x > horizontalMax)
                         newLineNeeded = true;
                 }
@@ -219,37 +220,13 @@ namespace ABCUnity
                 // Add the measure to the staff line
                 foreach (var layout in layouts)
                 {
-                    if (layout.measureVertices.Count > 0)
-                    {
-                        var mesh = new Mesh();
-                        mesh.vertices = layout.measureVertices.ToArray();
+                    CreateMeshForMeasure(layout);
 
-                        var triangles = new List<int>();
-                        for (int i = 0; i < layout.measureVertices.Count; i += 4)
-                        {
-                            triangles.Add(i);
-                            triangles.Add(i + 1);
-                            triangles.Add(i + 2);
-                            triangles.Add(i + 2);
-                            triangles.Add(i + 1);
-                            triangles.Add(i + 3);
-                        }
+                    float measureAdjustment = calculateMeasureAdjustment();
 
-                        mesh.triangles = triangles.ToArray();
-
-                        var item = new GameObject();
-                        var meshRenderer = item.AddComponent<MeshRenderer>();
-                        meshRenderer.sharedMaterial = NoteMaterial;
-
-                        var meshFilter = item.AddComponent<MeshFilter>();
-                        meshFilter.mesh = mesh;
-
-                        item.transform.parent = layout.measure.container.transform;
-                    }
-
-                    layout.measure.container.transform.localPosition = layout.staff.position;
+                    layout.measure.container.transform.localPosition = layout.staff.position + new Vector3(measureAdjustment, 0.0f, 0.0f);
                     layout.measure.container.transform.parent = layout.staff.container.transform;
-                    layout.staff.position.x += layout.measure.position.x;
+                    layout.staff.position.x += layout.measure.position.x + measureAdjustment;
                     layout.UpdateStaffBounding();
                 }
             }
@@ -257,6 +234,51 @@ namespace ABCUnity
             FinalizeStaffLines();
 
             this.gameObject.transform.localScale = scale;
+        }
+
+        /// <summary>
+        /// If a measure has a negative min value we need to move it over so that it will fit in the measure correctly.
+        /// Note: This will most likely happen when the first note in a measure has an accidental attached to it.
+        /// </summary>
+        float calculateMeasureAdjustment()
+        {
+            float minX = 0.0f;
+
+            foreach (var layout in layouts)
+                minX = Mathf.Min(minX, layout.measure.bounds.min.x);
+
+            return Mathf.Abs(minX) + measurePadding;
+        }
+
+        void CreateMeshForMeasure(VoiceLayout layout)
+        {
+            if (layout.measureVertices.Count > 0)
+            {
+                var mesh = new Mesh();
+                mesh.vertices = layout.measureVertices.ToArray();
+
+                var triangles = new List<int>();
+                for (int i = 0; i < layout.measureVertices.Count; i += 4)
+                {
+                    triangles.Add(i);
+                    triangles.Add(i + 1);
+                    triangles.Add(i + 2);
+                    triangles.Add(i + 2);
+                    triangles.Add(i + 1);
+                    triangles.Add(i + 3);
+                }
+
+                mesh.triangles = triangles.ToArray();
+
+                var item = new GameObject();
+                var meshRenderer = item.AddComponent<MeshRenderer>();
+                meshRenderer.sharedMaterial = NoteMaterial;
+
+                var meshFilter = item.AddComponent<MeshFilter>();
+                meshFilter.mesh = mesh;
+
+                item.transform.parent = layout.measure.container.transform;
+            }
         }
 
         TimeSignature GetTimeSignature()
@@ -289,10 +311,10 @@ namespace ABCUnity
                 AdjustStaffScale(layout);
 
                 layout.staff.container.transform.parent = this.transform;
-                layout.staff.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.staff.maxY * layoutScale), 0.0f);
+                layout.staff.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.staff.bounds.max.y * layoutScale), 0.0f);
                 layout.staff.container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
 
-                staffOffset.y -= (layout.staff.height + staffMargin) * layoutScale;
+                staffOffset.y -= (layout.staff.bounds.size.y + staffMargin) * layoutScale;
             }
         }
 

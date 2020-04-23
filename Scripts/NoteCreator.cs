@@ -88,17 +88,17 @@ namespace ABCUnity
         /// <summary>
         /// Draws all required staff markers for a note  with a given step count from the Staff's zero value.
         /// </summary>
-        private bool AddNoteStaffMarkers(int stepCount, GameObject container, Vector3 offset, float localScaleX)
+        private bool AddNoteStaffMarkers(int stepCount, GameObject container, Vector3 offset, float localScaleX, ref Bounds bounding)
         {
             if (stepCount < -2)  // below the staff
             {
                 int stepOffset = stepCount % 2 == 0 ? 1 : 0;
 
                 // if the step count is odd then the mark belongs in the middle, else below
-                CreateStaffMark(stepCount + stepOffset, container, offset, stepOffset == 0 ? 1.0f : localScaleX);
+                bounding.Encapsulate(CreateStaffMark(stepCount + stepOffset, container, offset, stepOffset == 0 ? 1.0f : localScaleX));
 
                 for (int sc = stepCount + 2 + stepOffset; sc < -2; sc += 2)
-                    CreateStaffMark(sc, container, offset, localScaleX);
+                    bounding.Encapsulate(CreateStaffMark(sc, container, offset, localScaleX));
 
                 return true;
             }
@@ -107,10 +107,10 @@ namespace ABCUnity
                 int stepOffset = stepCount % 2 == 0 ? 1 : 0;
 
                 // if the step count is odd then the mark belongs in the middle, else above
-                CreateStaffMark(stepCount + stepOffset, container, offset, 1.0f);
+                bounding.Encapsulate(CreateStaffMark(stepCount + stepOffset, container, offset, 1.0f));
 
                 for (int sc = stepCount + stepOffset - 2; sc > 8; sc -= 2)
-                    CreateStaffMark(sc, container, offset, stepOffset == 0 ? 1.0f : localScaleX);
+                    bounding.Encapsulate(CreateStaffMark(sc, container, offset, stepOffset == 0 ? 1.0f : localScaleX));
 
                 return true;
             }
@@ -125,6 +125,8 @@ namespace ABCUnity
         {
             var notePosition = offset + new Vector3(0.0f, noteStep * noteStepCount, 0.0f);
 
+            var totalBounds = new Bounds();
+            totalBounds.SetMinMax(offset, offset);
             if (note.accidental != ABC.Accidental.Unspecified)
             {
                 offset = offset + new Vector3(accidentalOffset, 0.0f, 0.0f);
@@ -134,13 +136,15 @@ namespace ABCUnity
                 var accidentalPos = notePosition + new Vector3(-accidentalWidth, 0.0f, 0.0f);
                 accidental.transform.parent = container.transform;
                 accidental.transform.localPosition = accidentalPos;
+
+                totalBounds.Encapsulate(accidental.bounds);
             }
 
             GameObject staffMarkers = null;
             if (NeedsStaffMarkers(noteStepCount))
             {
                 staffMarkers = new GameObject();
-                AddNoteStaffMarkers(noteStepCount, staffMarkers, offset, 1.0f);
+                AddNoteStaffMarkers(noteStepCount, staffMarkers, offset, 1.0f, ref totalBounds);
             }
 
             if (staffMarkers != null) // this ensures that the note appears centered w.r.t the markers
@@ -177,10 +181,10 @@ namespace ABCUnity
             {
                 Vector3 dotOffset = new Vector3(rootItemBounds.max.x + dotAdvance, 0.0f, 0.0f);
                 var dot = CreateNoteDot(noteStepCount, container, dotOffset);
-                rootItemBounds.Encapsulate(dot.bounds);
+                totalBounds.Encapsulate(dot.bounds);
             }
 
-            Bounds totalBounds = rootItemBounds;
+            totalBounds.Encapsulate(rootItemBounds);
             AddFingeringDecorations(note, rootItemBounds, container, ref totalBounds);
 
             if (staffMarkers != null)
@@ -240,18 +244,19 @@ namespace ABCUnity
                 return note == ABC.Length.Whole ? "Note_Whole" : $"Note_{note}_{noteDirection}";
         }
 
-        private SpriteRenderer AddChordNote(ABC.Pitch value, ABC.Length length, NoteDirection noteDirection, float stemHeight, bool beam, ABC.Clef clef, GameObject container, Vector3 offset, List<SpriteRenderer> items)
+        private Bounds AddChordNote(ABC.Pitch value, ABC.Length length, NoteDirection noteDirection, float stemHeight, bool beam, ABC.Clef clef, GameObject container, Vector3 offset)
         {
             int stepCount = value - clefZero[clef];
             var notePosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
 
+            var bounds = new Bounds();
             SpriteRenderer rootItem = null;
             if (stemHeight != 0.0f)
             {
                 var noteHead = spriteCache.GetSpriteObject("Chord_Quarter");
                 noteHead.transform.parent = container.transform;
                 noteHead.transform.localPosition = notePosition;
-                items.Add(noteHead);
+                bounds = noteHead.bounds;
 
                 rootItem = spriteCache.GetSpriteObject($"Note_Stem_{noteDirection}");
                 rootItem.transform.parent = container.transform;
@@ -259,6 +264,7 @@ namespace ABCUnity
                 var stemPos = notePosition + (noteDirection == NoteDirection.Up ? Beam.stemUpOffset : Beam.stemDownOffset);
                 rootItem.transform.localPosition = stemPos;
                 rootItem.transform.localScale = new Vector3(1.0f, Mathf.Abs(stemHeight - stemPos.y), 1.0f);
+                bounds.Encapsulate(rootItem.bounds);
             }
             else
             {
@@ -266,13 +272,13 @@ namespace ABCUnity
                 rootItem = spriteCache.GetSpriteObject(spriteName);
                 rootItem.transform.parent = container.transform;
                 rootItem.transform.localPosition = notePosition;
+                bounds = rootItem.bounds;
             }
 
-            items.Add(rootItem);
-            return rootItem;
+            return bounds;
         }
 
-        private SpriteRenderer AddChordNoteHead(ABC.Pitch value, ABC.Length length, ABC.Clef clef, NoteDirection noteDirection, GameObject container, Vector3 offset)
+        private Bounds AddChordNoteHead(ABC.Pitch value, ABC.Length length, ABC.Clef clef, NoteDirection noteDirection, GameObject container, Vector3 offset)
         {
             int stepCount = value - clefZero[clef];
 
@@ -283,7 +289,7 @@ namespace ABCUnity
             dot.transform.parent = container.transform;
             dot.transform.localPosition = offset + notePos;
 
-            return dot;
+            return dot.bounds;
         }
 
         /// <summary>
@@ -363,7 +369,7 @@ namespace ABCUnity
             return notesInLevel;
         }
 
-        private void CreateChordAccidentals(ABC.Chord.Element[] notes, ABC.Clef clef, ref Vector3 offset, GameObject container, List<SpriteRenderer> items)
+        private void CreateChordAccidentals(ABC.Chord.Element[] notes, ABC.Clef clef, ref Vector3 offset, GameObject container, ref Bounds bounding)
         {
             var accidentalLevels = ComputeChordAccidentalLevels(notes, clefZero[clef]);
 
@@ -381,37 +387,28 @@ namespace ABCUnity
                     var accidental = spriteCache.GetSpriteObject($"Accidental_{note.accidental}");
                     accidental.transform.parent = container.transform;
                     accidental.transform.localPosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
-                    items.Add(accidental);
+                    bounding.Encapsulate(accidental.bounds);
                 }
 
                 offset = offset + new Vector3(accidentalWidth, 0.0f, 0.0f);
             }
         }
 
-        Bounds CalculateBoundsForItems(List<SpriteRenderer> items)
-        {
-            Bounds b = items[0].bounds;
-
-            for (int i = 0; i < items.Count; i++)
-                b.Encapsulate(items[i].bounds);
-
-            return b;
-        }
-
         private NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, float stemHeight, GameObject container, Vector3 offset)
         {
-            var items = new List<SpriteRenderer>();
+            var totalBounds = new Bounds();
+            totalBounds.SetMinMax(offset, offset);
 
             var noteDirection = DetermineChordNoteDirection(chord.notes, clef);
             float staffMarkerScale = 1.0f;
 
-            CreateChordAccidentals(chord.notes, clef, ref offset, container, items);
+            CreateChordAccidentals(chord.notes, clef, ref offset, container, ref totalBounds);
 
-            if (ChordHasDots(chord.notes))
+            if (ChordHasDots(chord.notes)) // TODO: this should be renamed. 
             {
                 staffMarkerScale = 2.0f;
 
-                // note that when the stem direction is down then the dot will be placed too close to the previous note.
+                // note that when the stem direction is down then the compressed notehead will be placed too close to the previous note.
                 // In this case we will push the chord over such that its min x value lines up with the caret.
                 if (noteDirection == NoteDirection.Down)
                     offset = offset + new Vector3(chordDotOffset, 0.0f, 0.0f);
@@ -422,17 +419,14 @@ namespace ABCUnity
             {
                 staffMarkers = new GameObject();
                 
-                AddNoteStaffMarkers(chord.notes[0].pitch - clefZero[clef], staffMarkers, offset, staffMarkerScale);
-                AddNoteStaffMarkers(chord.notes[chord.notes.Length - 1].pitch - clefZero[clef], staffMarkers, offset,
-                    staffMarkerScale);
+                AddNoteStaffMarkers(chord.notes[0].pitch - clefZero[clef], staffMarkers, offset, staffMarkerScale, ref totalBounds);
+                AddNoteStaffMarkers(chord.notes[chord.notes.Length - 1].pitch - clefZero[clef], staffMarkers, offset, staffMarkerScale, ref totalBounds);
             }
 
             if (staffMarkers != null) // this ensures that the note appears centered w.r.t the markers
                 offset = offset + new Vector3(notePadding, 0.0f, 0.0f);
 
-            Bounds rootBounds = AddChordItems(chord, chord.length, noteDirection, stemHeight, clef, chord.beam != 0, container, offset, items);
-            Bounds totalBounds = CalculateBoundsForItems(items);
-
+            Bounds rootBounds = AddChordItems(chord, chord.length, noteDirection, stemHeight, clef, chord.beam != 0, container, offset, ref totalBounds);
             AddFingeringDecorations(chord, rootBounds, container, ref totalBounds);
 
             if (staffMarkers != null)
@@ -445,7 +439,7 @@ namespace ABCUnity
         /// If the note direction is down, the sprite is built from the lowest note to the highest, otherwise highest to lowest.
         /// </summary>
         /// <returns>The bounding of the root chord object</returns>
-        private Bounds AddChordItems(ABC.Chord chord, ABC.Length length, NoteDirection noteDirection, float stemHeight, ABC.Clef clef, bool beam, GameObject container, Vector3 offset, List<SpriteRenderer> items)
+        private Bounds AddChordItems(ABC.Chord chord, ABC.Length length, NoteDirection noteDirection, float stemHeight, ABC.Clef clef, bool beam, GameObject container, Vector3 offset, ref Bounds totalBounds)
         {
             bool[] stems = new bool[chord.notes.Length];
             var chordBounds = new Bounds();
@@ -457,82 +451,82 @@ namespace ABCUnity
             {
                 for (int i = 0; i < chord.notes.Length; i++)
                 {
-                    SpriteRenderer sprite = null;
+                    var itemBounds = new Bounds();
 
                     if (i > 0 && stems[i - 1] == true && chord.notes[i].pitch - chord.notes[i - 1].pitch == 1)
                     {
-                        sprite = AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, noteDirection, container, offset);
-                        items.Add(sprite);
-                        chordBounds.Encapsulate(sprite.bounds);
+                        itemBounds = AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, noteDirection, container, offset);
+                        chordBounds.Encapsulate(itemBounds);
                     }
                     else
                     {
-                        sprite = AddChordNote(chord.notes[i].pitch, noteValue, noteDirection, stemHeight, chord.beam != 0, clef, container, offset, items);
+                        itemBounds = AddChordNote(chord.notes[i].pitch, noteValue, noteDirection, stemHeight, chord.beam != 0, clef, container, offset);
                         stems[i] = true;
                         noteValue = dotValue;
 
                         if (i == 0)
-                            chordBounds = sprite.bounds;
+                            chordBounds = itemBounds;
                         else
-                            chordBounds.Encapsulate(sprite.bounds);
+                            chordBounds.Encapsulate(itemBounds);
                     }
 
-                    AddChordDots(chord.notes[i], chord.dotCount, clef, sprite, container, items);
+                    totalBounds.Encapsulate(itemBounds);
+                    AddChordDots(chord.notes[i], chord.dotCount, clef, itemBounds, container, ref totalBounds);
                 }
             }
             else
             {
                 for (int i = chord.notes.Length - 1; i >= 0; i--)
                 {
-                    SpriteRenderer sprite = null;
+                    var itemBounds = new Bounds();
 
                     if (i != chord.notes.Length - 1 && stems[i + 1] == true && chord.notes[i + 1].pitch - chord.notes[i].pitch == 1)
                     {
-                        sprite = AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, noteDirection, container, offset);
-                        items.Add(sprite);
-                        chordBounds.Encapsulate(sprite.bounds);
+                        itemBounds = AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, noteDirection, container, offset);
+                        chordBounds.Encapsulate(itemBounds);
                     }
                     else
                     {
-                        sprite = AddChordNote(chord.notes[i].pitch, noteValue, noteDirection, stemHeight, chord.beam != 0, clef, container, offset, items);
+                        itemBounds = AddChordNote(chord.notes[i].pitch, noteValue, noteDirection, stemHeight, chord.beam != 0, clef, container, offset);
                         stems[i] = true;
                         noteValue = dotValue;
 
                         if (i == chord.notes.Length - 1)
-                            chordBounds = sprite.bounds;
+                            chordBounds = itemBounds;
                         else
-                            chordBounds.Encapsulate(sprite.bounds);
+                            chordBounds.Encapsulate(itemBounds);
                     }
 
-                    AddChordDots(chord.notes[i], chord.dotCount, clef, sprite, container, items);
+                    totalBounds.Encapsulate(itemBounds);
+                    AddChordDots(chord.notes[i], chord.dotCount, clef, itemBounds, container, ref totalBounds);
                 }
             }
 
             return chordBounds;
         }
 
-        void AddChordDots(ABC.Chord.Element note, int dotCount, ABC.Clef clef, SpriteRenderer rootItem, GameObject container, List<SpriteRenderer> items)
+        void AddChordDots(ABC.Chord.Element note, int dotCount, ABC.Clef clef, Bounds rootItem, GameObject container, ref Bounds totalBounds)
         {
             int stepCount = note.pitch - clefZero[clef];
-            Bounds anchor = rootItem.bounds;
+            Bounds anchor = rootItem;
 
             for (int i = 0; i < dotCount; i++)
             {
                 Vector3 dotOffset = new Vector3(anchor.max.x + dotAdvance, 0.0f, 0.0f);
                 var dot = CreateNoteDot(stepCount, container, dotOffset);
                 anchor = dot.bounds;
-                items.Add(dot);
+                totalBounds.Encapsulate(anchor);
             }
         }
 
-        private SpriteRenderer CreateStaffMark(int stepCount, GameObject container, Vector3 offset, float localScaleX)
+        private Bounds CreateStaffMark(int stepCount, GameObject container, Vector3 offset, float localScaleX)
         {
             var mark = spriteCache.GetSpriteObject("Staff_Mark");
             mark.transform.parent = container.transform;
             mark.transform.localPosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
             mark.transform.localScale = new Vector3(localScaleX, 1.0f, 1.0f);
 
-            return mark;
+            return mark.bounds;
         }
 
         private SpriteRenderer CreateNoteDot(int stepCount, GameObject container, Vector3 offset)
