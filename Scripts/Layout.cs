@@ -222,9 +222,11 @@ namespace ABCUnity
                 {
                     CreateMeshForMeasure(layout);
 
-                    layout.measure.container.transform.localPosition = layout.staff.position;
+                    float measureAdjustment = calculateMeasureAdjustment();
+
+                    layout.measure.container.transform.localPosition = layout.staff.position + new Vector3(measureAdjustment, 0.0f, 0.0f);
                     layout.measure.container.transform.parent = layout.staff.container.transform;
-                    layout.staff.position.x += layout.measure.position.x;
+                    layout.staff.position.x += layout.measure.position.x + measureAdjustment;
                     layout.UpdateStaffBounding();
                 }
             }
@@ -232,6 +234,20 @@ namespace ABCUnity
             FinalizeStaffLines();
 
             this.gameObject.transform.localScale = scale;
+        }
+
+        /// <summary>
+        /// If a measure has a negative min value we need to move it over so that it will fit in the measure correctly.
+        /// Note: This will most likely happen when the first note in a measure has an accidental attached to it.
+        /// </summary>
+        float calculateMeasureAdjustment()
+        {
+            float minX = 0.0f;
+
+            foreach (var layout in layouts)
+                minX = Mathf.Min(minX, layout.measure.bounds.min.x);
+
+            return Mathf.Abs(minX) + measurePadding;
         }
 
         void CreateMeshForMeasure(VoiceLayout layout)
