@@ -31,12 +31,6 @@ namespace ABCUnity.Example
         {
             if (aspect != camera.aspect || orthographicSize != camera.orthographicSize)
                 ResizeLayout();
-
-
-            if (Input.GetKeyDown(KeyCode.L))
-            {
-                Debug.Log(title.rectTransform.rect);
-            }
         }
 
         private void ResizeLayout()

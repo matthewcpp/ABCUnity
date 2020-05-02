@@ -87,29 +87,17 @@ namespace ABCUnity
         {
             if (gameObjectMap.TryGetValue(item, out GameObject obj))
             {
-                SetObjectColor(obj, color);
+                Util.SetObjectColor(obj, color);
                 return true;
             }
 
             return false;
         }
-
-        private void SetObjectColor(GameObject target, Color noteColor)
-        {
-            var targetTransform = target.transform;
-
-            for (int i = 0; i < targetTransform.childCount - 1; i++)
-                targetTransform.GetChild(i).GetComponent<SpriteRenderer>().color = noteColor;
-
-            var lastChild = targetTransform.GetChild(targetTransform.childCount - 1);
-            if (lastChild.childCount  == 0)
-                lastChild.GetComponent<SpriteRenderer>().color = noteColor;
-        }
         
-        const float staffPadding = 0.3f;
+        public const float staffPadding = 0.3f;
         const float measurePadding = 0.5f;
         const float staffMargin = 0.2f;
-        const float noteAdvance = 0.75f;
+        public const float noteAdvance = 0.75f;
 
         Vector2 staffOffset;
 
@@ -121,7 +109,7 @@ namespace ABCUnity
         {
             if (tune == null) return;
             
-            notes = new NoteCreator(cache, tune);
+            notes = new NoteCreator(cache, tune.decorations);
             cache.color = color;
             
             var timeSignature = GetTimeSignature();

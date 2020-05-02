@@ -11,12 +11,12 @@ namespace ABCUnity
     class NoteCreator
     {
         private SpriteCache spriteCache;
-        private ABC.Tune tune;
+        Dictionary<int, List<string>> decorationMap;
 
-        public NoteCreator(SpriteCache spriteCache, ABC.Tune tune)
+        public NoteCreator(SpriteCache spriteCache, Dictionary<int, List<string>> decorationMap)
         {
             this.spriteCache = spriteCache;
-            this.tune = tune;
+            this.decorationMap = decorationMap;
         }
 
         public static readonly Dictionary<ABC.Clef, ABC.Pitch> clefZero = new Dictionary<ABC.Clef, ABC.Pitch>()
@@ -202,7 +202,7 @@ namespace ABCUnity
 
         private void AddFingeringDecorations(ABC.Item item, Bounds referenceBounding, GameObject container, ref Bounds bounds)
         {
-            if (tune.decorations.TryGetValue(item.id, out var decorations))
+            if (decorationMap.TryGetValue(item.id, out var decorations))
             {
                 string decorationText = "";
                 foreach (var decoration in decorations)
@@ -551,6 +551,24 @@ namespace ABCUnity
             restObj.transform.localPosition = offset + new Vector3(0.0f, restHeight[rest.length], 0.0f);
 
             return restObj;
+        }
+
+        public NoteInfo CreateStaff(ABC.Clef clef, GameObject container, Vector3 offset)
+        {
+            
+            var staff = spriteCache.GetSpriteObject("Staff");
+            staff.transform.parent = container.transform;
+            staff.transform.localPosition = offset;
+            
+            Bounds bounds = staff.bounds;
+            offset.x += Layout.staffPadding;
+
+            var clefSprite = spriteCache.GetSpriteObject($"Clef_{clef}");
+            clefSprite.transform.parent = container.transform;
+            clefSprite.transform.localPosition = offset;
+            bounds.Encapsulate(clefSprite.bounds);
+
+            return new NoteInfo(bounds, bounds);
         }
     }
 }
