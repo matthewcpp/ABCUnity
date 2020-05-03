@@ -109,7 +109,7 @@ namespace ABCUnity
         {
             if (tune == null) return;
             
-            notes = new NoteCreator(cache, tune.decorations);
+            notes = new NoteCreator(cache);
             cache.color = color;
             
             var timeSignature = GetTimeSignature();
@@ -379,6 +379,7 @@ namespace ABCUnity
 
         void LayoutChord(ABC.Chord chordItem, VoiceLayout layout)
         {
+            tune.decorations.TryGetValue(chordItem.id, out var decorations);
             var container = new GameObject("Chord");
             container.transform.parent = layout.measure.container.transform;
             
@@ -388,12 +389,13 @@ namespace ABCUnity
             var chordInfo = new NoteCreator.NoteInfo();
             if (layout.alignment.beams.TryGetValue(chordItem.beam, out Beam beam))
             {
-                chordInfo = notes.CreateChord(chordItem, beam, container, layout.measure.position);
+                
+                chordInfo = notes.CreateChord(chordItem, beam, decorations, container, layout.measure.position);
                 beam.Update(chordInfo.rootBounding, cache, layout);
             }
             else
             {
-                chordInfo = notes.CreateChord(chordItem, layout.voice.clef, container, layout.measure.position);
+                chordInfo = notes.CreateChord(chordItem, layout.voice.clef, decorations, container, layout.measure.position);
             }
 
             layout.measure.UpdateBounds(chordInfo.totalBounding);
@@ -402,6 +404,7 @@ namespace ABCUnity
         
         void LayoutNote(ABC.Note noteItem, VoiceLayout layout)
         {
+            tune.decorations.TryGetValue(noteItem.id, out var decorations);
             var container = new GameObject("Note");
             container.transform.parent = layout.measure.container.transform;
             
@@ -411,12 +414,12 @@ namespace ABCUnity
             var layoutItem = new NoteCreator.NoteInfo();
             if (layout.alignment.beams.TryGetValue(noteItem.beam, out Beam beam))
             {
-                layoutItem = notes.CreateNote(noteItem, beam, container, layout.measure.position);
+                layoutItem = notes.CreateNote(noteItem, beam, decorations, container, layout.measure.position);
                 beam.Update(layoutItem.rootBounding, cache, layout);
             }
             else
             {
-                layoutItem = notes.CreateNote(noteItem, layout.voice.clef, container, layout.measure.position);
+                layoutItem = notes.CreateNote(noteItem, layout.voice.clef, decorations, container, layout.measure.position);
             }
             
             layout.measure.UpdateBounds(layoutItem.totalBounding);

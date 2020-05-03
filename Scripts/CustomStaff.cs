@@ -28,7 +28,7 @@ namespace ABCUnity
             this.container = staffContainer;
 
             cache = new SpriteCache(spriteAtlas, textPrefab);
-            notes = new NoteCreator(cache, decorations);
+            notes = new NoteCreator(cache);
         }
 
         public void Init(ABC.Clef clef)
@@ -55,10 +55,15 @@ namespace ABCUnity
 
         public GameObject AppendNote(ABC.Note note, float pos)
         {
+            return AppendNote(note, null, pos);
+        }
+
+        public GameObject AppendNote(ABC.Note note, List<string> decorations, float pos)
+        {
             GameObject noteContainer = new GameObject();
             noteContainer.transform.parent = container.transform;
 
-            notes.CreateNote(note, this.clef, noteContainer, Vector3.zero);
+            notes.CreateNote(note, this.clef, decorations, noteContainer, Vector3.zero);
             noteContainer.transform.localPosition = new Vector3(pos, 0.0f, 0.0f);
             noteContainer.transform.localScale = Vector3.one; // clear any scaling set on the parent
 

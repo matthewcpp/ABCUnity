@@ -11,12 +11,10 @@ namespace ABCUnity
     class NoteCreator
     {
         private SpriteCache spriteCache;
-        Dictionary<int, List<string>> decorationMap;
 
-        public NoteCreator(SpriteCache spriteCache, Dictionary<int, List<string>> decorationMap)
+        public NoteCreator(SpriteCache spriteCache)
         {
             this.spriteCache = spriteCache;
-            this.decorationMap = decorationMap;
         }
 
         public static readonly Dictionary<ABC.Clef, ABC.Pitch> clefZero = new Dictionary<ABC.Clef, ABC.Pitch>()
@@ -61,28 +59,28 @@ namespace ABCUnity
             return stepCount < -2 || stepCount > 8;
         }
 
-        public NoteInfo CreateNote(ABC.Note note, Beam beam, GameObject container, Vector3 offset)
+        public NoteInfo CreateNote(ABC.Note note, Beam beam, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
         {
             int stepCount = note.pitch - clefZero[beam.clef];
-            return CreateNote(note, stepCount, beam.stemHeight, beam.noteDirection, container, offset);
+            return CreateNote(note, stepCount, beam.stemHeight, beam.noteDirection, decorations, container, offset);
         }
 
-        public NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, GameObject container, Vector3 offset)
+        public NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
         {
             int stepCount = note.pitch - clefZero[clef];
             var noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
 
-            return CreateNote(note, stepCount, 0.0f, noteDirection, container, offset);
+            return CreateNote(note, stepCount, 0.0f, noteDirection, decorations, container, offset);
         }
 
-        public NoteInfo CreateChord(ABC.Chord chord, Beam beam, GameObject container, Vector3 offset)
+        public NoteInfo CreateChord(ABC.Chord chord, Beam beam, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
         {
-            return CreateChord(chord, beam.clef, beam.stemHeight, container, offset);
+            return CreateChord(chord, beam.clef, beam.stemHeight, decorations, container, offset);
         }
 
-        public NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, GameObject container, Vector3 offset)
+        public NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
         {
-            return CreateChord(chord, clef, 0.0f, container, offset);
+            return CreateChord(chord, clef, 0.0f, decorations, container, offset);
         }
 
         /// <summary>
@@ -121,7 +119,7 @@ namespace ABCUnity
         const float accidentalOffset = 0.25f;
         const float accidentalWidth = 0.55f;
 
-        private NoteInfo CreateNote(ABC.Note note, int noteStepCount, float stemHeight, NoteDirection noteDirection, GameObject container, Vector3 offset)
+        private NoteInfo CreateNote(ABC.Note note, int noteStepCount, float stemHeight, NoteDirection noteDirection, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
         {
             var notePosition = offset + new Vector3(0.0f, noteStep * noteStepCount, 0.0f);
 
@@ -185,7 +183,7 @@ namespace ABCUnity
             }
 
             totalBounds.Encapsulate(rootItemBounds);
-            AddFingeringDecorations(note, rootItemBounds, container, ref totalBounds);
+            AddFingeringDecorations(note, decorations, rootItemBounds, container, ref totalBounds);
 
             if (staffMarkers != null)
                 staffMarkers.transform.parent = container.transform;
@@ -200,9 +198,9 @@ namespace ABCUnity
             "1", "2", "3", "4", "5"
         };
 
-        private void AddFingeringDecorations(ABC.Item item, Bounds referenceBounding, GameObject container, ref Bounds bounds)
+        private void AddFingeringDecorations(ABC.Item item, IReadOnlyList<string> decorations, Bounds referenceBounding, GameObject container, ref Bounds bounds)
         {
-            if (decorationMap.TryGetValue(item.id, out var decorations))
+            if (decorations != null)
             {
                 string decorationText = "";
                 foreach (var decoration in decorations)
@@ -394,7 +392,7 @@ namespace ABCUnity
             }
         }
 
-        private NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, float stemHeight, GameObject container, Vector3 offset)
+        private NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, float stemHeight, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
         {
             var totalBounds = new Bounds();
             totalBounds.SetMinMax(offset, offset);
@@ -427,7 +425,7 @@ namespace ABCUnity
                 offset = offset + new Vector3(notePadding, 0.0f, 0.0f);
 
             Bounds rootBounds = AddChordItems(chord, chord.length, noteDirection, stemHeight, clef, chord.beam != 0, container, offset, ref totalBounds);
-            AddFingeringDecorations(chord, rootBounds, container, ref totalBounds);
+            AddFingeringDecorations(chord, decorations, rootBounds, container, ref totalBounds);
 
             if (staffMarkers != null)
                 staffMarkers.transform.parent = container.transform;
