@@ -11,4 +11,9 @@ namespace ABCUnity
     {
         public LayoutException(string message) : base(message) { }
     }
+
+    public class Exception : System.Exception
+    {
+        public Exception(string message) : base(message) { }
+    }
 }
