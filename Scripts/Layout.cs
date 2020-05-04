@@ -102,8 +102,14 @@ namespace ABCUnity
         Vector2 staffOffset;
 
         List<VoiceLayout> layouts = new List<VoiceLayout>();
+        Dictionary<int, Beam> beams;
 
         private float horizontalMax;
+
+        public BeatAlignment GetAlignment(int i)
+        {
+            return layouts[i].alignment;
+        }
 
         void LayoutTune()
         {
@@ -126,10 +132,14 @@ namespace ABCUnity
             for (int i =0 ; i < tune.voices.Count; i++)
             {
                 var layout = new VoiceLayout(tune.voices[i]);
+                layout.CreateAlignmentMap(beams);
+
                 layouts.Add(layout);
                 LayoutStaff(layout);
                 LayoutTimeSignature(layout);
             }
+
+            beams = Beam.CreateBeams(tune);
 
             for (int measure = 0; measure < layouts[0].alignment.measures.Count; measure++)
             {
@@ -387,7 +397,7 @@ namespace ABCUnity
             itemMap[container] = chordItem;
 
             var chordInfo = new NoteCreator.NoteInfo();
-            if (layout.alignment.beams.TryGetValue(chordItem.beam, out Beam beam))
+            if (beams.TryGetValue(chordItem.beam, out Beam beam))
             {
                 
                 chordInfo = notes.CreateChord(chordItem, beam, decorations, container, layout.measure.position);
@@ -412,7 +422,7 @@ namespace ABCUnity
             itemMap[container] = noteItem;
 
             var layoutItem = new NoteCreator.NoteInfo();
-            if (layout.alignment.beams.TryGetValue(noteItem.beam, out Beam beam))
+            if (beams.TryGetValue(noteItem.beam, out Beam beam))
             {
                 layoutItem = notes.CreateNote(noteItem, beam, decorations, container, layout.measure.position);
                 beam.Update(layoutItem.rootBounding, cache, layout);

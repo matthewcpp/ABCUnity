@@ -4,11 +4,11 @@ using UnityEngine;
 
 namespace ABCUnity
 {
-    class BeatAlignment
+    public class BeatAlignment
     {
         public class BeatItem
         {
-            public List<ABC.Item> items = new List<ABC.Item>();
+            public List<ABC.Duration> items = new List<ABC.Duration>();
             public int beatStart;
 
             public BeatItem(int beatStart)
@@ -23,15 +23,8 @@ namespace ABCUnity
             public ABC.Bar bar;
         }
 
-        public BeatAlignment(ABC.Voice voice)
-        {
-            Create(voice);
-        }
-
         public List<MeasureInfo> measures { get; private set; }
         TimeSignature timeSignature;
-
-        public Dictionary<int, Beam> beams { get; } = new Dictionary<int, Beam>();
 
         public void Create(ABC.Voice voice)
         {
@@ -58,8 +51,8 @@ namespace ABCUnity
                     case ABC.Item.Type.Chord:
                     case ABC.Item.Type.Rest:
                     case ABC.Item.Type.Note:
-                        beatItem.items.Add(voice.items[i]);
                         var noteItem = voice.items[i] as ABC.Duration;
+                        beatItem.items.Add(noteItem);
                         t += noteItem.duration;
 
                         if (t >= timeSignature.noteValue) // current beat is filled
@@ -69,19 +62,6 @@ namespace ABCUnity
                             currentBeat += (int)beatCount;
                             beatItem = new BeatItem(currentBeat);
                             t -= beatCount * timeSignature.noteValue;
-                        }
-
-                        // add this note to a beam if necessary
-                        if (noteItem.beam != 0)
-                        {
-                            beams.TryGetValue(noteItem.beam, out Beam beam);
-                            if (beam == null)
-                            {
-                                beam = new Beam(noteItem.beam, voice.clef);
-                                beams[noteItem.beam] = beam;
-                            }
-
-                            beam.items.Add(noteItem);
                         }
 
                         break;
@@ -105,9 +85,6 @@ namespace ABCUnity
 
             if (measure.beatItems.Count > 0)
                 measures.Add(measure);
-
-            foreach (var beam in beams)
-                beam.Value.Analyze();
         }
     }
 }

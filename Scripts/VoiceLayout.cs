@@ -40,13 +40,18 @@ namespace ABCUnity
         public VoiceLayout(ABC.Voice v)
         {
             voice = v;
-            alignment = new BeatAlignment(v);
+            alignment = new BeatAlignment();
 
             staff = new Metrics();
             staff.container = new GameObject();
             measureVertices = new List<Vector3>();
 
             measure = new Metrics();
+        }
+
+        public void CreateAlignmentMap(Dictionary<int, Beam> beams)
+        {
+            alignment.Create(voice);
         }
 
         /// <summary>Beat map for the voice.</summary>
@@ -74,7 +79,6 @@ namespace ABCUnity
             staff = new Metrics();
             staff.container = new GameObject();
         }
-
         public void UpdateStaffBounding()
         {
             staff.UpdateBounds(measure.bounds);

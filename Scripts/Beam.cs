@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using ABC;
 
 namespace ABCUnity
 {
@@ -26,7 +27,7 @@ namespace ABCUnity
             Straight
         }
 
-        public List<ABC.Item> items { get; } = new List<ABC.Item>();
+        public List<ABC.Duration> items { get; } = new List<ABC.Duration>();
 
         public Type type { get; private set; }
 
@@ -295,6 +296,40 @@ namespace ABCUnity
 
                 offsetY += beamHeight + defaultBeamSpacer;
             }
+        }
+
+        public static Dictionary<int, Beam> CreateBeams(ABC.Tune tune)
+        {
+            var beams = new Dictionary<int, Beam>();
+
+            foreach (var voice in tune.voices)
+            {
+                foreach (var item in voice.items)
+                {
+                    var duration = item as ABC.Duration;
+
+                    if (duration == null)
+                        continue;
+                    
+                    // add this note to a beam if necessary
+                    if (duration.beam != 0)
+                    {
+                        beams.TryGetValue(duration.beam, out Beam beam);
+                        if (beam == null)
+                        {
+                            beam = new Beam(duration.beam, voice.clef);
+                            beams[duration.beam] = beam;
+                        }
+
+                        beam.items.Add(duration);
+                    }
+                }
+            }
+
+            foreach (var item in beams)
+                item.Value.Analyze();
+
+            return beams;
         }
     }
 }
