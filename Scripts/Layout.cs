@@ -72,7 +72,7 @@ namespace ABCUnity
             }
         }
 
-        public Dictionary<ABC.Item, GameObject> gameObjectMap { get; } = new Dictionary<ABC.Item, GameObject>();
+        public Dictionary<int, GameObject> gameObjectMap { get; } = new Dictionary<int, GameObject>();
         public Dictionary<GameObject, ABC.Item> itemMap { get; } = new Dictionary<GameObject, Item>();
 
         public GameObject FindItemRootObject(GameObject obj)
@@ -85,7 +85,7 @@ namespace ABCUnity
 
         public bool SetItemColor(ABC.Item item, Color color)
         {
-            if (gameObjectMap.TryGetValue(item, out GameObject obj))
+            if (gameObjectMap.TryGetValue(item.id, out GameObject obj))
             {
                 Util.SetObjectColor(obj, color);
                 return true;
@@ -393,7 +393,7 @@ namespace ABCUnity
             var container = new GameObject("Chord");
             container.transform.parent = layout.measure.container.transform;
             
-            gameObjectMap[chordItem] = container;
+            gameObjectMap[chordItem.id] = container;
             itemMap[container] = chordItem;
 
             var chordInfo = new NoteCreator.NoteInfo();
@@ -418,7 +418,7 @@ namespace ABCUnity
             var container = new GameObject("Note");
             container.transform.parent = layout.measure.container.transform;
             
-            gameObjectMap[noteItem] = container;
+            gameObjectMap[noteItem.id] = container;
             itemMap[container] = noteItem;
 
             var layoutItem = new NoteCreator.NoteInfo();
@@ -441,7 +441,7 @@ namespace ABCUnity
             var container = new GameObject("Rest");
             container.transform.parent = layout.measure.container.transform;
 
-            gameObjectMap[restItem] = container;
+            gameObjectMap[restItem.id] = container;
             itemMap[container] = restItem;
             
             var rest = notes.CreateRest(restItem, container, layout.measure.position);
