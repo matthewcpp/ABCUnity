@@ -5,6 +5,7 @@ using ABC;
 using TMPro;
 using UnityEngine;
 using UnityEngine.U2D;
+using UnityEngine.XR.WSA.Input;
 
 namespace ABCUnity
 {
@@ -14,7 +15,7 @@ namespace ABCUnity
         private SpriteAtlas spriteAtlas; // set in editor
 
         [SerializeField]
-        float layoutScale = 0.5f;
+        public float layoutScale = 0.5f;
         
         [SerializeField]
         public Color color = Color.black;
@@ -74,6 +75,8 @@ namespace ABCUnity
 
         public Dictionary<int, GameObject> gameObjectMap { get; } = new Dictionary<int, GameObject>();
         public Dictionary<GameObject, ABC.Item> itemMap { get; } = new Dictionary<GameObject, Item>();
+        private Dictionary<int, List<SpriteRenderer>> spriteRendererCache = new Dictionary<int, List<SpriteRenderer>>();
+
 
         public GameObject FindItemRootObject(GameObject obj)
         {
@@ -87,13 +90,30 @@ namespace ABCUnity
         {
             if (gameObjectMap.TryGetValue(item.id, out GameObject obj))
             {
-                Util.SetObjectColor(obj, color);
+                if (!spriteRendererCache.TryGetValue(item.id, out var spriteRenderers))
+                {
+                    spriteRenderers = Util.GatherSpriteRenderers(obj);
+                    spriteRendererCache[item.id] = spriteRenderers;
+                }
+
+                foreach (var spriteRenderer in spriteRenderers)
+                    spriteRenderer.color = color;
+                
                 return true;
             }
 
             return false;
         }
-        
+
+        public void ResetItemColors()
+        {
+            foreach (var spriteRenderes in spriteRendererCache.Values)
+            {
+                foreach (var spriteRenderer in spriteRenderes)
+                    spriteRenderer.color = color;
+            }
+        }
+
         public const float staffPadding = 0.3f;
         const float measurePadding = 0.5f;
         const float staffMargin = 0.2f;

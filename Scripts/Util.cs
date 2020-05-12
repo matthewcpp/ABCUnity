@@ -6,16 +6,12 @@ namespace ABCUnity
 {
     public static class Util
     {
-        public static void SetObjectColor(GameObject target, Color noteColor)
+        public static void SetObjectColor(GameObject target, Color color)
         {
-            var targetTransform = target.transform;
+            var spriteRenderers = GatherSpriteRenderers(target);
 
-            for (int i = 0; i < targetTransform.childCount - 1; i++)
-                targetTransform.GetChild(i).GetComponent<SpriteRenderer>().color = noteColor;
-
-            var lastChild = targetTransform.GetChild(targetTransform.childCount - 1);
-            if (lastChild.childCount == 0)
-                lastChild.GetComponent<SpriteRenderer>().color = noteColor;
+            foreach (var spriteRenderer in spriteRenderers)
+                spriteRenderer.color = color;
         }
 
         public static List<SpriteRenderer> GatherSpriteRenderers(GameObject item)
