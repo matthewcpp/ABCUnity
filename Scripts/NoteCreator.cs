@@ -551,6 +551,15 @@ namespace ABCUnity
             return restObj;
         }
 
+        public SpriteRenderer CreateMeasureRest(ABC.MultiMeasureRest rest, GameObject container, Vector3 offset)
+        {
+            var restObj = spriteCache.GetSpriteObject("Rest_Half");
+            restObj.transform.parent = container.transform;
+            restObj.transform.localPosition = offset + new Vector3(0.0f, restHeight[ABC.Length.Whole], 0.0f);
+
+            return restObj;
+        }
+
         public NoteInfo CreateStaff(ABC.Clef clef, GameObject container, Vector3 offset)
         {
             

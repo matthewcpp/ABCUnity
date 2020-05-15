@@ -8,7 +8,7 @@ namespace ABCUnity
     {
         public class BeatItem
         {
-            public List<ABC.Duration> items = new List<ABC.Duration>();
+            public List<ABC.Item> items = new List<ABC.Item>();
             public int beatStart;
 
             public BeatItem(int beatStart)
@@ -66,10 +66,20 @@ namespace ABCUnity
 
                         break;
 
+                    case ABC.Item.Type.MultiMeasureRest:
+                        var measureRest = voice.items[i] as ABC.MultiMeasureRest;
+
+                        if (measureRest.count > 1)
+                            throw new LayoutException("Measure Rests of length greater than 1 are not currently supported.");
+
+                        beatItem.items.Add(measureRest);
+
+                        break;
+
                     case ABC.Item.Type.Bar:
                         if (beatItem.items.Count > 0)
                             measure.beatItems.Add(beatItem);
-                            
+
                         measures.Add(measure);
                         measure = new MeasureInfo();
 

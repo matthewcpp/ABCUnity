@@ -5,7 +5,6 @@ using ABC;
 using TMPro;
 using UnityEngine;
 using UnityEngine.U2D;
-using UnityEngine.XR.WSA.Input;
 
 namespace ABCUnity
 {
@@ -70,6 +69,14 @@ namespace ABCUnity
             catch (ABC.ParseException e)
             {
                 Debug.Log(e.Message);
+            }
+        }
+
+        public void LoadFile(string path)
+        {
+            using (FileStream file = File.OpenRead(path))
+            {
+                LoadStream(file);
             }
         }
 
@@ -195,6 +202,10 @@ namespace ABCUnity
 
                                     case ABC.Item.Type.Rest:
                                         LayoutRest(item as ABC.Rest, layout);
+                                        break;
+
+                                    case ABC.Item.Type.MultiMeasureRest:
+                                        LayoutMeasureRest(item as ABC.MultiMeasureRest, layout);
                                         break;
                                 }
                             }
@@ -465,6 +476,19 @@ namespace ABCUnity
             itemMap[container] = restItem;
             
             var rest = notes.CreateRest(restItem, container, layout.measure.position);
+            layout.measure.UpdateBounds(rest.bounds);
+            layout.measure.position.x = rest.bounds.max.x + noteAdvance;
+        }
+
+        void LayoutMeasureRest(ABC.MultiMeasureRest measureRest, VoiceLayout layout)
+        {
+            var container = new GameObject("Rest");
+            container.transform.parent = layout.measure.container.transform;
+
+            gameObjectMap[measureRest.id] = container;
+            itemMap[container] = measureRest;
+
+            var rest = notes.CreateMeasureRest(measureRest, container, layout.measure.position);
             layout.measure.UpdateBounds(rest.bounds);
             layout.measure.position.x = rest.bounds.max.x + noteAdvance;
         }
