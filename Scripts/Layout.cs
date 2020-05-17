@@ -83,6 +83,7 @@ namespace ABCUnity
         public Dictionary<int, GameObject> gameObjectMap { get; } = new Dictionary<int, GameObject>();
         public Dictionary<GameObject, ABC.Item> itemMap { get; } = new Dictionary<GameObject, Item>();
         private Dictionary<int, List<SpriteRenderer>> spriteRendererCache = new Dictionary<int, List<SpriteRenderer>>();
+        private TimeSignature timeSignature;
 
 
         public GameObject FindItemRootObject(GameObject obj)
@@ -138,37 +139,39 @@ namespace ABCUnity
             return layouts[i].alignment;
         }
 
-        void LayoutTune()
+        void SetupVoiceLayouts()
         {
-            if (tune == null) return;
-            
-            notes = new NoteCreator(cache);
-            cache.color = color;
-            
-            var timeSignature = GetTimeSignature();
-
-            var rect = rectTransform.rect;
-            horizontalMax = rect.size.x * 1.0f / layoutScale;
-
-            staffOffset = new Vector2(-rect.size.x / 2.0f, 0);
-
-            Vector3 scale = this.gameObject.transform.localScale;
-            this.gameObject.transform.localScale = Vector3.one;
-
             // create the layout structures for each voice
-            for (int i =0 ; i < tune.voices.Count; i++)
+            int measureCount = 0;
+            for (int i = 0; i < tune.voices.Count; i++)
             {
                 var layout = new VoiceLayout(tune.voices[i]);
-                layout.CreateAlignmentMap(beams);
-
+                layout.Align();
                 layouts.Add(layout);
+
+                if (i == 0)
+                {
+                    measureCount = layout.alignment.measures.Count;
+                }
+                else
+                {
+                    if (layout.alignment.measures.Count != measureCount)
+                        throw new LayoutException("All voices must have the same measure count");
+                }
+            }
+        }
+
+        void LayoutScoreLine(int lineNum)
+        {
+            foreach (var layout in layouts)
+            {
+                layout.NewStaffline();
                 LayoutStaff(layout);
-                LayoutTimeSignature(layout);
+                if (lineNum == 0)
+                    LayoutTimeSignature(layout);
             }
 
-            beams = Beam.CreateBeams(tune);
-
-            for (int measure = 0; measure < layouts[0].alignment.measures.Count; measure++)
+            for (int measure = 0; measure < layouts[0].scoreLines[lineNum].Count; measure++)
             {
                 foreach (var layout in layouts)
                 {
@@ -182,7 +185,7 @@ namespace ABCUnity
 
                     foreach (var layout in layouts)
                     {
-                        var measureInfo = layout.alignment.measures[measure];
+                        var measureInfo = layout.scoreLines[lineNum][measure];
                         var beatInfo = measureInfo.beatItems[layout.beatAlignmentIndex];
 
                         // if this beat is the start of a new group of notes render them
@@ -261,6 +264,30 @@ namespace ABCUnity
             }
 
             FinalizeStaffLines();
+        }
+
+        void LayoutTune()
+        {
+            if (tune == null) return;
+            
+            notes = new NoteCreator(cache);
+            cache.color = color;
+            
+            timeSignature = GetTimeSignature();
+
+            var rect = rectTransform.rect;
+            horizontalMax = rect.size.x * 1.0f / layoutScale;
+
+            staffOffset = new Vector2(-rect.size.x / 2.0f, 0);
+
+            Vector3 scale = this.gameObject.transform.localScale;
+            this.gameObject.transform.localScale = Vector3.one;
+
+            SetupVoiceLayouts();
+            beams = Beam.CreateBeams(tune);
+
+            for (int i = 0; i < layouts[0].scoreLines.Count; i++)
+                LayoutScoreLine(i);
 
             this.gameObject.transform.localScale = scale;
         }

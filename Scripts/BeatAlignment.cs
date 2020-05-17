@@ -21,6 +21,12 @@ namespace ABCUnity
         {
             public List<BeatItem> beatItems { get; } = new List<BeatItem>();
             public ABC.Bar bar;
+            public int lineNumber { get; set; }
+
+            public MeasureInfo(int lineNumber)
+            {
+                this.lineNumber = lineNumber;
+            }
         }
 
         public List<MeasureInfo> measures { get; private set; }
@@ -40,8 +46,9 @@ namespace ABCUnity
 
             float t = 0;
             int currentBeat = 1;
+            int lineNumber = 0;
 
-            MeasureInfo measure = new MeasureInfo();
+            MeasureInfo measure = new MeasureInfo(lineNumber);
             BeatItem beatItem = new BeatItem(currentBeat);
 
             for (int i = 1; i < voice.items.Count; i++)
@@ -81,11 +88,16 @@ namespace ABCUnity
                             measure.beatItems.Add(beatItem);
 
                         measures.Add(measure);
-                        measure = new MeasureInfo();
+                        measure = new MeasureInfo(lineNumber);
 
                         currentBeat = 1;
                         beatItem = new BeatItem(currentBeat);
                         t = 0.0f;
+                        break;
+
+                    case ABC.Item.Type.LineBreak:
+                        lineNumber += 1;
+                        measure.lineNumber = lineNumber;
                         break;
                 }
             }

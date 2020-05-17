@@ -37,6 +37,8 @@ namespace ABCUnity
         public Metrics staff { get; private set; }
         public Metrics measure { get; private set; }
 
+        public List<List<BeatAlignment.MeasureInfo>> scoreLines { get; } = new List<List<BeatAlignment.MeasureInfo>>();
+
         public VoiceLayout(ABC.Voice v)
         {
             voice = v;
@@ -49,9 +51,18 @@ namespace ABCUnity
             measure = new Metrics();
         }
 
-        public void CreateAlignmentMap(Dictionary<int, Beam> beams)
+        public void Align()
         {
             alignment.Create(voice);
+
+            // Partitions measures into their appropriate score lines
+            foreach (var measure in alignment.measures)
+            {
+                if (measure.lineNumber >= scoreLines.Count)
+                    scoreLines.Add(new List<BeatAlignment.MeasureInfo>());
+
+                scoreLines[measure.lineNumber].Add(measure);
+            }
         }
 
         /// <summary>Beat map for the voice.</summary>
