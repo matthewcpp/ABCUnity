@@ -1,9 +1,7 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.CompilerServices;
-using System.ComponentModel;
 
 
 namespace ABCUnity
@@ -541,23 +539,23 @@ namespace ABCUnity
             { ABC.Length.Whole, 1.41f }, { ABC.Length.Half, 1.16f }, { ABC.Length.Quarter, 0.3f}, { ABC.Length.Eighth, 0.0f}, { ABC.Length.Sixteenth, 0.0f }
         };
 
-        public SpriteRenderer CreateRest(ABC.Rest rest, GameObject container, Vector3 offset)
+        public NoteInfo CreateRest(ABC.Rest rest, GameObject container, Vector3 offset)
         {
             var restSprite = rest.length == ABC.Length.Whole ? "Rest_Half" : $"Rest_{rest.length}";
             var restObj = spriteCache.GetSpriteObject(restSprite);
             restObj.transform.parent = container.transform;
             restObj.transform.localPosition = offset + new Vector3(0.0f, restHeight[rest.length], 0.0f);
 
-            return restObj;
+            return new NoteInfo(restObj.bounds, restObj.bounds);
         }
 
-        public SpriteRenderer CreateMeasureRest(ABC.MultiMeasureRest rest, GameObject container, Vector3 offset)
+        public NoteInfo CreateMeasureRest(ABC.MultiMeasureRest rest, GameObject container, Vector3 offset)
         {
             var restObj = spriteCache.GetSpriteObject("Rest_Half");
             restObj.transform.parent = container.transform;
             restObj.transform.localPosition = offset + new Vector3(0.0f, restHeight[ABC.Length.Whole], 0.0f);
 
-            return restObj;
+            return new NoteInfo(restObj.bounds, restObj.bounds);
         }
 
         public NoteInfo CreateStaff(ABC.Clef clef, GameObject container, Vector3 offset)
@@ -574,6 +572,40 @@ namespace ABCUnity
             clefSprite.transform.parent = container.transform;
             clefSprite.transform.localPosition = offset;
             bounds.Encapsulate(clefSprite.bounds);
+
+            return new NoteInfo(bounds, bounds);
+        }
+
+        const float TimeSignatureY = 1.15f;
+
+        public NoteInfo CreateTimeSignature(ABC.TimeSignature timeSignature, GameObject container, Vector3 offset)
+        {
+            var bounds = new Bounds();
+
+            if (timeSignature.value == "C" || timeSignature.value == "C|")
+            {
+                var spriteName = (timeSignature.value == "C") ? "Time_Common" : "Time_Cut";
+                var commonTime = spriteCache.GetSpriteObject(spriteName);
+                commonTime.transform.parent = container.transform;
+                commonTime.transform.localPosition = offset + new Vector3(0.0f, TimeSignatureY, 0.0f);
+                bounds = commonTime.bounds;
+            }
+            else
+            {
+                var pieces = timeSignature.value.Split('/');
+                if (pieces.Length < 2)
+                    throw new LayoutException($"Unable to parse time signature: {timeSignature.value}");
+
+                var sprite = spriteCache.GetSpriteObject($"Time_{pieces[0]}");
+                sprite.transform.parent = container.transform;
+                sprite.transform.localPosition = offset + new Vector3(0.0f, TimeSignatureY, 0.0f);
+                bounds = sprite.bounds;
+
+                sprite = spriteCache.GetSpriteObject($"Time_{pieces[1]}");
+                sprite.transform.parent = container.transform;
+                sprite.transform.localPosition = offset;
+                bounds.Encapsulate(sprite.bounds);
+            }
 
             return new NoteInfo(bounds, bounds);
         }

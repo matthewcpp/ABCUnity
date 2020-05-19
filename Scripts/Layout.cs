@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using ABC;
@@ -392,7 +392,7 @@ namespace ABCUnity
             layout.staff.position.x = clef.bounds.max.x + noteAdvance;
         }
 
-        const float TimeSignatureY = 1.15f;
+        
 
         void LayoutTimeSignature(VoiceLayout layout)
         {
@@ -400,35 +400,12 @@ namespace ABCUnity
             if (timeSignature == null)
                 throw new LayoutException($"expected voice: {layout.voice.name} to have Time Signature");
 
-            if (timeSignature.value == "C" || timeSignature.value == "C|")
-            {
-                var spriteName = (timeSignature.value == "C") ? "Time_Common" : "Time_Cut";
-                var offset = layout.staff.position + new Vector3(0.0f, TimeSignatureY, 0.0f);
-                var commonTime = cache.GetSpriteObject(spriteName);
-                commonTime.transform.parent = layout.staff.container.transform;
-                commonTime.transform.position = offset;
+            var container = new GameObject("Time Signature");
+            container.transform.parent = layout.staff.container.transform;
+            var timeSignatureInfo = notes.CreateTimeSignature(timeSignature, container, layout.staff.position);
 
-                layout.staff.UpdateBounds(commonTime.bounds);
-                layout.staff.position.x = commonTime.bounds.max.x;
-            }
-            else
-            {
-                var pieces = timeSignature.value.Split('/');
-                if (pieces.Length < 2)
-                    throw new LayoutException($"Unable to parse time signature: {timeSignature.value}");
-
-                var sprite = cache.GetSpriteObject($"Time_{pieces[0]}");
-                sprite.transform.parent = layout.staff.container.transform;
-                sprite.transform.position = layout.staff.position + new Vector3(0.0f, TimeSignatureY, 0.0f);
-                layout.staff.UpdateBounds(sprite.bounds);
-
-                sprite = cache.GetSpriteObject($"Time_{pieces[1]}");
-                sprite.transform.parent = layout.staff.container.transform;
-                sprite.transform.position = layout.staff.position;
-                layout.staff.UpdateBounds(sprite.bounds);
-                layout.staff.position.x = sprite.bounds.max.x;
-            }
-
+            layout.staff.UpdateBounds(timeSignatureInfo.totalBounding);
+            layout.staff.position.x = timeSignatureInfo.totalBounding.max.x;
         }
 
         void AdjustStaffScale(VoiceLayout layout)
