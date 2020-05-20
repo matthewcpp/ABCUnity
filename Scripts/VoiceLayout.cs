@@ -51,7 +51,7 @@ namespace ABCUnity
             measure = new Metrics();
         }
 
-        public void Align()
+        public void Init()
         {
             alignment.Create(voice);
 

@@ -57,28 +57,28 @@ namespace ABCUnity
             return stepCount < -2 || stepCount > 8;
         }
 
-        public NoteInfo CreateNote(ABC.Note note, Beam beam, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        public NoteInfo CreateNote(ABC.Note note, Beam beam, IReadOnlyList<string> decorations, GameObject container)
         {
             int stepCount = note.pitch - clefZero[beam.clef];
-            return CreateNote(note, stepCount, beam.stemHeight, beam.noteDirection, decorations, container, offset);
+            return CreateNote(note, stepCount, beam.stemHeight, beam.noteDirection, decorations, container);
         }
 
-        public NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        public NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container)
         {
             int stepCount = note.pitch - clefZero[clef];
             var noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
 
-            return CreateNote(note, stepCount, 0.0f, noteDirection, decorations, container, offset);
+            return CreateNote(note, stepCount, 0.0f, noteDirection, decorations, container);
         }
 
-        public NoteInfo CreateChord(ABC.Chord chord, Beam beam, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        public NoteInfo CreateChord(ABC.Chord chord, Beam beam, IReadOnlyList<string> decorations, GameObject container)
         {
-            return CreateChord(chord, beam.clef, beam.stemHeight, decorations, container, offset);
+            return CreateChord(chord, beam.clef, beam.stemHeight, decorations, container);
         }
 
-        public NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        public NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container)
         {
-            return CreateChord(chord, clef, 0.0f, decorations, container, offset);
+            return CreateChord(chord, clef, 0.0f, decorations, container);
         }
 
         /// <summary>
@@ -117,8 +117,9 @@ namespace ABCUnity
         const float accidentalOffset = 0.25f;
         const float accidentalWidth = 0.55f;
 
-        private NoteInfo CreateNote(ABC.Note note, int noteStepCount, float stemHeight, NoteDirection noteDirection, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        private NoteInfo CreateNote(ABC.Note note, int noteStepCount, float stemHeight, NoteDirection noteDirection, IReadOnlyList<string> decorations, GameObject container)
         {
+            var offset = Vector3.zero;
             var notePosition = offset + new Vector3(0.0f, noteStep * noteStepCount, 0.0f);
 
             var totalBounds = new Bounds();
@@ -390,8 +391,9 @@ namespace ABCUnity
             }
         }
 
-        private NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, float stemHeight, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        private NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, float stemHeight, IReadOnlyList<string> decorations, GameObject container)
         {
+            var offset = Vector3.zero;
             var totalBounds = new Bounds();
             totalBounds.SetMinMax(offset, offset);
 

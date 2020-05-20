@@ -10,17 +10,11 @@ namespace ABCUnity
         {
             public ABC.Item item { get; }
             public GameObject container;
-            public NoteInfo info = new NoteInfo();
+            public NoteInfo info;
 
             public BeatItem(ABC.Item item)
             {
                 this.item = item;
-            }
-
-            public void SetSprite(NoteInfo info, GameObject container)
-            {
-                this.info = info;
-                this.container = container;
             }
         }
         

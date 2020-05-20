@@ -146,7 +146,7 @@ namespace ABCUnity
             for (int i = 0; i < tune.voices.Count; i++)
             {
                 var layout = new VoiceLayout(tune.voices[i]);
-                layout.Align();
+                layout.Init();
                 layouts.Add(layout);
 
                 if (i == 0)
@@ -157,6 +157,45 @@ namespace ABCUnity
                 {
                     if (layout.alignment.measures.Count != measureCount)
                         throw new LayoutException("All voices must have the same measure count");
+                }
+            }
+
+            CreateSprites();
+        }
+
+        void CreateSprites()
+        {
+            foreach (var layout in layouts)
+            {
+                foreach (var measure in layout.alignment.measures)
+                {
+                    foreach (var beat in measure.beats)
+                    {
+                        foreach (var beatItem in beat.items)
+                        {
+                            switch (beatItem.item.type)
+                            {
+                                case ABC.Item.Type.Note:
+                                    LayoutNote(beatItem.item as ABC.Note, layout, beatItem);
+                                    break;
+
+                                case ABC.Item.Type.Chord:
+                                    LayoutChord(beatItem.item as ABC.Chord, layout, beatItem);
+                                    break;
+
+                                case ABC.Item.Type.Rest:
+                                    LayoutRest(beatItem.item as ABC.Rest, layout, beatItem);
+                                    break;
+
+                                case ABC.Item.Type.MultiMeasureRest:
+                                    LayoutMeasureRest(beatItem.item as ABC.MultiMeasureRest, layout, beatItem);
+                                    break;
+                            }
+                            
+                            gameObjectMap[beatItem.item.id] = beatItem.container;
+                            itemMap[beatItem.container] = beatItem.item;
+                        }
+                    }
                 }
             }
         }
@@ -192,26 +231,7 @@ namespace ABCUnity
                         if (beatInfo.beatStart == beat)
                         {
                             foreach (var beatItem in beatInfo.items)
-                            {
-                                switch (beatItem.item.type)
-                                {
-                                    case ABC.Item.Type.Note:
-                                        LayoutNote(beatItem.item as ABC.Note, layout, beatItem);
-                                        break;
-
-                                    case ABC.Item.Type.Chord:
-                                        LayoutChord(beatItem.item as ABC.Chord, layout, beatItem);
-                                        break;
-
-                                    case ABC.Item.Type.Rest:
-                                        LayoutRest(beatItem.item as ABC.Rest, layout, beatItem);
-                                        break;
-
-                                    case ABC.Item.Type.MultiMeasureRest:
-                                        LayoutMeasureRest(beatItem.item as ABC.MultiMeasureRest, layout, beatItem);
-                                        break;
-                                }
-                            }
+                                PositionItem(layout, beatItem);
 
                             if (layout.beatAlignmentIndex < measureInfo.beats.Count - 1)
                                 layout.beatAlignmentIndex += 1;
@@ -282,9 +302,9 @@ namespace ABCUnity
 
             Vector3 scale = this.gameObject.transform.localScale;
             this.gameObject.transform.localScale = Vector3.one;
-
-            SetupVoiceLayouts();
+            
             beams = Beam.CreateBeams(tune);
+            SetupVoiceLayouts();
 
             for (int i = 0; i < layouts[0].scoreLines.Count; i++)
                 LayoutScoreLine(i);
@@ -391,9 +411,7 @@ namespace ABCUnity
             layout.staff.UpdateBounds(clef.bounds);
             layout.staff.position.x = clef.bounds.max.x + noteAdvance;
         }
-
         
-
         void LayoutTimeSignature(VoiceLayout layout)
         {
             var timeSignature = layout.voice.items[0] as ABC.TimeSignature;
@@ -421,84 +439,79 @@ namespace ABCUnity
             barObj.transform.parent = layout.measure.container.transform;
             barObj.transform.localPosition = layout.measure.position;
         }
+        
+        void PositionItem(VoiceLayout layout, Alignment.BeatItem beatItem)
+        {
+            beatItem.container.transform.parent = layout.measure.container.transform;
+            beatItem.container.transform.localPosition = layout.measure.position;
+
+            var totalBounding = new Bounds(beatItem.info.totalBounding.center + layout.measure.position, beatItem.info.totalBounding.size);
+            var rootBounding = new Bounds(beatItem.info.rootBounding.center + layout.measure.position, beatItem.info.rootBounding.size);
+            
+            layout.measure.UpdateBounds(totalBounding);
+            layout.measure.position.x += totalBounding.size.x + noteAdvance;
+
+            var duration = beatItem.item as ABC.Duration;
+            if (duration != null && beams.TryGetValue(duration.beam, out Beam beam))
+            {
+                beam.Update(rootBounding, cache, layout);
+            }
+        }
 
         void LayoutChord(ABC.Chord chordItem, VoiceLayout layout, Alignment.BeatItem beatItem)
         {
-            tune.decorations.TryGetValue(chordItem.id, out var decorations);
-            var container = new GameObject("Chord");
-            container.transform.parent = layout.measure.container.transform;
+            beatItem.container = new GameObject("Chord");
             
-            gameObjectMap[chordItem.id] = container;
-            itemMap[container] = chordItem;
-
+            tune.decorations.TryGetValue(chordItem.id, out var decorations);
+            
             NoteInfo chordInfo;
             if (beams.TryGetValue(chordItem.beam, out Beam beam))
             {
-                
-                chordInfo = notes.CreateChord(chordItem, beam, decorations, container, layout.measure.position);
-                beam.Update(chordInfo.rootBounding, cache, layout);
+                chordInfo = notes.CreateChord(chordItem, beam, decorations, beatItem.container);
+                //beam.Update(chordInfo.rootBounding, cache, layout);
             }
             else
             {
-                chordInfo = notes.CreateChord(chordItem, layout.voice.clef, decorations, container, layout.measure.position);
+                chordInfo = notes.CreateChord(chordItem, layout.voice.clef, decorations, beatItem.container);
             }
-
-            layout.measure.UpdateBounds(chordInfo.totalBounding);
-            layout.measure.position.x = chordInfo.totalBounding.max.x + noteAdvance;
-            beatItem.SetSprite(chordInfo, container);
+            
+            beatItem.info = chordInfo;
         }
-        
+
         void LayoutNote(ABC.Note noteItem, VoiceLayout layout, Alignment.BeatItem beatItem)
         {
+            beatItem.container = new GameObject("Note");
+
             tune.decorations.TryGetValue(noteItem.id, out var decorations);
-            var container = new GameObject("Note");
-            container.transform.parent = layout.measure.container.transform;
-            
-            gameObjectMap[noteItem.id] = container;
-            itemMap[container] = noteItem;
 
             NoteInfo noteInfo;
             if (beams.TryGetValue(noteItem.beam, out Beam beam))
             {
-                noteInfo = notes.CreateNote(noteItem, beam, decorations, container, layout.measure.position);
-                beam.Update(noteInfo.rootBounding, cache, layout);
+                noteInfo = notes.CreateNote(noteItem, beam, decorations, beatItem.container);
+                //beam.Update(noteInfo.rootBounding, cache, layout);
             }
             else
             {
-                noteInfo = notes.CreateNote(noteItem, layout.voice.clef, decorations, container, layout.measure.position);
+                noteInfo = notes.CreateNote(noteItem, layout.voice.clef, decorations, beatItem.container);
             }
             
-            layout.measure.UpdateBounds(noteInfo.totalBounding);
-            layout.measure.position.x = noteInfo.totalBounding.max.x + noteAdvance;
-            beatItem.SetSprite(noteInfo, container);
+            beatItem.info = noteInfo;
         }
 
         void LayoutRest(ABC.Rest restItem, VoiceLayout layout, Alignment.BeatItem beatItem)
         {
-            var container = new GameObject("Rest");
-            container.transform.parent = layout.measure.container.transform;
+            beatItem.container = new GameObject("Rest");
 
-            gameObjectMap[restItem.id] = container;
-            itemMap[container] = restItem;
-            
-            var restInfo = notes.CreateRest(restItem, container, layout.measure.position);
-            layout.measure.UpdateBounds(restInfo.totalBounding);
-            layout.measure.position.x = restInfo.totalBounding.max.x + noteAdvance;
-            beatItem.SetSprite(restInfo, container);
+            var restInfo = notes.CreateRest(restItem, beatItem.container , layout.measure.position);
+            beatItem.info = restInfo;
         }
 
         void LayoutMeasureRest(ABC.MultiMeasureRest measureRest, VoiceLayout layout, Alignment.BeatItem beatItem)
         {
-            var container = new GameObject("Rest");
-            container.transform.parent = layout.measure.container.transform;
+            beatItem.container = new GameObject("Rest");
 
-            gameObjectMap[measureRest.id] = container;
-            itemMap[container] = measureRest;
-
-            var restInfo = notes.CreateMeasureRest(measureRest, container, layout.measure.position);
-            layout.measure.UpdateBounds(restInfo.totalBounding);
-            layout.measure.position.x = restInfo.totalBounding.max.x + noteAdvance;
-            beatItem.SetSprite(restInfo, container);
+            var restInfo = notes.CreateMeasureRest(measureRest, beatItem.container, layout.measure.position);
+            beatItem.info = restInfo;
         }
     }
 }
