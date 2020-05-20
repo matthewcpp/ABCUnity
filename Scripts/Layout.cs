@@ -134,7 +134,7 @@ namespace ABCUnity
 
         private float horizontalMax;
 
-        public BeatAlignment GetAlignment(int i)
+        public Alignment GetAlignment(int i)
         {
             return layouts[i].alignment;
         }
@@ -422,7 +422,7 @@ namespace ABCUnity
             barObj.transform.localPosition = layout.measure.position;
         }
 
-        void LayoutChord(ABC.Chord chordItem, VoiceLayout layout, BeatAlignment.BeatItem beatItem)
+        void LayoutChord(ABC.Chord chordItem, VoiceLayout layout, Alignment.BeatItem beatItem)
         {
             tune.decorations.TryGetValue(chordItem.id, out var decorations);
             var container = new GameObject("Chord");
@@ -448,7 +448,7 @@ namespace ABCUnity
             beatItem.SetSprite(chordInfo, container);
         }
         
-        void LayoutNote(ABC.Note noteItem, VoiceLayout layout, BeatAlignment.BeatItem beatItem)
+        void LayoutNote(ABC.Note noteItem, VoiceLayout layout, Alignment.BeatItem beatItem)
         {
             tune.decorations.TryGetValue(noteItem.id, out var decorations);
             var container = new GameObject("Note");
@@ -473,7 +473,7 @@ namespace ABCUnity
             beatItem.SetSprite(noteInfo, container);
         }
 
-        void LayoutRest(ABC.Rest restItem, VoiceLayout layout, BeatAlignment.BeatItem beatItem)
+        void LayoutRest(ABC.Rest restItem, VoiceLayout layout, Alignment.BeatItem beatItem)
         {
             var container = new GameObject("Rest");
             container.transform.parent = layout.measure.container.transform;
@@ -487,7 +487,7 @@ namespace ABCUnity
             beatItem.SetSprite(restInfo, container);
         }
 
-        void LayoutMeasureRest(ABC.MultiMeasureRest measureRest, VoiceLayout layout, BeatAlignment.BeatItem beatItem)
+        void LayoutMeasureRest(ABC.MultiMeasureRest measureRest, VoiceLayout layout, Alignment.BeatItem beatItem)
         {
             var container = new GameObject("Rest");
             container.transform.parent = layout.measure.container.transform;

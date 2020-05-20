@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ABCUnity
 {
-    public class BeatAlignment
+    public class Alignment
     {
         public class BeatItem
         {

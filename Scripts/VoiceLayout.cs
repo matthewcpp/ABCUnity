@@ -37,12 +37,12 @@ namespace ABCUnity
         public Metrics staff { get; private set; }
         public Metrics measure { get; private set; }
 
-        public List<List<BeatAlignment.Measure>> scoreLines { get; } = new List<List<BeatAlignment.Measure>>();
+        public List<List<Alignment.Measure>> scoreLines { get; } = new List<List<Alignment.Measure>>();
 
         public VoiceLayout(ABC.Voice v)
         {
             voice = v;
-            alignment = new BeatAlignment();
+            alignment = new Alignment();
 
             staff = new Metrics();
             staff.container = new GameObject();
@@ -59,14 +59,14 @@ namespace ABCUnity
             foreach (var measure in alignment.measures)
             {
                 if (measure.lineNumber >= scoreLines.Count)
-                    scoreLines.Add(new List<BeatAlignment.Measure>());
+                    scoreLines.Add(new List<Alignment.Measure>());
 
                 scoreLines[measure.lineNumber].Add(measure);
             }
         }
 
         /// <summary>Beat map for the voice.</summary>
-        public BeatAlignment alignment { get; }
+        public Alignment alignment { get; }
 
         /// <summary>The index of the current beat that is active for this measure.</summary>
         public int beatAlignmentIndex { get; set; } = 0;
