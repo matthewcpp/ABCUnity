@@ -37,7 +37,7 @@ namespace ABCUnity
         public Metrics staff { get; private set; }
         public Metrics measure { get; private set; }
 
-        public List<List<BeatAlignment.MeasureInfo>> scoreLines { get; } = new List<List<BeatAlignment.MeasureInfo>>();
+        public List<List<BeatAlignment.Measure>> scoreLines { get; } = new List<List<BeatAlignment.Measure>>();
 
         public VoiceLayout(ABC.Voice v)
         {
@@ -59,7 +59,7 @@ namespace ABCUnity
             foreach (var measure in alignment.measures)
             {
                 if (measure.lineNumber >= scoreLines.Count)
-                    scoreLines.Add(new List<BeatAlignment.MeasureInfo>());
+                    scoreLines.Add(new List<BeatAlignment.Measure>());
 
                 scoreLines[measure.lineNumber].Add(measure);
             }

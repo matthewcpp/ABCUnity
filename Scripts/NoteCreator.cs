@@ -6,6 +6,18 @@ using System.Runtime.CompilerServices;
 
 namespace ABCUnity
 {
+    public struct NoteInfo
+    {
+        public NoteInfo(Bounds rootBounding, Bounds bounding)
+        {
+            this.rootBounding = rootBounding;
+            this.totalBounding = bounding;
+        }
+
+        public Bounds rootBounding;
+        public Bounds totalBounding;
+    }
+    
     class NoteCreator
     {
         private SpriteCache spriteCache;
@@ -38,18 +50,6 @@ namespace ABCUnity
 
         /// <summary> Distance between dots </summary>
         const float dotAdvance = 0.2f;
-
-        public struct NoteInfo
-        {
-            public NoteInfo(Bounds rootBounding, Bounds bounding)
-            {
-                this.rootBounding = rootBounding;
-                this.totalBounding = bounding;
-            }
-
-            public Bounds rootBounding;
-            public Bounds totalBounding;
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool NeedsStaffMarkers(int stepCount)

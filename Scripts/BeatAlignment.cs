@@ -8,33 +8,51 @@ namespace ABCUnity
     {
         public class BeatItem
         {
-            public List<ABC.Item> items = new List<ABC.Item>();
-            public int beatStart;
+            public ABC.Item item { get; }
+            public GameObject container;
+            public NoteInfo info = new NoteInfo();
 
-            public BeatItem(int beatStart)
+            public BeatItem(ABC.Item item)
+            {
+                this.item = item;
+            }
+
+            public void SetSprite(NoteInfo info, GameObject container)
+            {
+                this.info = info;
+                this.container = container;
+            }
+        }
+        
+        public class Beat
+        {
+            public List<BeatItem> items = new List<BeatItem>();
+            public int beatStart { get; }
+
+            public Beat(int beatStart)
             {
                 this.beatStart = beatStart;
             }
         }
 
-        public class MeasureInfo
+        public class Measure
         {
-            public List<BeatItem> beatItems { get; } = new List<BeatItem>();
+            public List<Beat> beats { get; } = new List<Beat>();
             public ABC.Bar bar;
             public int lineNumber { get; set; }
 
-            public MeasureInfo(int lineNumber)
+            public Measure(int lineNumber)
             {
                 this.lineNumber = lineNumber;
             }
         }
 
-        public List<MeasureInfo> measures { get; private set; }
+        public List<Measure> measures { get; private set; }
         TimeSignature timeSignature;
 
         public void Create(ABC.Voice voice)
         {
-            measures = new List<MeasureInfo>();
+            measures = new List<Measure>();
 
             if (voice.items.Count == 0) return;
 
@@ -48,8 +66,8 @@ namespace ABCUnity
             int currentBeat = 1;
             int lineNumber = 0;
 
-            MeasureInfo measure = new MeasureInfo(lineNumber);
-            BeatItem beatItem = new BeatItem(currentBeat);
+            Measure measure = new Measure(lineNumber);
+            Beat beat = new Beat(currentBeat);
 
             for (int i = 1; i < voice.items.Count; i++)
             {
@@ -59,15 +77,15 @@ namespace ABCUnity
                     case ABC.Item.Type.Rest:
                     case ABC.Item.Type.Note:
                         var noteItem = voice.items[i] as ABC.Duration;
-                        beatItem.items.Add(noteItem);
+                        beat.items.Add(new BeatItem(noteItem));
                         t += noteItem.duration;
 
                         if (t >= timeSignature.noteValue) // current beat is filled
                         {
-                            measure.beatItems.Add(beatItem);
+                            measure.beats.Add(beat);
                             float beatCount = Mathf.Floor(t / timeSignature.noteValue);
                             currentBeat += (int)beatCount;
-                            beatItem = new BeatItem(currentBeat);
+                            beat = new Beat(currentBeat);
                             t -= beatCount * timeSignature.noteValue;
                         }
 
@@ -79,19 +97,19 @@ namespace ABCUnity
                         if (measureRest.count > 1)
                             throw new LayoutException("Measure Rests of length greater than 1 are not currently supported.");
 
-                        beatItem.items.Add(measureRest);
+                        beat.items.Add(new BeatItem(measureRest));
 
                         break;
 
                     case ABC.Item.Type.Bar:
-                        if (beatItem.items.Count > 0)
-                            measure.beatItems.Add(beatItem);
+                        if (beat.items.Count > 0)
+                            measure.beats.Add(beat);
 
                         measures.Add(measure);
-                        measure = new MeasureInfo(lineNumber);
+                        measure = new Measure(lineNumber);
 
                         currentBeat = 1;
-                        beatItem = new BeatItem(currentBeat);
+                        beat = new Beat(currentBeat);
                         t = 0.0f;
                         break;
 
@@ -102,10 +120,10 @@ namespace ABCUnity
                 }
             }
 
-            if (beatItem.items.Count > 0)
-                measure.beatItems.Add(beatItem);
+            if (beat.items.Count > 0)
+                measure.beats.Add(beat);
 
-            if (measure.beatItems.Count > 0)
+            if (measure.beats.Count > 0)
                 measures.Add(measure);
         }
     }
