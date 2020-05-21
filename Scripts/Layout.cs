@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using ABC;
 using TMPro;
 using UnityEngine;
 using UnityEngine.U2D;
@@ -81,7 +80,7 @@ namespace ABCUnity
         }
 
         public Dictionary<int, GameObject> gameObjectMap { get; } = new Dictionary<int, GameObject>();
-        public Dictionary<GameObject, ABC.Item> itemMap { get; } = new Dictionary<GameObject, Item>();
+        public Dictionary<GameObject, ABC.Item> itemMap { get; } = new Dictionary<GameObject, ABC.Item>();
         private Dictionary<int, List<SpriteRenderer>> spriteRendererCache = new Dictionary<int, List<SpriteRenderer>>();
         private TimeSignature timeSignature;
 
@@ -191,10 +190,24 @@ namespace ABCUnity
                                     LayoutMeasureRest(beatItem.item as ABC.MultiMeasureRest, layout, beatItem);
                                     break;
                             }
-                            
+
+                            beat.minSize.x += beatItem.info.totalBounding.size.x + noteAdvance;
+                            beat.minSize.y = Mathf.Max(beat.minSize.y, beatItem.info.totalBounding.size.y);
+
                             gameObjectMap[beatItem.item.id] = beatItem.container;
                             itemMap[beatItem.container] = beatItem.item;
                         }
+
+                        measure.minSize.x += beat.minSize.x;
+                        measure.minSize.y = Mathf.Max(measure.minSize.y, beat.minSize.y);
+                    }
+
+                    if (measure.bar != null)
+                    {
+                        measure.bar.container = new GameObject("Bar");
+                        measure.bar.info = notes.CreateBar(measure.bar.item as ABC.Bar, measure.bar.container);
+                        measure.minSize.x += measure.bar.info.totalBounding.size.x;
+                        measure.minSize.y = Mathf.Max(measure.minSize.y, measure.bar.info.totalBounding.size.y);
                     }
                 }
             }
@@ -250,8 +263,8 @@ namespace ABCUnity
                 // render the bar to end the measure and ensure they will all fit on new staff line
                 foreach (var layout in layouts)
                 {
-                    var measureInfo = layout.alignment.measures[measure];
-                    LayoutBar(measureInfo.bar, layout);
+                    var measureInfo = layout.scoreLines[lineNum][measure];
+                    PositionBar(measureInfo.bar, layout);
 
                     // TODO: This calculation probably needs adjusting to be totally correct.
                     if (layout.staff.position.x + layout.measure.position.x > horizontalMax)
@@ -433,11 +446,14 @@ namespace ABCUnity
             layout.currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
         }
 
-        void LayoutBar(ABC.Bar barItem, VoiceLayout layout)
+        void PositionBar(Alignment.BeatItem bar, VoiceLayout layout)
         {
-            var barObj = cache.GetSpriteObject("Bar_Line");
-            barObj.transform.parent = layout.measure.container.transform;
-            barObj.transform.localPosition = layout.measure.position;
+            bar.container.transform.parent = layout.measure.container.transform;
+            bar.container.transform.localPosition = layout.measure.position;
+
+            var totalBounding = new Bounds(bar.info.totalBounding.center + layout.measure.position, bar.info.totalBounding.size);
+            layout.measure.UpdateBounds(totalBounding);
+            layout.measure.position.x += totalBounding.size.x;
         }
         
         void PositionItem(VoiceLayout layout, Alignment.BeatItem beatItem)
@@ -453,9 +469,7 @@ namespace ABCUnity
 
             var duration = beatItem.item as ABC.Duration;
             if (duration != null && beams.TryGetValue(duration.beam, out Beam beam))
-            {
                 beam.Update(rootBounding, cache, layout);
-            }
         }
 
         void LayoutChord(ABC.Chord chordItem, VoiceLayout layout, Alignment.BeatItem beatItem)
@@ -466,14 +480,9 @@ namespace ABCUnity
             
             NoteInfo chordInfo;
             if (beams.TryGetValue(chordItem.beam, out Beam beam))
-            {
                 chordInfo = notes.CreateChord(chordItem, beam, decorations, beatItem.container);
-                //beam.Update(chordInfo.rootBounding, cache, layout);
-            }
             else
-            {
                 chordInfo = notes.CreateChord(chordItem, layout.voice.clef, decorations, beatItem.container);
-            }
             
             beatItem.info = chordInfo;
         }
@@ -486,14 +495,9 @@ namespace ABCUnity
 
             NoteInfo noteInfo;
             if (beams.TryGetValue(noteItem.beam, out Beam beam))
-            {
                 noteInfo = notes.CreateNote(noteItem, beam, decorations, beatItem.container);
-                //beam.Update(noteInfo.rootBounding, cache, layout);
-            }
             else
-            {
                 noteInfo = notes.CreateNote(noteItem, layout.voice.clef, decorations, beatItem.container);
-            }
             
             beatItem.info = noteInfo;
         }

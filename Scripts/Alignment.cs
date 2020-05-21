@@ -27,18 +27,22 @@ namespace ABCUnity
             {
                 this.beatStart = beatStart;
             }
+
+            public Vector2 minSize = Vector2.zero;
         }
 
         public class Measure
         {
             public List<Beat> beats { get; } = new List<Beat>();
-            public ABC.Bar bar;
+            public BeatItem bar;
             public int lineNumber { get; set; }
 
             public Measure(int lineNumber)
             {
                 this.lineNumber = lineNumber;
             }
+
+            public Vector2 minSize = Vector2.zero;
         }
 
         public List<Measure> measures { get; private set; }
@@ -96,6 +100,8 @@ namespace ABCUnity
                         break;
 
                     case ABC.Item.Type.Bar:
+                        measure.bar = new BeatItem(voice.items[i]);
+
                         if (beat.items.Count > 0)
                             measure.beats.Add(beat);
 

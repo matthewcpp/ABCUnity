@@ -611,5 +611,13 @@ namespace ABCUnity
 
             return new NoteInfo(bounds, bounds);
         }
+
+        public NoteInfo CreateBar(ABC.Bar bar, GameObject container)
+        {
+            var sprite = spriteCache.GetSpriteObject($"Bar_{bar.kind}");
+            sprite.transform.parent = container.transform;
+
+            return new NoteInfo(sprite.bounds, sprite.bounds);
+        }
     }
 }
