@@ -175,19 +175,19 @@ namespace ABCUnity
                             switch (beatItem.item.type)
                             {
                                 case ABC.Item.Type.Note:
-                                    LayoutNote(beatItem.item as ABC.Note, layout, beatItem);
+                                    CreateNoteSprite(beatItem.item as ABC.Note, layout, beatItem);
                                     break;
 
                                 case ABC.Item.Type.Chord:
-                                    LayoutChord(beatItem.item as ABC.Chord, layout, beatItem);
+                                    CreateChordSprite(beatItem.item as ABC.Chord, layout, beatItem);
                                     break;
 
                                 case ABC.Item.Type.Rest:
-                                    LayoutRest(beatItem.item as ABC.Rest, layout, beatItem);
+                                    CreateRestSprite(beatItem.item as ABC.Rest, layout, beatItem);
                                     break;
 
                                 case ABC.Item.Type.MultiMeasureRest:
-                                    LayoutMeasureRest(beatItem.item as ABC.MultiMeasureRest, layout, beatItem);
+                                    CreateMeasureRestSprite(beatItem.item as ABC.MultiMeasureRest, layout, beatItem);
                                     break;
                             }
 
@@ -446,7 +446,7 @@ namespace ABCUnity
             layout.currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
         }
 
-        void PositionBar(Alignment.BeatItem bar, VoiceLayout layout)
+        void PositionBar(Alignment.Item bar, VoiceLayout layout)
         {
             bar.container.transform.parent = layout.measure.container.transform;
             bar.container.transform.localPosition = layout.measure.position;
@@ -456,7 +456,7 @@ namespace ABCUnity
             layout.measure.position.x += totalBounding.size.x;
         }
         
-        void PositionItem(VoiceLayout layout, Alignment.BeatItem beatItem)
+        void PositionItem(VoiceLayout layout, Alignment.Item beatItem)
         {
             beatItem.container.transform.parent = layout.measure.container.transform;
             beatItem.container.transform.localPosition = layout.measure.position;
@@ -472,7 +472,7 @@ namespace ABCUnity
                 beam.Update(rootBounding, cache, layout);
         }
 
-        void LayoutChord(ABC.Chord chordItem, VoiceLayout layout, Alignment.BeatItem beatItem)
+        void CreateChordSprite(ABC.Chord chordItem, VoiceLayout layout, Alignment.Item beatItem)
         {
             beatItem.container = new GameObject("Chord");
             
@@ -487,7 +487,7 @@ namespace ABCUnity
             beatItem.info = chordInfo;
         }
 
-        void LayoutNote(ABC.Note noteItem, VoiceLayout layout, Alignment.BeatItem beatItem)
+        void CreateNoteSprite(ABC.Note noteItem, VoiceLayout layout, Alignment.Item beatItem)
         {
             beatItem.container = new GameObject("Note");
 
@@ -502,7 +502,7 @@ namespace ABCUnity
             beatItem.info = noteInfo;
         }
 
-        void LayoutRest(ABC.Rest restItem, VoiceLayout layout, Alignment.BeatItem beatItem)
+        void CreateRestSprite(ABC.Rest restItem, VoiceLayout layout, Alignment.Item beatItem)
         {
             beatItem.container = new GameObject("Rest");
 
@@ -510,7 +510,7 @@ namespace ABCUnity
             beatItem.info = restInfo;
         }
 
-        void LayoutMeasureRest(ABC.MultiMeasureRest measureRest, VoiceLayout layout, Alignment.BeatItem beatItem)
+        void CreateMeasureRestSprite(ABC.MultiMeasureRest measureRest, VoiceLayout layout, Alignment.Item beatItem)
         {
             beatItem.container = new GameObject("Rest");
 

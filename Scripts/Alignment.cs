@@ -6,13 +6,13 @@ namespace ABCUnity
 {
     public class Alignment
     {
-        public class BeatItem
+        public class Item
         {
             public ABC.Item item { get; }
             public GameObject container;
             public NoteInfo info;
 
-            public BeatItem(ABC.Item item)
+            public Item(ABC.Item item)
             {
                 this.item = item;
             }
@@ -20,7 +20,7 @@ namespace ABCUnity
         
         public class Beat
         {
-            public List<BeatItem> items = new List<BeatItem>();
+            public List<Item> items = new List<Item>();
             public int beatStart { get; }
 
             public Beat(int beatStart)
@@ -34,7 +34,7 @@ namespace ABCUnity
         public class Measure
         {
             public List<Beat> beats { get; } = new List<Beat>();
-            public BeatItem bar;
+            public Item bar;
             public int lineNumber { get; set; }
 
             public Measure(int lineNumber)
@@ -75,7 +75,7 @@ namespace ABCUnity
                     case ABC.Item.Type.Rest:
                     case ABC.Item.Type.Note:
                         var noteItem = voice.items[i] as ABC.Duration;
-                        beat.items.Add(new BeatItem(noteItem));
+                        beat.items.Add(new Item(noteItem));
                         t += noteItem.duration;
 
                         if (t >= timeSignature.noteValue) // current beat is filled
@@ -95,12 +95,12 @@ namespace ABCUnity
                         if (measureRest.count > 1)
                             throw new LayoutException("Measure Rests of length greater than 1 are not currently supported.");
 
-                        beat.items.Add(new BeatItem(measureRest));
+                        beat.items.Add(new Item(measureRest));
 
                         break;
 
                     case ABC.Item.Type.Bar:
-                        measure.bar = new BeatItem(voice.items[i]);
+                        measure.bar = new Item(voice.items[i]);
 
                         if (beat.items.Count > 0)
                             measure.beats.Add(beat);
