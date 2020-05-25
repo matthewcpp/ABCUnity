@@ -541,21 +541,21 @@ namespace ABCUnity
             { ABC.Length.Whole, 1.41f }, { ABC.Length.Half, 1.16f }, { ABC.Length.Quarter, 0.3f}, { ABC.Length.Eighth, 0.0f}, { ABC.Length.Sixteenth, 0.0f }
         };
 
-        public NoteInfo CreateRest(ABC.Rest rest, GameObject container, Vector3 offset)
+        public NoteInfo CreateRest(ABC.Rest rest, GameObject container)
         {
             var restSprite = rest.length == ABC.Length.Whole ? "Rest_Half" : $"Rest_{rest.length}";
             var restObj = spriteCache.GetSpriteObject(restSprite);
             restObj.transform.parent = container.transform;
-            restObj.transform.localPosition = offset + new Vector3(0.0f, restHeight[rest.length], 0.0f);
+            restObj.transform.localPosition = new Vector3(0.0f, restHeight[rest.length], 0.0f);
 
             return new NoteInfo(restObj.bounds, restObj.bounds);
         }
 
-        public NoteInfo CreateMeasureRest(ABC.MultiMeasureRest rest, GameObject container, Vector3 offset)
+        public NoteInfo CreateMeasureRest(ABC.MultiMeasureRest rest, GameObject container)
         {
             var restObj = spriteCache.GetSpriteObject("Rest_Half");
             restObj.transform.parent = container.transform;
-            restObj.transform.localPosition = offset + new Vector3(0.0f, restHeight[ABC.Length.Whole], 0.0f);
+            restObj.transform.localPosition = new Vector3(0.0f, restHeight[ABC.Length.Whole], 0.0f);
 
             return new NoteInfo(restObj.bounds, restObj.bounds);
         }
@@ -580,7 +580,7 @@ namespace ABCUnity
 
         const float TimeSignatureY = 1.15f;
 
-        public NoteInfo CreateTimeSignature(ABC.TimeSignature timeSignature, GameObject container, Vector3 offset)
+        public NoteInfo CreateTimeSignature(ABC.TimeSignature timeSignature, GameObject container)
         {
             var bounds = new Bounds();
 
@@ -589,7 +589,7 @@ namespace ABCUnity
                 var spriteName = (timeSignature.value == "C") ? "Time_Common" : "Time_Cut";
                 var commonTime = spriteCache.GetSpriteObject(spriteName);
                 commonTime.transform.parent = container.transform;
-                commonTime.transform.localPosition = offset + new Vector3(0.0f, TimeSignatureY, 0.0f);
+                commonTime.transform.localPosition = new Vector3(0.0f, TimeSignatureY, 0.0f);
                 bounds = commonTime.bounds;
             }
             else
@@ -600,12 +600,12 @@ namespace ABCUnity
 
                 var sprite = spriteCache.GetSpriteObject($"Time_{pieces[0]}");
                 sprite.transform.parent = container.transform;
-                sprite.transform.localPosition = offset + new Vector3(0.0f, TimeSignatureY, 0.0f);
+                sprite.transform.localPosition = new Vector3(0.0f, TimeSignatureY, 0.0f);
                 bounds = sprite.bounds;
 
                 sprite = spriteCache.GetSpriteObject($"Time_{pieces[1]}");
                 sprite.transform.parent = container.transform;
-                sprite.transform.localPosition = offset;
+                sprite.transform.localPosition = Vector3.zero;
                 bounds.Encapsulate(sprite.bounds);
             }
 

@@ -11,6 +11,7 @@ namespace ABCUnity
             public ABC.Item item { get; }
             public GameObject container;
             public NoteInfo info;
+            public float referencePosition; // relative position within the measure
 
             public Item(ABC.Item item)
             {
@@ -28,7 +29,7 @@ namespace ABCUnity
                 this.beatStart = beatStart;
             }
 
-            public Vector2 minSize = Vector2.zero;
+            public float contentWidth = 0.0f;
         }
 
         public class Measure
@@ -42,7 +43,21 @@ namespace ABCUnity
                 this.lineNumber = lineNumber;
             }
 
-            public Vector2 minSize = Vector2.zero;
+            public Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
+            public void EncapsulateAppendedBounds(Bounds bounding)
+            {
+                bounds.Encapsulate(new Bounds(bounding.center + new Vector3(insertX, 0.0f, 0.0f), bounding.size));
+            }
+            
+            public void AdvaceInsertPos(float amount)
+            {
+                var pos = new Vector3(insertX, 0.0f, 0.0f);
+                pos.x += amount;
+                bounds.Encapsulate(pos);
+            }
+
+            public float insertX { get { return bounds.size.x; } }
+            public GameObject container;
         }
 
         public List<Measure> measures { get; private set; }

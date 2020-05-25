@@ -169,7 +169,7 @@ namespace ABCUnity
                 {
                     case Type.Basic:
                     case Type.Straight:
-                        CreateBasicBeam(bounds, cache, layout.measure.container);
+                        //CreateBasicBeam(bounds, cache, layout.measure.container);
                         break;
 
                     case Type.Angle:

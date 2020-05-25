@@ -9,18 +9,10 @@ namespace ABCUnity
 {
     public class Layout : MonoBehaviour
     {
-        [SerializeField]
-        private SpriteAtlas spriteAtlas; // set in editor
-
-        [SerializeField]
-        public float layoutScale = 0.5f;
-        
-        [SerializeField]
-        public Color color = Color.black;
-
-        [SerializeField]
-        public Material NoteMaterial;
-
+        [SerializeField] private SpriteAtlas spriteAtlas; // set in editor
+        [SerializeField] public float layoutScale = 0.5f;
+        [SerializeField] public Color color = Color.black;
+        [SerializeField] public Material NoteMaterial;
         [SerializeField] public TextMeshPro textPrefab;
 
         private SpriteCache cache;
@@ -122,7 +114,7 @@ namespace ABCUnity
         }
 
         public const float staffPadding = 0.3f;
-        const float measurePadding = 0.5f;
+        public const float measurePadding = 0.5f;
         const float staffMargin = 0.2f;
         public const float noteAdvance = 0.75f;
 
@@ -158,77 +150,19 @@ namespace ABCUnity
                         throw new LayoutException("All voices must have the same measure count");
                 }
             }
-
-            CreateSprites();
-        }
-
-        void CreateSprites()
-        {
-            foreach (var layout in layouts)
-            {
-                foreach (var measure in layout.alignment.measures)
-                {
-                    foreach (var beat in measure.beats)
-                    {
-                        foreach (var beatItem in beat.items)
-                        {
-                            switch (beatItem.item.type)
-                            {
-                                case ABC.Item.Type.Note:
-                                    CreateNoteSprite(beatItem.item as ABC.Note, layout, beatItem);
-                                    break;
-
-                                case ABC.Item.Type.Chord:
-                                    CreateChordSprite(beatItem.item as ABC.Chord, layout, beatItem);
-                                    break;
-
-                                case ABC.Item.Type.Rest:
-                                    CreateRestSprite(beatItem.item as ABC.Rest, layout, beatItem);
-                                    break;
-
-                                case ABC.Item.Type.MultiMeasureRest:
-                                    CreateMeasureRestSprite(beatItem.item as ABC.MultiMeasureRest, layout, beatItem);
-                                    break;
-                            }
-
-                            beat.minSize.x += beatItem.info.totalBounding.size.x + noteAdvance;
-                            beat.minSize.y = Mathf.Max(beat.minSize.y, beatItem.info.totalBounding.size.y);
-
-                            gameObjectMap[beatItem.item.id] = beatItem.container;
-                            itemMap[beatItem.container] = beatItem.item;
-                        }
-
-                        measure.minSize.x += beat.minSize.x;
-                        measure.minSize.y = Mathf.Max(measure.minSize.y, beat.minSize.y);
-                    }
-
-                    if (measure.bar != null)
-                    {
-                        measure.bar.container = new GameObject("Bar");
-                        measure.bar.info = notes.CreateBar(measure.bar.item as ABC.Bar, measure.bar.container);
-                        measure.minSize.x += measure.bar.info.totalBounding.size.x;
-                        measure.minSize.y = Mathf.Max(measure.minSize.y, measure.bar.info.totalBounding.size.y);
-                    }
-                }
-            }
         }
 
         void LayoutScoreLine(int lineNum)
         {
-            foreach (var layout in layouts)
-            {
-                layout.NewStaffline();
-                LayoutStaff(layout);
-                if (lineNum == 0)
-                    LayoutTimeSignature(layout);
-            }
-
-            for (int measure = 0; measure < layouts[0].scoreLines[lineNum].Count; measure++)
+            for (int measure = 0; measure < layouts[0].scoreLines[lineNum].measures.Count; measure++)
             {
                 foreach (var layout in layouts)
                 {
-                    layout.NewMeasure();
-                    layout.measure.position.x = measurePadding;
+                    layout.beatAlignmentIndex = 0;
+                    var scoreLine = layout.scoreLines[lineNum];
+                    var measureInfo = scoreLine.measures[measure];
+                    measureInfo.container = new GameObject("Measure");
+                    measureInfo.AdvaceInsertPos(measurePadding);
                 }
 
                 for (int beat = 1; beat <= timeSignature.beatCount; beat++)
@@ -237,66 +171,150 @@ namespace ABCUnity
 
                     foreach (var layout in layouts)
                     {
-                        var measureInfo = layout.scoreLines[lineNum][measure];
+                        var scoreLine = layout.scoreLines[lineNum];
+                        var measureInfo = scoreLine.measures[measure];
                         var beatInfo = measureInfo.beats[layout.beatAlignmentIndex];
 
                         // if this beat is the start of a new group of notes render them
                         if (beatInfo.beatStart == beat)
                         {
                             foreach (var beatItem in beatInfo.items)
-                                PositionItem(layout, beatItem);
+                            {
+                                switch (beatItem.item.type)
+                                {
+                                    case ABC.Item.Type.Note:
+                                        CreateNoteSprite(layout.voice.clef, beatItem);
+                                        break;
+
+                                    case ABC.Item.Type.Chord:
+                                        CreateChordSprite(layout.voice.clef, beatItem);
+                                        break;
+
+                                    case ABC.Item.Type.Rest:
+                                        CreateRestSprite(beatItem);
+                                        break;
+
+                                    case ABC.Item.Type.MultiMeasureRest:
+                                        CreateMeasureRestSprite(beatItem);
+                                        break;
+                                }
+
+                                SetItemReferencePosition(beatItem, measureInfo);
+                                measureInfo.AdvaceInsertPos(noteAdvance);
+                                beatItem.container.transform.parent = measureInfo.container.transform;
+                            }
 
                             if (layout.beatAlignmentIndex < measureInfo.beats.Count - 1)
                                 layout.beatAlignmentIndex += 1;
                         }
 
-                        maxBeatX = Math.Max(maxBeatX, layout.measure.position.x);
+                        maxBeatX = Math.Max(maxBeatX, measureInfo.bounds.size.x);
                     }
 
                     // in order to preserve alignment, all layouts will advance to the furthest position of the current beat marker
                     foreach (var layout in layouts)
-                        layout.measure.position.x = maxBeatX;
-                }
-
-                bool newLineNeeded = false;
-
-                // render the bar to end the measure and ensure they will all fit on new staff line
-                foreach (var layout in layouts)
-                {
-                    var measureInfo = layout.scoreLines[lineNum][measure];
-                    PositionBar(measureInfo.bar, layout);
-
-                    // TODO: This calculation probably needs adjusting to be totally correct.
-                    if (layout.staff.position.x + layout.measure.position.x > horizontalMax)
-                        newLineNeeded = true;
-                }
-
-                if (newLineNeeded)
-                {
-                    FinalizeStaffLines();
-
-                    foreach (var layout in layouts)
                     {
-                        layout.NewStaffline();
-                        LayoutStaff(layout);
+                        var measureInfo = layout.scoreLines[lineNum].measures[measure];
+                        measureInfo.bounds.Encapsulate(new Vector3(maxBeatX, 0.0f, 0.0f));
                     }
                 }
 
-                // Add the measure to the staff line
                 foreach (var layout in layouts)
                 {
-                    CreateMeshForMeasure(layout);
+                    var measureInfo = layout.scoreLines[lineNum].measures[measure];
+                    CreateBarSprite(measureInfo.bar);
+                    SetItemReferencePosition(measureInfo.bar, measureInfo);
+                    measureInfo.bar.container.transform.parent = measureInfo.container.transform;
+                }
+            }
+        }
 
-                    float measureAdjustment = calculateMeasureAdjustment();
+        void RenderScoreLine(int lineNum)
+        {
+            float startX = float.MinValue;
 
-                    layout.measure.container.transform.localPosition = layout.staff.position + new Vector3(measureAdjustment, 0.0f, 0.0f);
-                    layout.measure.container.transform.parent = layout.staff.container.transform;
-                    layout.staff.position.x += layout.measure.position.x + measureAdjustment;
-                    layout.UpdateStaffBounding();
+            foreach (var layout in layouts)
+            {
+                var scoreLine = layout.scoreLines[lineNum];
+                scoreLine.container = new GameObject("ScoreLine");
+                LayoutStaff(scoreLine, layout.voice.clef);
+
+                startX = Mathf.Max(startX, scoreLine.insertX);
+            }
+
+            foreach (var layout in layouts)
+            {
+                var scoreLine = layout.scoreLines[lineNum];
+                scoreLine.AdvaceInsertPos(startX - scoreLine.insertX + staffPadding);
+            }
+
+            if (lineNum == 0)
+            {
+                foreach (var layout in layouts)
+                {
+                    var scoreLine = layout.scoreLines[lineNum];
+                    var timeSignature = layout.voice.items[0] as ABC.TimeSignature;
+                    LayoutTimeSignature(scoreLine, timeSignature);
                 }
             }
 
-            FinalizeStaffLines();
+            var measureWidths = CalculateMeasureWidths(layouts[0].scoreLines[lineNum]);
+
+            foreach (var layout in layouts)
+            {
+                var scoreLine = layout.scoreLines[lineNum];
+                for (int i = 0; i < scoreLine.measures.Count; i++)
+                {
+                    var measure = scoreLine.measures[i];
+                    var actualMeasureBounds = SetMeasureItemPositions(measure, measureWidths[i]);
+                    measure.container.transform.parent = scoreLine.container.transform;
+                    measure.container.transform.localPosition = scoreLine.insertPos;
+                    scoreLine.EncapsulateAppendedBounds(actualMeasureBounds);
+                }
+            }
+
+            FinalizeScoreLine(lineNum);
+        }
+
+        // TODO: this should calculate the proportional scaled widths for each measurement
+        float[] CalculateMeasureWidths(VoiceLayout.ScoreLine scoreLine)
+        {
+            float[] measureWidths = new float[scoreLine.measures.Count];
+            float referenceWidth = 0.0f;
+            float allocatedSpace = horizontalMax - scoreLine.insertX;
+            for (int i = 0; i < scoreLine.measures.Count; i++)
+            {
+                measureWidths[i] = scoreLine.measures[i].insertX;
+                referenceWidth += measureWidths[i];
+            }
+
+            for (int i = 0; i < scoreLine.measures.Count; i++)
+                measureWidths[i] = (measureWidths[i] / referenceWidth) * allocatedSpace;
+
+            return measureWidths;
+        }
+
+        Bounds SetMeasureItemPositions(Alignment.Measure measure, float actualmeasureWidth)
+        {
+            Bounds actualBounds = new Bounds(Vector3.zero, Vector3.zero);
+
+            foreach (var beat in measure.beats)
+            {
+                foreach (var item in beat.items)
+                    SetMeasureItemPosition(item, measure, actualmeasureWidth, ref actualBounds);
+
+                SetMeasureItemPosition(measure.bar, measure, actualmeasureWidth, ref actualBounds);
+            }
+
+            return actualBounds;
+        }
+
+        void SetMeasureItemPosition(Alignment.Item item, Alignment.Measure measure, float actualmeasureWidth, ref Bounds actualBounds)
+        {
+            float positionX = (item.referencePosition / measure.insertX) * actualmeasureWidth;
+            Vector3 insertPos = new Vector3(positionX, 0.0f, 0.0f);
+            item.container.transform.localPosition = insertPos;
+            actualBounds.Encapsulate(new Bounds(item.info.totalBounding.center + insertPos, item.info.totalBounding.size));
         }
 
         void LayoutTune()
@@ -320,23 +338,12 @@ namespace ABCUnity
             SetupVoiceLayouts();
 
             for (int i = 0; i < layouts[0].scoreLines.Count; i++)
+            {
                 LayoutScoreLine(i);
+                RenderScoreLine(i);
+            }
 
             this.gameObject.transform.localScale = scale;
-        }
-
-        /// <summary>
-        /// If a measure has a negative min value we need to move it over so that it will fit in the measure correctly.
-        /// Note: This will most likely happen when the first note in a measure has an accidental attached to it.
-        /// </summary>
-        float calculateMeasureAdjustment()
-        {
-            float minX = 0.0f;
-
-            foreach (var layout in layouts)
-                minX = Mathf.Min(minX, layout.measure.bounds.min.x);
-
-            return Mathf.Abs(minX) + measurePadding;
         }
 
         void CreateMeshForMeasure(VoiceLayout layout)
@@ -366,7 +373,7 @@ namespace ABCUnity
                 var meshFilter = item.AddComponent<MeshFilter>();
                 meshFilter.mesh = mesh;
 
-                item.transform.parent = layout.measure.container.transform;
+                //item.transform.parent = layout.measure.container.transform;
             }
         }
 
@@ -393,87 +400,75 @@ namespace ABCUnity
         }
 
         /// <summary>Calculates the final size of the staff and positions it correctly relative to the container.</summary>
-        void FinalizeStaffLines()
+        void FinalizeScoreLine(int lineNum)
         {
             foreach (var layout in layouts)
             {
-                AdjustStaffScale(layout);
+                var scoreLine = layout.scoreLines[lineNum];
+                AdjustStaffScale(scoreLine);
 
-                layout.staff.container.transform.parent = this.transform;
-                layout.staff.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (layout.staff.bounds.max.y * layoutScale), 0.0f);
-                layout.staff.container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
+                scoreLine.container.transform.parent = this.transform;
+                scoreLine.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (scoreLine.bounds.max.y * layoutScale), 0.0f);
+                scoreLine.container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
 
-                staffOffset.y -= (layout.staff.bounds.size.y + staffMargin) * layoutScale;
+                staffOffset.y -= (scoreLine.bounds.size.y + staffMargin) * layoutScale;
             }
         }
 
-        void LayoutStaff(VoiceLayout layout)
+        void LayoutStaff(VoiceLayout.ScoreLine scoreLine, ABC.Clef clef)
         {
-            var staff = cache.GetSpriteObject("Staff");
-            layout.currentStaff = staff.gameObject;
-            layout.currentStaff.transform.parent = layout.staff.container.transform;
-            layout.currentStaff.transform.localPosition = layout.staff.position;
+            var staffSprite = cache.GetSpriteObject("Staff");
+            staffSprite.transform.parent = scoreLine.container.transform;
+            staffSprite.transform.localPosition = scoreLine.insertPos;
+            scoreLine.bounds = staffSprite.bounds;
 
-            layout.staff.UpdateBounds(staff.bounds);
-            layout.staff.position.x += staffPadding;
-
-            var clef = cache.GetSpriteObject($"Clef_{layout.voice.clef.ToString()}");
-            clef.transform.parent = layout.staff.container.transform;
-            clef.transform.localPosition = layout.staff.position;
-
-            layout.staff.UpdateBounds(clef.bounds);
-            layout.staff.position.x = clef.bounds.max.x + noteAdvance;
+            scoreLine.AdvaceInsertPos(staffPadding);
+            var clefSprite = cache.GetSpriteObject($"Clef_{clef}");
+            clefSprite.transform.parent = scoreLine.container.transform;
+            clefSprite.transform.localPosition = scoreLine.insertPos;
+            scoreLine.bounds.Encapsulate(clefSprite.bounds);
+            scoreLine.AdvaceInsertPos(staffPadding);
         }
         
-        void LayoutTimeSignature(VoiceLayout layout)
+        void LayoutTimeSignature(VoiceLayout.ScoreLine scoreLine, ABC.TimeSignature timeSignature)
         {
-            var timeSignature = layout.voice.items[0] as ABC.TimeSignature;
-            if (timeSignature == null)
-                throw new LayoutException($"expected voice: {layout.voice.name} to have Time Signature");
-
             var container = new GameObject("Time Signature");
-            container.transform.parent = layout.staff.container.transform;
-            var timeSignatureInfo = notes.CreateTimeSignature(timeSignature, container, layout.staff.position);
+            container.transform.parent = scoreLine.container.transform;
 
-            layout.staff.UpdateBounds(timeSignatureInfo.totalBounding);
-            layout.staff.position.x = timeSignatureInfo.totalBounding.max.x;
+            var timeSignatureInfo = notes.CreateTimeSignature(timeSignature, container);
+            
+            container.transform.localPosition = scoreLine.insertPos;
+            scoreLine.EncapsulateAppendedBounds(timeSignatureInfo.totalBounding);
         }
 
-        void AdjustStaffScale(VoiceLayout layout)
+        void AdjustStaffScale(VoiceLayout.ScoreLine scoreLine)
         {
-            var currentWidth = layout.currentStaff.GetComponent<SpriteRenderer>().bounds.size.x;
-            var scaleX = layout.staff.position.x / currentWidth;
-            layout.currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
-        }
-
-        void PositionBar(Alignment.Item bar, VoiceLayout layout)
-        {
-            bar.container.transform.parent = layout.measure.container.transform;
-            bar.container.transform.localPosition = layout.measure.position;
-
-            var totalBounding = new Bounds(bar.info.totalBounding.center + layout.measure.position, bar.info.totalBounding.size);
-            layout.measure.UpdateBounds(totalBounding);
-            layout.measure.position.x += totalBounding.size.x;
+            var currentStaff = scoreLine.container.transform.GetChild(0);
+            var currentWidth = currentStaff.GetComponent<SpriteRenderer>().bounds.size.x;
+            var scaleX = scoreLine.insertX / currentWidth;
+            currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
         }
         
-        void PositionItem(VoiceLayout layout, Alignment.Item beatItem)
+        void SetItemReferencePosition(Alignment.Item beatItem, Alignment.Measure measure)
         {
-            beatItem.container.transform.parent = layout.measure.container.transform;
-            beatItem.container.transform.localPosition = layout.measure.position;
+            // handles adjustment of first item with accidental...but need to line up all items in measure
+            if (measure.insertX == measurePadding && beatItem.info.totalBounding.min.x < 0)
+                measure.AdvaceInsertPos(-beatItem.info.totalBounding.min.x);
 
-            var totalBounding = new Bounds(beatItem.info.totalBounding.center + layout.measure.position, beatItem.info.totalBounding.size);
-            var rootBounding = new Bounds(beatItem.info.rootBounding.center + layout.measure.position, beatItem.info.rootBounding.size);
-            
-            layout.measure.UpdateBounds(totalBounding);
-            layout.measure.position.x += totalBounding.size.x + noteAdvance;
+            beatItem.referencePosition = measure.insertX;
+            measure.EncapsulateAppendedBounds(beatItem.info.totalBounding);
 
+            /* TEMP: This will need to be done in scale phase
+             * //var rootBounding = new Bounds(beatItem.info.rootBounding.center + layout.measure.position, beatItem.info.rootBounding.size);
             var duration = beatItem.item as ABC.Duration;
             if (duration != null && beams.TryGetValue(duration.beam, out Beam beam))
                 beam.Update(rootBounding, cache, layout);
+            */
         }
 
-        void CreateChordSprite(ABC.Chord chordItem, VoiceLayout layout, Alignment.Item beatItem)
+        void CreateChordSprite(ABC.Clef clef, Alignment.Item beatItem)
         {
+            var chordItem = beatItem.item as ABC.Chord;
             beatItem.container = new GameObject("Chord");
             
             tune.decorations.TryGetValue(chordItem.id, out var decorations);
@@ -482,13 +477,14 @@ namespace ABCUnity
             if (beams.TryGetValue(chordItem.beam, out Beam beam))
                 chordInfo = notes.CreateChord(chordItem, beam, decorations, beatItem.container);
             else
-                chordInfo = notes.CreateChord(chordItem, layout.voice.clef, decorations, beatItem.container);
+                chordInfo = notes.CreateChord(chordItem, clef, decorations, beatItem.container);
             
             beatItem.info = chordInfo;
         }
 
-        void CreateNoteSprite(ABC.Note noteItem, VoiceLayout layout, Alignment.Item beatItem)
+        void CreateNoteSprite(ABC.Clef clef, Alignment.Item beatItem)
         {
+            var noteItem = beatItem.item as ABC.Note;
             beatItem.container = new GameObject("Note");
 
             tune.decorations.TryGetValue(noteItem.id, out var decorations);
@@ -497,25 +493,30 @@ namespace ABCUnity
             if (beams.TryGetValue(noteItem.beam, out Beam beam))
                 noteInfo = notes.CreateNote(noteItem, beam, decorations, beatItem.container);
             else
-                noteInfo = notes.CreateNote(noteItem, layout.voice.clef, decorations, beatItem.container);
+                noteInfo = notes.CreateNote(noteItem, clef, decorations, beatItem.container);
             
             beatItem.info = noteInfo;
         }
 
-        void CreateRestSprite(ABC.Rest restItem, VoiceLayout layout, Alignment.Item beatItem)
+        void CreateRestSprite(Alignment.Item beatItem)
         {
+            var restItem = beatItem.item as ABC.Rest;
             beatItem.container = new GameObject("Rest");
-
-            var restInfo = notes.CreateRest(restItem, beatItem.container , layout.measure.position);
-            beatItem.info = restInfo;
+            beatItem.info = notes.CreateRest(restItem, beatItem.container);
         }
 
-        void CreateMeasureRestSprite(ABC.MultiMeasureRest measureRest, VoiceLayout layout, Alignment.Item beatItem)
+        void CreateBarSprite(Alignment.Item item)
         {
-            beatItem.container = new GameObject("Rest");
+            var barItem = item.item as ABC.Bar;
+            item.container = new GameObject("Bar");
+            item.info = notes.CreateBar(item.item as ABC.Bar, item.container);
+        }
 
-            var restInfo = notes.CreateMeasureRest(measureRest, beatItem.container, layout.measure.position);
-            beatItem.info = restInfo;
+        void CreateMeasureRestSprite(Alignment.Item beatItem)
+        {
+            var measureRest = beatItem.item as ABC.MultiMeasureRest;
+            beatItem.container = new GameObject("Rest");
+            beatItem.info = notes.CreateMeasureRest(measureRest, beatItem.container);
         }
     }
 }
