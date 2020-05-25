@@ -319,24 +319,60 @@ namespace ABCUnity
         Bounds SetMeasureItemPositions(Alignment.Measure measure, float actualmeasureWidth)
         {
             Bounds actualBounds = new Bounds(Vector3.zero, Vector3.zero);
+            List<Vector3> beamVertices = null;
 
             foreach (var beat in measure.beats)
             {
                 foreach (var item in beat.items)
-                    SetMeasureItemPosition(item, measure, actualmeasureWidth, ref actualBounds);
+                {
+                    float positionX = (item.referencePosition / measure.insertX) * actualmeasureWidth;
+                    Vector3 insertPos = new Vector3(positionX, 0.0f, 0.0f);
+                    item.container.transform.localPosition = insertPos;
+                    actualBounds.Encapsulate(new Bounds(item.info.totalBounding.center + insertPos, item.info.totalBounding.size));
 
-                SetMeasureItemPosition(measure.bar, measure, actualmeasureWidth, ref actualBounds);
+                    var duration = item.item as ABC.Duration;
+                    if (duration != null && beams.TryGetValue(duration.beam, out Beam beam))
+                    {
+                        var rootBounding = new Bounds(item.info.rootBounding.center + insertPos, item.info.rootBounding.size);
+                        beam.Update(rootBounding);
+
+                        if (beam.isReadyToCreate)
+                        {
+                            if (beam.type == Beam.Type.Angle)
+                            {
+                                if (beamVertices == null)
+                                    beamVertices = new List<Vector3>();
+
+                                beam.CreateAngledBeam(beamVertices);
+                            }
+                            else
+                            {
+                                beam.CreateBasicBeam(cache, measure.container);
+                            }
+                }
+                    }
+                }
+
+                {
+                    float positionX = (measure.bar.referencePosition / measure.insertX) * actualmeasureWidth;
+                    Vector3 insertPos = new Vector3(positionX, 0.0f, 0.0f);
+                    measure.bar.container.transform.localPosition = insertPos;
+                    actualBounds.Encapsulate(new Bounds(measure.bar.info.totalBounding.center + insertPos, measure.bar.info.totalBounding.size));
+                }
             }
+
+            if (beamVertices != null)
+                Beam.CreateMesh(beamVertices, NoteMaterial, measure.container);
 
             return actualBounds;
         }
 
-        void SetMeasureItemPosition(Alignment.Item item, Alignment.Measure measure, float actualmeasureWidth, ref Bounds actualBounds)
+        Bounds SetMeasureItemPosition(Alignment.Item item, Alignment.Measure measure, float actualmeasureWidth)
         {
             float positionX = (item.referencePosition / measure.insertX) * actualmeasureWidth;
             Vector3 insertPos = new Vector3(positionX, 0.0f, 0.0f);
             item.container.transform.localPosition = insertPos;
-            actualBounds.Encapsulate(new Bounds(item.info.totalBounding.center + insertPos, item.info.totalBounding.size));
+            return new Bounds(item.info.totalBounding.center + insertPos, item.info.totalBounding.size);
         }
 
         void LayoutTune()
@@ -366,37 +402,6 @@ namespace ABCUnity
             }
 
             this.gameObject.transform.localScale = scale;
-        }
-
-        void CreateMeshForMeasure(VoiceLayout layout)
-        {
-            if (layout.measureVertices.Count > 0)
-            {
-                var mesh = new Mesh();
-                mesh.vertices = layout.measureVertices.ToArray();
-
-                var triangles = new List<int>();
-                for (int i = 0; i < layout.measureVertices.Count; i += 4)
-                {
-                    triangles.Add(i);
-                    triangles.Add(i + 1);
-                    triangles.Add(i + 2);
-                    triangles.Add(i + 2);
-                    triangles.Add(i + 1);
-                    triangles.Add(i + 3);
-                }
-
-                mesh.triangles = triangles.ToArray();
-
-                var item = new GameObject();
-                var meshRenderer = item.AddComponent<MeshRenderer>();
-                meshRenderer.sharedMaterial = NoteMaterial;
-
-                var meshFilter = item.AddComponent<MeshFilter>();
-                meshFilter.mesh = mesh;
-
-                //item.transform.parent = layout.measure.container.transform;
-            }
         }
 
         TimeSignature GetTimeSignature()
@@ -475,13 +480,6 @@ namespace ABCUnity
         {
             beatItem.referencePosition = measure.insertX;
             measure.EncapsulateAppendedBounds(beatItem.info.totalBounding);
-
-            /* TEMP: This will need to be done in scale phase
-             * //var rootBounding = new Bounds(beatItem.info.rootBounding.center + layout.measure.position, beatItem.info.rootBounding.size);
-            var duration = beatItem.item as ABC.Duration;
-            if (duration != null && beams.TryGetValue(duration.beam, out Beam beam))
-                beam.Update(rootBounding, cache, layout);
-            */
         }
 
         void CreateChordSprite(ABC.Clef clef, Alignment.Item beatItem)

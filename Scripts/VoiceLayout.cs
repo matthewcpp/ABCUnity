@@ -40,8 +40,6 @@ namespace ABCUnity
         {
             voice = v;
             alignment = new Alignment();
-
-            measureVertices = new List<Vector3>();
         }
 
         public void Init()
@@ -63,10 +61,5 @@ namespace ABCUnity
 
         /// <summary>The index of the current beat that is active for this measure.</summary>
         public int beatAlignmentIndex { get; set; } = 0;
-
-        /// <summary>The staff object on the current line.</summary>
-        public GameObject currentStaff { get; set; }
-
-        public List<Vector3> measureVertices { get; private set; }
     }
 }

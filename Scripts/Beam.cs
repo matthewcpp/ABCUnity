@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using ABC;
 
 namespace ABCUnity
 {
@@ -38,6 +36,7 @@ namespace ABCUnity
         public float stemHeight { get; set; } = 0.0f;
 
         private int index = 0;
+        public bool isReadyToCreate { get { return index == items.Count; } }
 
         public Beam(int id, ABC.Clef clef)
         {
@@ -45,7 +44,6 @@ namespace ABCUnity
             this.clef = clef;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ABC.Pitch GetPitchForItem(ABC.Item item)
         {
             switch(item.type)
@@ -151,31 +149,21 @@ namespace ABCUnity
         }
 
         Bounds first;
+        Bounds last;
 
         /// <summary>
         /// This method is called every time an item in the beam has been laid out.  
         /// When the final item is laid out the beam will be added to the scene.
         /// </summary>
-        public void Update(Bounds bounds, SpriteCache cache, VoiceLayout layout)
+        public void Update(Bounds bounds)
         {
             if (index == 0)
                 first = bounds;
 
-            index += 1;
-
-            if (index == items.Count)
+            if (index < items.Count)
             {
-                switch(type)
-                {
-                    case Type.Basic:
-                    case Type.Straight:
-                        //CreateBasicBeam(bounds, cache, layout.measure.container);
-                        break;
-
-                    case Type.Angle:
-                        CreateAngledBeam(bounds, layout.measureVertices);
-                        break;
-                }
+                last = bounds;
+                index += 1;
             }
         }
 
@@ -235,8 +223,11 @@ namespace ABCUnity
         /// Creates a basic straight beam connecting the first and last item in this beam.
         /// Note that this method should be used when the first and last items have the same max Y bounding value.
         /// </summary>
-        private void CreateBasicBeam(Bounds sprite, SpriteCache cache, GameObject container)
+        public bool CreateBasicBeam(SpriteCache cache, GameObject container)
         {
+            if (type != Type.Basic && type != Type.Straight)
+                return false;
+
             float offsetY = 0.0f;
             ABC.Length length = (items[0] as ABC.Duration).length;
 
@@ -251,20 +242,22 @@ namespace ABCUnity
                     var beamPos = first.max;
                     beam.transform.position = new Vector3(beamPos.x, beamPos.y - offsetY, 0.0f);
 
-                    distX = sprite.max.x - beamPos.x;
+                    distX = last.max.x - beamPos.x;
                 }
                 else
                 {
                     var beamPos = first.min;
                     beam.transform.position = new Vector3(beamPos.x, beamPos.y + offsetY, 0.0f); ;
 
-                    distX = sprite.min.x - beamPos.x;
+                    distX = last.min.x - beamPos.x;
                 }
 
                 beam.transform.localScale = new Vector3(distX, 1.0f, 1.0f);
 
                 offsetY += beamHeight + defaultBeamSpacer;
             }
+
+            return true;
         }
 
         /// <summary>
@@ -272,8 +265,11 @@ namespace ABCUnity
         /// This method should be used when the max values for these items are not at the same height.
         /// Mesh vertices are generated as opposed to a sprite as in the straight beam.
         /// </summary>
-        private void CreateAngledBeam(Bounds sprite, List<Vector3> meshVertices)
+        public bool CreateAngledBeam(List<Vector3> vertices)
         {
+            if (type != Type.Angle)
+                return false;
+
             float offsetY = 0.0f;
             ABC.Length length = (items[0] as ABC.Duration).length;
 
@@ -281,21 +277,52 @@ namespace ABCUnity
             {
                 if (noteDirection == NoteCreator.NoteDirection.Up)
                 {
-                    meshVertices.Add(new Vector3(first.max.x, first.max.y - offsetY, 0.0f));
-                    meshVertices.Add(new Vector3(sprite.max.x, sprite.max.y - offsetY, 0.0f));
-                    meshVertices.Add(new Vector3(first.max.x, first.max.y - offsetY - beamHeight, 0.0f));
-                    meshVertices.Add(new Vector3(sprite.max.x, sprite.max.y - offsetY - beamHeight, 0.0f));
+                    vertices.Add(new Vector3(first.max.x, first.max.y - offsetY, 0.0f));
+                    vertices.Add(new Vector3(last.max.x, last.max.y - offsetY, 0.0f));
+                    vertices.Add(new Vector3(first.max.x, first.max.y - offsetY - beamHeight, 0.0f));
+                    vertices.Add(new Vector3(last.max.x, last.max.y - offsetY - beamHeight, 0.0f));
                 }
                 else
                 {
-                    meshVertices.Add(new Vector3(first.min.x, first.min.y + offsetY + beamHeight, 0.0f));
-                    meshVertices.Add(new Vector3(sprite.min.x, sprite.min.y + offsetY + beamHeight, 0.0f));
-                    meshVertices.Add(new Vector3(first.min.x, first.min.y + offsetY, 0.0f));
-                    meshVertices.Add(new Vector3(sprite.min.x, sprite.min.y + offsetY, 0.0f));
+                    vertices.Add(new Vector3(first.min.x, first.min.y + offsetY + beamHeight, 0.0f));
+                    vertices.Add(new Vector3(last.min.x, last.min.y + offsetY + beamHeight, 0.0f));
+                    vertices.Add(new Vector3(first.min.x, first.min.y + offsetY, 0.0f));
+                    vertices.Add(new Vector3(last.min.x, last.min.y + offsetY, 0.0f));
                 }
 
                 offsetY += beamHeight + defaultBeamSpacer;
             }
+
+            return true;
+        }
+
+        public static void CreateMesh(List<Vector3> vertices, Material material, GameObject container)
+        {
+            var mesh = new Mesh();
+            mesh.vertices = vertices.ToArray();
+
+            var triangles = new List<int>();
+            for (int i = 0; i < vertices.Count; i += 4)
+            {
+                triangles.Add(i);
+                triangles.Add(i + 1);
+                triangles.Add(i + 2);
+                triangles.Add(i + 2);
+                triangles.Add(i + 1);
+                triangles.Add(i + 3);
+            }
+
+            mesh.triangles = triangles.ToArray();
+
+            var item = new GameObject("Beam");
+            var meshRenderer = item.AddComponent<MeshRenderer>();
+            meshRenderer.sharedMaterial = material;
+
+            var meshFilter = item.AddComponent<MeshFilter>();
+            meshFilter.mesh = mesh;
+
+            item.transform.localPosition = Vector3.zero;
+            item.transform.parent = container.transform;
         }
 
         public static Dictionary<int, Beam> CreateBeams(ABC.Tune tune)
