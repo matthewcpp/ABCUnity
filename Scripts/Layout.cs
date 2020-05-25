@@ -162,8 +162,9 @@ namespace ABCUnity
                     var scoreLine = layout.scoreLines[lineNum];
                     var measureInfo = scoreLine.measures[measure];
                     measureInfo.container = new GameObject("Measure");
-                    measureInfo.AdvaceInsertPos(measurePadding);
                 }
+                
+                SetMeasurePadding(lineNum, measure);
 
                 for (int beat = 1; beat <= timeSignature.beatCount; beat++)
                 {
@@ -229,6 +230,28 @@ namespace ABCUnity
             }
         }
 
+        void SetMeasurePadding(int lineNumber, int measureIndex)
+        {
+            float adjustment = 0.0f;
+
+            foreach (var layout in layouts)
+            {
+                var scoreLine = layout.scoreLines[lineNumber];
+                var measure = scoreLine.measures[measureIndex];
+                var item = measure.beats[0].items[0];
+
+                if (item.info.totalBounding.min.x < 0)
+                    adjustment = Mathf.Max(adjustment, -item.info.totalBounding.min.x);
+            }
+
+            foreach (var layout in layouts)
+            {
+                var scoreLine = layout.scoreLines[lineNumber];
+                var measure = scoreLine.measures[measureIndex];
+                measure.AdvaceInsertPos(measurePadding + adjustment);
+            }
+        }
+
         void RenderScoreLine(int lineNum)
         {
             float startX = float.MinValue;
@@ -276,7 +299,6 @@ namespace ABCUnity
             FinalizeScoreLine(lineNum);
         }
 
-        // TODO: this should calculate the proportional scaled widths for each measurement
         float[] CalculateMeasureWidths(VoiceLayout.ScoreLine scoreLine)
         {
             float[] measureWidths = new float[scoreLine.measures.Count];
@@ -451,10 +473,6 @@ namespace ABCUnity
         
         void SetItemReferencePosition(Alignment.Item beatItem, Alignment.Measure measure)
         {
-            // handles adjustment of first item with accidental...but need to line up all items in measure
-            if (measure.insertX == measurePadding && beatItem.info.totalBounding.min.x < 0)
-                measure.AdvaceInsertPos(-beatItem.info.totalBounding.min.x);
-
             beatItem.referencePosition = measure.insertX;
             measure.EncapsulateAppendedBounds(beatItem.info.totalBounding);
 
