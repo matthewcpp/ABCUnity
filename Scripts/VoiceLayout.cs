@@ -40,19 +40,30 @@ namespace ABCUnity
         {
             voice = v;
             alignment = new Alignment();
+            alignment.Create(voice);
         }
 
-        public void Init()
+        public void Init(bool multiline)
         {
-            alignment.Create(voice);
-
             // Partitions measures into their appropriate score lines
-            foreach (var measure in alignment.measures)
+            if (multiline)
             {
-                if (measure.lineNumber >= scoreLines.Count)
-                    scoreLines.Add(new ScoreLine());
+                foreach (var measure in alignment.measures)
+                {
+                    if (measure.lineNumber >= scoreLines.Count)
+                        scoreLines.Add(new ScoreLine());
 
-                scoreLines[measure.lineNumber].measures.Add(measure);
+                    scoreLines[measure.lineNumber].measures.Add(measure);
+                }
+            }
+            else
+            {
+                var scoreLine = new ScoreLine();
+
+                foreach (var measure in alignment.measures)
+                    scoreLine.measures.Add(measure);
+
+                scoreLines.Add(scoreLine);
             }
         }
 

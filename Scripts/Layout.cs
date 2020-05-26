@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.U2D;
+using UnityEngine.SocialPlatforms.Impl;
 
 namespace ABCUnity
 {
@@ -15,8 +16,12 @@ namespace ABCUnity
         [SerializeField] public Material NoteMaterial;
         [SerializeField] public TextMeshPro textPrefab;
 
+        [SerializeField] public bool overrideLineBreaks = false;
+
         private SpriteCache cache;
         private NoteCreator notes;
+
+        private bool multilineLayout;
 
         public ABC.Tune tune { get; private set; }
 
@@ -28,6 +33,7 @@ namespace ABCUnity
 
         public void Awake()
         {
+            multilineLayout = !overrideLineBreaks;
             rectTransform = GetComponent<RectTransform>();
             cache = new SpriteCache(spriteAtlas, textPrefab);
 
@@ -137,18 +143,14 @@ namespace ABCUnity
             for (int i = 0; i < tune.voices.Count; i++)
             {
                 var layout = new VoiceLayout(tune.voices[i]);
-                layout.Init();
+
                 layouts.Add(layout);
+                layout.Init(multilineLayout);
 
                 if (i == 0)
-                {
                     measureCount = layout.alignment.measures.Count;
-                }
-                else
-                {
-                    if (layout.alignment.measures.Count != measureCount)
+                else if (layout.alignment.measures.Count != measureCount)
                         throw new LayoutException("All voices must have the same measure count");
-                }
             }
         }
 
@@ -163,7 +165,7 @@ namespace ABCUnity
                     var measureInfo = scoreLine.measures[measure];
                     measureInfo.container = new GameObject("Measure");
                 }
-                
+
                 SetMeasurePadding(lineNum, measure);
 
                 for (int beat = 1; beat <= timeSignature.beatCount; beat++)
@@ -281,7 +283,7 @@ namespace ABCUnity
                 }
             }
 
-            var measureWidths = CalculateMeasureWidths(layouts[0].scoreLines[lineNum]);
+            var measureWidths = CalculateMeasureWidths(lineNum);
 
             foreach (var layout in layouts)
             {
@@ -299,8 +301,9 @@ namespace ABCUnity
             FinalizeScoreLine(lineNum);
         }
 
-        float[] CalculateMeasureWidths(VoiceLayout.ScoreLine scoreLine)
+        float[] CalculateMeasureWidths(int lineNum)
         {
+            var scoreLine = layouts[0].scoreLines[lineNum];
             float[] measureWidths = new float[scoreLine.measures.Count];
             float referenceWidth = 0.0f;
             float allocatedSpace = horizontalMax - scoreLine.insertX;
@@ -349,7 +352,7 @@ namespace ABCUnity
                             {
                                 beam.CreateBasicBeam(cache, measure.container);
                             }
-                }
+                        }
                     }
                 }
 
@@ -395,13 +398,68 @@ namespace ABCUnity
             beams = Beam.CreateBeams(tune);
             SetupVoiceLayouts();
 
-            for (int i = 0; i < layouts[0].scoreLines.Count; i++)
+            if (multilineLayout)
             {
-                LayoutScoreLine(i);
-                RenderScoreLine(i);
+                for (int i = 0; i < layouts[0].scoreLines.Count; i++)
+                {
+                    LayoutScoreLine(i);
+                    RenderScoreLine(i);
+                }
+            }
+            else
+            {
+                LayoutScoreLine(0);
+                PartitionScoreLine();
+
+                for (int i = 0; i < layouts[0].scoreLines.Count; i++)
+                    RenderScoreLine(i);
             }
 
             this.gameObject.transform.localScale = scale;
+        }
+
+        /// <summary> Breaks up a single score line into multiple lines based on the horizontal max</summary>
+        void PartitionScoreLine()
+        {
+            // save off the scorelines that were laid out
+            int measureCount = layouts[0].scoreLines[0].measures.Count;
+            var scoreLines = new List<Alignment.Measure>[layouts.Count];
+            for (int i = 0; i < scoreLines.Length; i++)
+            {
+                scoreLines[i] = layouts[i].scoreLines[0].measures;
+                layouts[i].scoreLines.Clear();
+                layouts[i].scoreLines.Add(new VoiceLayout.ScoreLine());
+            }
+
+            float currentWidth = 0.0f;
+
+            for (int measureIndex = 0; measureIndex < measureCount; measureIndex++)
+            {
+                float measureWidth = float.MinValue;
+                foreach (var scoreLine in scoreLines)
+                    measureWidth = Mathf.Max(measureWidth, scoreLine[measureIndex].insertX);
+
+                // ensure that the measure of each scoreline will fit on the current line.
+                // If it wont fit make a new line
+                foreach (var scoreLine in scoreLines)
+                {
+                    if (currentWidth + scoreLine[measureIndex].insertX > horizontalMax)
+                    {
+                        foreach (var layout in layouts)
+                            layout.scoreLines.Add(new VoiceLayout.ScoreLine());
+
+                        currentWidth = 0.0f;
+                        break;
+                    }
+                }
+
+                //Add the current measure to the last scoreline
+                for (int i = 0; i < scoreLines.Length; i++)
+                {
+                    layouts[i].scoreLines[layouts[i].scoreLines.Count - 1].measures.Add(scoreLines[i][measureIndex]);
+                    currentWidth += measureWidth;
+                }
+            }
         }
 
         TimeSignature GetTimeSignature()
