@@ -55,6 +55,22 @@ namespace ABCUnity
                 pos.x += amount;
                 bounds.Encapsulate(pos);
             }
+            
+            public bool isRest 
+            {
+                get { return IsMeasureRest(); }
+            }
+
+            private bool IsMeasureRest()
+            {
+                if (beats.Count != 1)
+                    return false;
+
+                if (beats[0].items.Count != 1)
+                    return false;
+
+                return beats[0].items[0].item.type == ABC.Item.Type.MultiMeasureRest;
+            }
 
             public float insertX { get { return bounds.size.x; } }
             public GameObject container;

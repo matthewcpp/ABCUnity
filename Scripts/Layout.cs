@@ -225,11 +225,22 @@ namespace ABCUnity
                 foreach (var layout in layouts)
                 {
                     var measureInfo = layout.scoreLines[lineNum].measures[measure];
+                    if (measureInfo.isRest)
+                        CenterRestMeasure(measureInfo);
+
                     CreateBarSprite(measureInfo.bar);
                     SetItemReferencePosition(measureInfo.bar, measureInfo);
                     measureInfo.bar.container.transform.parent = measureInfo.container.transform;
                 }
             }
+        }
+
+        void CenterRestMeasure(Alignment.Measure measure)
+        {
+            var item = measure.beats[0].items[0];
+            var center = measure.insertX / 2.0f;
+            var pos = center - item.info.totalBounding.size.x / 2.0f;
+            item.referencePosition = pos;
         }
 
         void SetMeasurePadding(int lineNumber, int measureIndex)
