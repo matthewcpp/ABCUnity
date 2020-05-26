@@ -15,6 +15,8 @@ namespace ABCUnity
         [SerializeField] public Color color = Color.black;
         [SerializeField] public Material NoteMaterial;
         [SerializeField] public TextMeshPro textPrefab;
+        [SerializeField] public float staffLinePadding = 0.4f;
+        [SerializeField] public float staffLineMargin = 1.0f;
 
         [SerializeField] public bool overrideLineBreaks = false;
 
@@ -121,7 +123,6 @@ namespace ABCUnity
 
         public const float staffPadding = 0.3f;
         public const float measurePadding = 0.5f;
-        const float staffMargin = 0.2f;
         public const float noteAdvance = 0.75f;
 
         Vector2 staffOffset;
@@ -498,16 +499,18 @@ namespace ABCUnity
         /// <summary>Calculates the final size of the staff and positions it correctly relative to the container.</summary>
         void FinalizeScoreLine(int lineNum)
         {
-            foreach (var layout in layouts)
+            //foreach (var layout in layouts)
+            for (int i = 0; i < layouts.Count; i++)
             {
-                var scoreLine = layout.scoreLines[lineNum];
+                var scoreLine = layouts[i].scoreLines[lineNum];
                 AdjustStaffScale(scoreLine);
 
                 scoreLine.container.transform.parent = this.transform;
                 scoreLine.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (scoreLine.bounds.max.y * layoutScale), 0.0f);
                 scoreLine.container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
 
-                staffOffset.y -= (scoreLine.bounds.size.y + staffMargin) * layoutScale;
+                var staffSpacer = i == layouts.Count - 1 ? staffLineMargin : staffLinePadding;
+                staffOffset.y -= (scoreLine.bounds.size.y + staffSpacer) * layoutScale;
             }
         }
 

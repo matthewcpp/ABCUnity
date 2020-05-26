@@ -39,7 +39,7 @@ namespace ABCUnity.Example
             orthographicSize = camera.orthographicSize;
 
             float orthoHeight = orthographicSize* 2.0f;
-            float targetWidth = orthoHeight * aspect;
+            float targetWidth = (orthoHeight * aspect) * 0.8f;
 
             var titleTransform = title.rectTransform;
             titleTransform.position = new Vector3(0.0f, orthographicSize, 0.0f);
