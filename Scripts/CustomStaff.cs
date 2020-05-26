@@ -63,7 +63,7 @@ namespace ABCUnity
             GameObject noteContainer = new GameObject();
             noteContainer.transform.parent = container.transform;
 
-            notes.CreateNote(note, this.clef, decorations, noteContainer, Vector3.zero);
+            notes.CreateNote(note, this.clef, decorations, noteContainer);
             noteContainer.transform.localPosition = new Vector3(pos, 0.0f, 0.0f);
             noteContainer.transform.localScale = Vector3.one; // clear any scaling set on the parent
 

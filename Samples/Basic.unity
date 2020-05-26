@@ -529,6 +529,11 @@ PrefabInstance:
       propertyPath: layoutScale
       value: 0.2
       objectReference: {fileID: 0}
+    - target: {fileID: 4807823002965126730, guid: 5f1f5f7ab76fd8c4b9bfa42892dc57f9,
+        type: 3}
+      propertyPath: overrideLineBreaks
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4807823002965126731, guid: 5f1f5f7ab76fd8c4b9bfa42892dc57f9,
         type: 3}
       propertyPath: m_LocalPosition.x

@@ -1,13 +1,23 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.CompilerServices;
-using System.ComponentModel;
 
 
 namespace ABCUnity
 {
+    public struct NoteInfo
+    {
+        public NoteInfo(Bounds rootBounding, Bounds bounding)
+        {
+            this.rootBounding = rootBounding;
+            this.totalBounding = bounding;
+        }
+
+        public Bounds rootBounding;
+        public Bounds totalBounding;
+    }
+    
     class NoteCreator
     {
         private SpriteCache spriteCache;
@@ -41,46 +51,34 @@ namespace ABCUnity
         /// <summary> Distance between dots </summary>
         const float dotAdvance = 0.2f;
 
-        public struct NoteInfo
-        {
-            public NoteInfo(Bounds rootBounding, Bounds bounding)
-            {
-                this.rootBounding = rootBounding;
-                this.totalBounding = bounding;
-            }
-
-            public Bounds rootBounding;
-            public Bounds totalBounding;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool NeedsStaffMarkers(int stepCount)
         {
             return stepCount < -2 || stepCount > 8;
         }
 
-        public NoteInfo CreateNote(ABC.Note note, Beam beam, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        public NoteInfo CreateNote(ABC.Note note, Beam beam, IReadOnlyList<string> decorations, GameObject container)
         {
             int stepCount = note.pitch - clefZero[beam.clef];
-            return CreateNote(note, stepCount, beam.stemHeight, beam.noteDirection, decorations, container, offset);
+            return CreateNote(note, stepCount, beam.stemHeight, beam.noteDirection, decorations, container);
         }
 
-        public NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        public NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container)
         {
             int stepCount = note.pitch - clefZero[clef];
             var noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
 
-            return CreateNote(note, stepCount, 0.0f, noteDirection, decorations, container, offset);
+            return CreateNote(note, stepCount, 0.0f, noteDirection, decorations, container);
         }
 
-        public NoteInfo CreateChord(ABC.Chord chord, Beam beam, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        public NoteInfo CreateChord(ABC.Chord chord, Beam beam, IReadOnlyList<string> decorations, GameObject container)
         {
-            return CreateChord(chord, beam.clef, beam.stemHeight, decorations, container, offset);
+            return CreateChord(chord, beam.clef, beam.stemHeight, decorations, container);
         }
 
-        public NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        public NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container)
         {
-            return CreateChord(chord, clef, 0.0f, decorations, container, offset);
+            return CreateChord(chord, clef, 0.0f, decorations, container);
         }
 
         /// <summary>
@@ -119,8 +117,9 @@ namespace ABCUnity
         const float accidentalOffset = 0.25f;
         const float accidentalWidth = 0.55f;
 
-        private NoteInfo CreateNote(ABC.Note note, int noteStepCount, float stemHeight, NoteDirection noteDirection, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        private NoteInfo CreateNote(ABC.Note note, int noteStepCount, float stemHeight, NoteDirection noteDirection, IReadOnlyList<string> decorations, GameObject container)
         {
+            var offset = Vector3.zero;
             var notePosition = offset + new Vector3(0.0f, noteStep * noteStepCount, 0.0f);
 
             var totalBounds = new Bounds();
@@ -392,8 +391,9 @@ namespace ABCUnity
             }
         }
 
-        private NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, float stemHeight, IReadOnlyList<string> decorations, GameObject container, Vector3 offset)
+        private NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, float stemHeight, IReadOnlyList<string> decorations, GameObject container)
         {
+            var offset = Vector3.zero;
             var totalBounds = new Bounds();
             totalBounds.SetMinMax(offset, offset);
 
@@ -541,23 +541,23 @@ namespace ABCUnity
             { ABC.Length.Whole, 1.41f }, { ABC.Length.Half, 1.16f }, { ABC.Length.Quarter, 0.3f}, { ABC.Length.Eighth, 0.0f}, { ABC.Length.Sixteenth, 0.0f }
         };
 
-        public SpriteRenderer CreateRest(ABC.Rest rest, GameObject container, Vector3 offset)
+        public NoteInfo CreateRest(ABC.Rest rest, GameObject container)
         {
             var restSprite = rest.length == ABC.Length.Whole ? "Rest_Half" : $"Rest_{rest.length}";
             var restObj = spriteCache.GetSpriteObject(restSprite);
             restObj.transform.parent = container.transform;
-            restObj.transform.localPosition = offset + new Vector3(0.0f, restHeight[rest.length], 0.0f);
+            restObj.transform.localPosition = new Vector3(0.0f, restHeight[rest.length], 0.0f);
 
-            return restObj;
+            return new NoteInfo(restObj.bounds, restObj.bounds);
         }
 
-        public SpriteRenderer CreateMeasureRest(ABC.MultiMeasureRest rest, GameObject container, Vector3 offset)
+        public NoteInfo CreateMeasureRest(ABC.MultiMeasureRest rest, GameObject container)
         {
             var restObj = spriteCache.GetSpriteObject("Rest_Half");
             restObj.transform.parent = container.transform;
-            restObj.transform.localPosition = offset + new Vector3(0.0f, restHeight[ABC.Length.Whole], 0.0f);
+            restObj.transform.localPosition = new Vector3(0.0f, restHeight[ABC.Length.Whole], 0.0f);
 
-            return restObj;
+            return new NoteInfo(restObj.bounds, restObj.bounds);
         }
 
         public NoteInfo CreateStaff(ABC.Clef clef, GameObject container, Vector3 offset)
@@ -576,6 +576,48 @@ namespace ABCUnity
             bounds.Encapsulate(clefSprite.bounds);
 
             return new NoteInfo(bounds, bounds);
+        }
+
+        const float TimeSignatureY = 1.15f;
+
+        public NoteInfo CreateTimeSignature(ABC.TimeSignature timeSignature, GameObject container)
+        {
+            var bounds = new Bounds();
+
+            if (timeSignature.value == "C" || timeSignature.value == "C|")
+            {
+                var spriteName = (timeSignature.value == "C") ? "Time_Common" : "Time_Cut";
+                var commonTime = spriteCache.GetSpriteObject(spriteName);
+                commonTime.transform.parent = container.transform;
+                commonTime.transform.localPosition = new Vector3(0.0f, TimeSignatureY, 0.0f);
+                bounds = commonTime.bounds;
+            }
+            else
+            {
+                var pieces = timeSignature.value.Split('/');
+                if (pieces.Length < 2)
+                    throw new LayoutException($"Unable to parse time signature: {timeSignature.value}");
+
+                var sprite = spriteCache.GetSpriteObject($"Time_{pieces[0]}");
+                sprite.transform.parent = container.transform;
+                sprite.transform.localPosition = new Vector3(0.0f, TimeSignatureY, 0.0f);
+                bounds = sprite.bounds;
+
+                sprite = spriteCache.GetSpriteObject($"Time_{pieces[1]}");
+                sprite.transform.parent = container.transform;
+                sprite.transform.localPosition = Vector3.zero;
+                bounds.Encapsulate(sprite.bounds);
+            }
+
+            return new NoteInfo(bounds, bounds);
+        }
+
+        public NoteInfo CreateBar(ABC.Bar bar, GameObject container)
+        {
+            var sprite = spriteCache.GetSpriteObject($"Bar_{bar.kind}");
+            sprite.transform.parent = container.transform;
+
+            return new NoteInfo(sprite.bounds, sprite.bounds);
         }
     }
 }

@@ -6,82 +6,71 @@ namespace ABCUnity
 {
     class VoiceLayout
     {
-        public class Metrics
-        {
-            Bounds boundingBox;
-
-            public Bounds bounds => boundingBox;
-
-            public Metrics()
-            {
-                boundingBox.SetMinMax(Vector3.one, Vector3.zero);
-            }
-
-            public void UpdateBounds(Bounds b)
-            {
-                if (boundingBox.max.x < boundingBox.min.x)
-                    boundingBox = b;
-                else
-                {
-                    boundingBox.Encapsulate(b);
-                }
-            }
-
-            public Vector3 position = Vector3.zero;
-
-            public GameObject container;
-        }
-
         public ABC.Voice voice { get; }
 
-        public Metrics staff { get; private set; }
-        public Metrics measure { get; private set; }
+        public class ScoreLine
+        {
+            public List<Alignment.Measure> measures = new List<Alignment.Measure>();
+            public GameObject container;
+            public Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
+
+            public Vector3 insertPos
+            {
+                get { return new Vector3(bounds.size.x, 0.0f, 0.0f); }
+            }
+
+            public float insertX { get { return bounds.size.x; } }
+
+            public void EncapsulateAppendedBounds(Bounds bounding)
+            {
+                bounds.Encapsulate(new Bounds(bounding.center + insertPos, bounding.size));
+            }
+
+            public void AdvaceInsertPos(float amount)
+            {
+                var pos = insertPos;
+                pos.x += amount;
+                bounds.Encapsulate(pos);
+            }
+        }
+
+        public List<ScoreLine> scoreLines { get; } = new List<ScoreLine>();
 
         public VoiceLayout(ABC.Voice v)
         {
             voice = v;
-            alignment = new BeatAlignment();
-
-            staff = new Metrics();
-            staff.container = new GameObject();
-            measureVertices = new List<Vector3>();
-
-            measure = new Metrics();
-        }
-
-        public void CreateAlignmentMap(Dictionary<int, Beam> beams)
-        {
+            alignment = new Alignment();
             alignment.Create(voice);
         }
 
+        public void Init(bool multiline)
+        {
+            // Partitions measures into their appropriate score lines
+            if (multiline)
+            {
+                foreach (var measure in alignment.measures)
+                {
+                    if (measure.lineNumber >= scoreLines.Count)
+                        scoreLines.Add(new ScoreLine());
+
+                    scoreLines[measure.lineNumber].measures.Add(measure);
+                }
+            }
+            else
+            {
+                var scoreLine = new ScoreLine();
+
+                foreach (var measure in alignment.measures)
+                    scoreLine.measures.Add(measure);
+
+                scoreLines.Add(scoreLine);
+            }
+        }
+
         /// <summary>Beat map for the voice.</summary>
-        public BeatAlignment alignment { get; }
+        public Alignment alignment { get; }
 
         /// <summary>The index of the current beat that is active for this measure.</summary>
         public int beatAlignmentIndex { get; set; } = 0;
-
-        /// <summary>The staff object on the current line.</summary>
-        public GameObject currentStaff { get; set; }
-
-        public List<Vector3> measureVertices { get; private set; }
-
-        /// <summary>Prepares this measure to render the next measure.</summary>
-        public void NewMeasure()
-        {
-            beatAlignmentIndex = 0;
-            measure = new Metrics();
-            measure.container = new GameObject();
-            measureVertices = new List<Vector3>();
-        }
-
-        public void NewStaffline()
-        {
-            staff = new Metrics();
-            staff.container = new GameObject();
-        }
-        public void UpdateStaffBounding()
-        {
-            staff.UpdateBounds(measure.bounds);
-        }
     }
 }
