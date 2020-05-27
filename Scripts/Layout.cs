@@ -35,6 +35,11 @@ namespace ABCUnity
         GameObject scoreContainer;
         private float layoutScale = 1.0f;
 
+        public const float staffPadding = 0.3f;
+        public const float measurePadding = 0.5f;
+        public const float noteAdvance = 0.75f;
+        const float staffHeight = 2.29f;
+
         public void Awake()
         {
             multilineLayout = !overrideLineBreaks;
@@ -122,10 +127,6 @@ namespace ABCUnity
                     spriteRenderer.color = color;
             }
         }
-
-        public const float staffPadding = 0.3f;
-        public const float measurePadding = 0.5f;
-        public const float noteAdvance = 0.75f;
 
         Vector2 staffOffset;
 
@@ -557,11 +558,30 @@ namespace ABCUnity
                 AdjustStaffScale(scoreLine);
 
                 scoreLine.container.transform.parent = scoreContainer.transform;
-                scoreLine.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (scoreLine.bounds.max.y * layoutScale), 0.0f);
+                scoreLine.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (scoreLine.bounds.max.y), 0.0f);
                 var staffSpacer = i == layouts.Count - 1 ? staffLineMargin : staffLinePadding;
                 staffOffset.y -= (scoreLine.bounds.size.y + staffSpacer);
-                Debug.Log($"FinalizeScoreLine: {staffOffset.y}");
             }
+
+            RenderConnectorBar(lineNum);
+        }
+
+        void RenderConnectorBar(int lineNum)
+        {
+            var barSprite = cache.GetSpriteObject("Bar_Line");
+            barSprite.transform.parent = scoreContainer.transform;
+
+            var topScoreLine = layouts[0].scoreLines[lineNum];
+            var bottomScoreLine = layouts[layouts.Count - 1].scoreLines[lineNum];
+
+            var barPos = bottomScoreLine.container.transform.localPosition;
+            var topPos = topScoreLine.container.transform.localPosition.y + staffHeight;
+
+            var targetHeight = topPos - barPos.y;
+            var scale = targetHeight / barSprite.bounds.size.y;
+
+            barSprite.transform.localPosition = barPos;
+            barSprite.transform.localScale = new Vector3(1.0f, scale, 1.0f);
         }
 
         void LayoutStaff(VoiceLayout.ScoreLine scoreLine, ABC.Clef clef)
