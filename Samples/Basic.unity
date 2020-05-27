@@ -231,7 +231,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 20
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -328,13 +328,13 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 6
-  m_fontSizeBase: 6
+  m_fontSize: 16
+  m_fontSizeBase: 16
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_textAlignment: 258
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -345,7 +345,7 @@ MonoBehaviour:
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
-  m_firstOverflowCharacterIndex: -1
+  m_firstOverflowCharacterIndex: 0
   m_linkedTextComponent: {fileID: 0}
   m_isLinkedTextComponent: 0
   m_isTextTruncated: 0
@@ -464,7 +464,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -0.29, y: 4.94}
-  m_SizeDelta: {x: 11.251, y: 0.815}
+  m_SizeDelta: {x: 11.251, y: 1.6260157}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &936662190
 GameObject:
@@ -527,12 +527,27 @@ PrefabInstance:
     - target: {fileID: 4807823002965126730, guid: 5f1f5f7ab76fd8c4b9bfa42892dc57f9,
         type: 3}
       propertyPath: layoutScale
-      value: 0.2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4807823002965126730, guid: 5f1f5f7ab76fd8c4b9bfa42892dc57f9,
         type: 3}
       propertyPath: overrideLineBreaks
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4807823002965126730, guid: 5f1f5f7ab76fd8c4b9bfa42892dc57f9,
+        type: 3}
+      propertyPath: staffLineMargin
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4807823002965126730, guid: 5f1f5f7ab76fd8c4b9bfa42892dc57f9,
+        type: 3}
+      propertyPath: staffLinePadding
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4807823002965126730, guid: 5f1f5f7ab76fd8c4b9bfa42892dc57f9,
+        type: 3}
+      propertyPath: autosize
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4807823002965126731, guid: 5f1f5f7ab76fd8c4b9bfa42892dc57f9,
         type: 3}

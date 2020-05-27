@@ -45,9 +45,10 @@ namespace ABCUnity.Example
             titleTransform.position = new Vector3(0.0f, orthographicSize, 0.0f);
             titleTransform.sizeDelta = new Vector2 (targetWidth, titleTransform.sizeDelta.y);
 
+            var layoutSpacer = 1.5f;
             var layoutTransform = layout.GetComponent<RectTransform>();
-            layoutTransform.position = new Vector3(0.0f, titleTransform.position.y - titleTransform.rect.height, 0.0f);
-            layoutTransform.sizeDelta = new Vector2(targetWidth, orthoHeight - titleTransform.sizeDelta.y);
+            layoutTransform.position = new Vector3(0.0f, titleTransform.position.y - titleTransform.rect.height - layoutSpacer, 0.0f);
+            layoutTransform.sizeDelta = new Vector2(targetWidth, orthoHeight - titleTransform.sizeDelta.y - layoutSpacer);
         }
     }
 
