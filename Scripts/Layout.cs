@@ -11,7 +11,6 @@ namespace ABCUnity
     public class Layout : MonoBehaviour
     {
         [SerializeField] private SpriteAtlas spriteAtlas; // set in editor
-        [SerializeField] public float layoutScale = 0.5f;
         [SerializeField] public Color color = Color.black;
         [SerializeField] public Material NoteMaterial;
         [SerializeField] public TextMeshPro textPrefab;
@@ -32,6 +31,9 @@ namespace ABCUnity
         public OnLoaded onLoaded;
 
         public RectTransform rectTransform { get; private set; }
+
+        GameObject scoreContainer;
+        private float layoutScale = 1.0f;
 
         public void Awake()
         {
@@ -382,12 +384,67 @@ namespace ABCUnity
             return actualBounds;
         }
 
-        Bounds SetMeasureItemPosition(Alignment.Item item, Alignment.Measure measure, float actualmeasureWidth)
+        class StafflineHeight
         {
-            float positionX = (item.referencePosition / measure.insertX) * actualmeasureWidth;
-            Vector3 insertPos = new Vector3(positionX, 0.0f, 0.0f);
-            item.container.transform.localPosition = insertPos;
-            return new Bounds(item.info.totalBounding.center + insertPos, item.info.totalBounding.size);
+            public readonly float min, max;
+            public StafflineHeight(float min, float max)
+            {
+                this.min = min;
+                this.max = max;
+            }
+
+            public float val { get { return max - min; } }
+        }
+        private static readonly Dictionary<ABC.Clef, StafflineHeight> baseStaffValues = new Dictionary<ABC.Clef, StafflineHeight>()
+        {
+            { ABC.Clef.Treble, new StafflineHeight(-0.9f, 3.0f) },
+            { ABC.Clef.Bass, new StafflineHeight(0.0f, 2.3f) },
+        };
+
+        float CalculateScoreHeight()
+        {
+            float height = 0.0f;
+
+            for (int i = 0; i < layouts[0].scoreLines.Count; i++)
+            {
+                //compute height of this score line
+                for (int l = 0; l < layouts.Count; l++)
+                {
+                    var baseValues = baseStaffValues[layouts[l].voice.clef];
+                    float min = baseValues.min;
+                    float max = baseValues.max;
+
+                    foreach (var measure in layouts[l].scoreLines[i].measures)
+                    {
+                        min = Mathf.Min(min, measure.bounds.min.y);
+                        max = Mathf.Max(max, measure.bounds.max.y);
+                    }
+
+                    var staffSpacer = l == layouts.Count - 1 ? staffLineMargin : staffLinePadding;
+                    height += (max - min) + staffSpacer;
+                }
+            }
+
+            return height;
+        }
+
+        void PrepareScoreLines()
+        {
+            if (multilineLayout)
+            {
+                for (int i = 0; i < layouts[0].scoreLines.Count; i++)
+                    LayoutScoreLine(i);
+            }
+            else
+            {
+                LayoutScoreLine(0);
+                PartitionScoreLine();
+            }
+
+            float calculatedHeight = CalculateScoreHeight();
+
+            if (calculatedHeight > rectTransform.rect.size.y)
+                layoutScale = rectTransform.rect.size.y / calculatedHeight;
         }
 
         void LayoutTune()
@@ -410,24 +467,18 @@ namespace ABCUnity
             beams = Beam.CreateBeams(tune);
             SetupVoiceLayouts();
 
-            if (multilineLayout)
-            {
-                for (int i = 0; i < layouts[0].scoreLines.Count; i++)
-                {
-                    LayoutScoreLine(i);
-                    RenderScoreLine(i);
-                }
-            }
-            else
-            {
-                LayoutScoreLine(0);
-                PartitionScoreLine();
+            scoreContainer = new GameObject("Score");
+            scoreContainer.transform.parent = this.transform;
+            scoreContainer.transform.localPosition = Vector3.zero;
 
-                for (int i = 0; i < layouts[0].scoreLines.Count; i++)
-                    RenderScoreLine(i);
-            }
+            PrepareScoreLines();
 
+            for (int i = 0; i < layouts[0].scoreLines.Count; i++)
+                RenderScoreLine(i);
+
+            scoreContainer.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
             this.gameObject.transform.localScale = scale;
+            
         }
 
         /// <summary> Breaks up a single score line into multiple lines based on the horizontal max</summary>
@@ -505,12 +556,11 @@ namespace ABCUnity
                 var scoreLine = layouts[i].scoreLines[lineNum];
                 AdjustStaffScale(scoreLine);
 
-                scoreLine.container.transform.parent = this.transform;
+                scoreLine.container.transform.parent = scoreContainer.transform;
                 scoreLine.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (scoreLine.bounds.max.y * layoutScale), 0.0f);
-                scoreLine.container.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
-
                 var staffSpacer = i == layouts.Count - 1 ? staffLineMargin : staffLinePadding;
-                staffOffset.y -= (scoreLine.bounds.size.y + staffSpacer) * layoutScale;
+                staffOffset.y -= (scoreLine.bounds.size.y + staffSpacer);
+                Debug.Log($"FinalizeScoreLine: {staffOffset.y}");
             }
         }
 
