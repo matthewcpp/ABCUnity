@@ -580,13 +580,13 @@ namespace ABCUnity
 
         const float TimeSignatureY = 1.15f;
 
-        public NoteInfo CreateTimeSignature(ABC.TimeSignature timeSignature, GameObject container)
+        public NoteInfo CreateTimeSignature(string timeSignature, GameObject container)
         {
             var bounds = new Bounds();
 
-            if (timeSignature.value == "C" || timeSignature.value == "C|")
+            if (timeSignature == "C" || timeSignature == "C|")
             {
-                var spriteName = (timeSignature.value == "C") ? "Time_Common" : "Time_Cut";
+                var spriteName = (timeSignature == "C") ? "Time_Common" : "Time_Cut";
                 var commonTime = spriteCache.GetSpriteObject(spriteName);
                 commonTime.transform.parent = container.transform;
                 commonTime.transform.localPosition = new Vector3(0.0f, TimeSignatureY, 0.0f);
@@ -594,9 +594,9 @@ namespace ABCUnity
             }
             else
             {
-                var pieces = timeSignature.value.Split('/');
+                var pieces = timeSignature.Split('/');
                 if (pieces.Length < 2)
-                    throw new LayoutException($"Unable to parse time signature: {timeSignature.value}");
+                    throw new LayoutException($"Unable to parse time signature: {timeSignature}");
 
                 var sprite = spriteCache.GetSpriteObject($"Time_{pieces[0]}");
                 sprite.transform.parent = container.transform;

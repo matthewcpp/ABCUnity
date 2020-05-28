@@ -293,8 +293,7 @@ namespace ABCUnity
                 foreach (var layout in layouts)
                 {
                     var scoreLine = layout.scoreLines[lineNum];
-                    var timeSignature = layout.voice.items[0] as ABC.TimeSignature;
-                    LayoutTimeSignature(scoreLine, timeSignature);
+                    LayoutTimeSignature(scoreLine, layout.voice.initialTimeSignature);
                 }
             }
 
@@ -532,11 +531,11 @@ namespace ABCUnity
 
             for (int i = 0; i < tune.voices.Count; i++)
             {
-                var timeSignatureItem = tune.voices[i].items[0] as ABC.TimeSignature;
-                if (timeSignatureItem == null)
+                var initialTimeSignature = tune.voices[i].initialTimeSignature;
+                if (initialTimeSignature == string.Empty)
                     throw new BeatAlignmentException($"Voice {i} does not initially declare a time signature.");
 
-                var timeSignature = TimeSignature.Parse(timeSignatureItem.value);
+                var timeSignature = TimeSignature.Parse(initialTimeSignature);
 
                 if (result == null)
                     result = timeSignature;
@@ -599,7 +598,7 @@ namespace ABCUnity
             scoreLine.AdvaceInsertPos(staffPadding);
         }
         
-        void LayoutTimeSignature(VoiceLayout.ScoreLine scoreLine, ABC.TimeSignature timeSignature)
+        void LayoutTimeSignature(VoiceLayout.ScoreLine scoreLine, string timeSignature)
         {
             var container = new GameObject("Time Signature");
             container.transform.parent = scoreLine.container.transform;

@@ -85,11 +85,11 @@ namespace ABCUnity
 
             if (voice.items.Count == 0) return;
 
-            var timeSignatureItem = voice.items[0] as ABC.TimeSignature;
-            if (timeSignatureItem == null)
+            var initialTimeSignature = voice.initialTimeSignature;
+            if (initialTimeSignature == string.Empty)
                 throw new BeatAlignmentException("Voice does not initially declare a time signature.");
 
-            timeSignature = TimeSignature.Parse(timeSignatureItem.value);
+            timeSignature = TimeSignature.Parse(initialTimeSignature);
 
             float t = 0;
             int currentBeat = 1;
@@ -98,7 +98,7 @@ namespace ABCUnity
             Measure measure = new Measure(lineNumber);
             Beat beat = new Beat(currentBeat);
 
-            for (int i = 1; i < voice.items.Count; i++)
+            for (int i = 0; i < voice.items.Count; i++)
             {
                 switch (voice.items[i].type)
                 {
