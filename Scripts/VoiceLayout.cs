@@ -10,7 +10,7 @@ namespace ABCUnity
 
         public class ScoreLine
         {
-            public List<Alignment.Measure> measures = new List<Alignment.Measure>();
+            public List<Measure> measures = new List<Measure>();
             public GameObject container;
             public Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
 
@@ -31,6 +31,58 @@ namespace ABCUnity
                 var pos = insertPos;
                 pos.x += amount;
                 bounds.Encapsulate(pos);
+            }
+
+            public class Measure
+            {
+                public Alignment.Measure source { get; }
+                public float insertX { get { return bounds.size.x; } }
+                public GameObject container;
+                public Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
+                public List<Element> elements = new List<Element>();
+
+                public Measure(Alignment.Measure measure)
+                {
+                    source = measure;
+                }
+
+                public void EncapsulateAppendedBounds(Bounds bounding)
+                {
+                    bounds.Encapsulate(new Bounds(bounding.center + new Vector3(insertX, 0.0f, 0.0f), bounding.size));
+                }
+
+                public void AdvaceInsertPos(float amount)
+                {
+                    var pos = new Vector3(insertX, 0.0f, 0.0f);
+                    pos.x += amount;
+                    bounds.Encapsulate(pos);
+                }
+
+                public Element AddItem(ABC.Item item)
+                {
+                    var element = new Element(item);
+                    elements.Add(element);
+                    return element;
+                }
+            }
+
+            public class Element
+            {
+                public ABC.Item item { get; }
+                public GameObject container { get; set; }
+                public NoteInfo info;
+                
+
+                public Element(ABC.Item item)
+                {
+                    this.item = item;
+                }
+
+                public float referencePosition { get; set; } // relative position within the measure
+                public float prefixAmount { get { return info.rootBounding.min.x; } }
+                public float postfixAmount { get { return info.totalBounding.max.x - info.rootBounding.max.x; } }
+                public float totalWidth { get { return info.totalBounding.size.x; } }
+                public float alignOffset { get; set; } = 0.0f;
             }
         }
 
@@ -53,7 +105,7 @@ namespace ABCUnity
                     if (measure.lineNumber >= scoreLines.Count)
                         scoreLines.Add(new ScoreLine());
 
-                    scoreLines[measure.lineNumber].measures.Add(measure);
+                    scoreLines[measure.lineNumber].measures.Add(new ScoreLine.Measure(measure));
                 }
             }
             else
@@ -61,7 +113,7 @@ namespace ABCUnity
                 var scoreLine = new ScoreLine();
 
                 foreach (var measure in alignment.measures)
-                    scoreLine.measures.Add(measure);
+                    scoreLine.measures.Add(new ScoreLine.Measure(measure));
 
                 scoreLines.Add(scoreLine);
             }
@@ -71,6 +123,6 @@ namespace ABCUnity
         public Alignment alignment { get; }
 
         /// <summary>The index of the current beat that is active for this measure.</summary>
-        public int beatAlignmentIndex { get; set; } = 0;
+        public int beatIndex { get; set; } = 0;
     }
 }

@@ -5,7 +5,7 @@ namespace ABCUnity
 {
     class Beam
     {
-        const float defaultStemHeight = 1.92f;
+        public const float defaultStemHeight = 1.92f;
         public static Vector3 stemUpOffset = new Vector3(0.65f, 0.35f, 0.0f);
         public static Vector3 stemDownOffset = new Vector3(0.0f, 0.262f, 0.0f);
 
