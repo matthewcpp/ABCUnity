@@ -633,7 +633,6 @@ namespace ABCUnity
             
             measure.EncapsulateAppendedBounds(element.info.totalBounding);
             element.referencePosition = measure.insertX;
-            Debug.Log($"SetItemReferencePosition: {spacer}, {element.item}, {element.referencePosition}");
         }
 
         void CreateChordSprite(ABC.Clef clef, VoiceLayout.ScoreLine.Element element)
