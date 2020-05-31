@@ -67,7 +67,7 @@ namespace ABCUnity
         /// <summary> Analyzes the items in the beam and determines relevant info that will control layout. </summary>
         public void Analyze()
         {
-            DetermineNoteDirection();
+            DetermineDirection();
 
             if (IsBasic())
                 type = Type.Basic;
@@ -118,7 +118,7 @@ namespace ABCUnity
         /// Determines the direction of the beam stem.
         /// If the average of all notes is above the middle staff value they will be down else, up.
         /// </summary>
-        private void DetermineNoteDirection()
+        private void DetermineDirection()
         {
             int total = 0;
             foreach (var item in items)
@@ -169,11 +169,11 @@ namespace ABCUnity
 
         bool IsBasic()
         {
-            var firstNote = GetPitchForItem(items[0]);
+            var firstNotePitch = GetPitchForItem(items[0]);
 
             for (int i = 0; i < items.Count; i++)
             {
-                if (GetPitchForItem(items[i]) != firstNote)
+                if (GetPitchForItem(items[i]) != firstNotePitch)
                     return false;
             }
 
@@ -214,6 +214,8 @@ namespace ABCUnity
 
                     previousNote = currentNote;
                 }
+
+                return true;
             }
 
             return false;

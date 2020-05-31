@@ -73,12 +73,13 @@ namespace ABCUnity
 
         public NoteInfo CreateChord(ABC.Chord chord, Beam beam, IReadOnlyList<string> decorations, GameObject container)
         {
-            return CreateChord(chord, beam.clef, beam.stemHeight, decorations, container);
+            return CreateChord(chord, beam.clef, beam.noteDirection, beam.stemHeight, decorations, container);
         }
 
         public NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container)
         {
-            return CreateChord(chord, clef, 0.0f, decorations, container);
+            var noteDirection = DetermineChordNoteDirection(chord.notes, clef);
+            return CreateChord(chord, clef, noteDirection, 0.0f, decorations, container);
         }
 
         /// <summary>
@@ -387,13 +388,11 @@ namespace ABCUnity
             }
         }
 
-        private NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, float stemHeight, IReadOnlyList<string> decorations, GameObject container)
+        private NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, NoteDirection noteDirection, float stemHeight, IReadOnlyList<string> decorations, GameObject container)
         {
             var offset = Vector3.zero;
             var totalBounds = new Bounds();
             totalBounds.SetMinMax(offset, offset);
-
-            var noteDirection = DetermineChordNoteDirection(chord.notes, clef);
 
             CreateChordAccidentals(chord.notes, clef, ref offset, container, ref totalBounds);
 
@@ -525,6 +524,10 @@ namespace ABCUnity
                 lastNotePos += Beam.stemUpOffset;
                 stemHeight = Mathf.Abs(lastNotePos.y - stemPos.y) + Beam.defaultStemHeight;
             }
+            else
+            {
+                stemHeight = stemHeight - stemPos.y;
+            }
 
             stem.transform.localScale = new Vector3(1.0f, stemHeight, 1.0f);
 
@@ -565,6 +568,8 @@ namespace ABCUnity
 
             if (stemHeight == 0.0f)
                 stemHeight = Mathf.Abs((lastNotePos.y - Beam.defaultStemHeight) - stemPos.y);
+            else
+                stemHeight = Mathf.Abs(stemHeight - stemPos.y);
 
             stem.transform.localScale = new Vector3(1.0f, stemHeight, 1.0f);
 
