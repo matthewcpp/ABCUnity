@@ -247,7 +247,7 @@ namespace ABCUnity
 
                                 bool allItemsDone = beatItemIndex == beatInfo.items.Count - 1;
                                 if (allItemsDone)
-                                    layout.beatIndex += 1;
+                                    layout.beatIndex = Math.Min(layoutMeasure.source.beats.Count - 1, layout.beatIndex + 1);
                                 else
                                     more = true;
                             }
