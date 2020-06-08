@@ -99,8 +99,8 @@ namespace ABCUnity
                 public NoteInfo OffsetNoteInfo(Vector3 offset)
                 {
                     return new NoteInfo(
-                        new Bounds(info.totalBounding.center + offset, info.totalBounding.size),
-                        new Bounds(info.rootBounding.center + offset, info.rootBounding.size));
+                        new Bounds(info.rootBounding.center + offset, info.rootBounding.size),
+                        new Bounds(info.totalBounding.center + offset, info.totalBounding.size));
                 }
             }
         }

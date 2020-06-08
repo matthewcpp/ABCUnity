@@ -242,14 +242,14 @@ namespace ABCUnity
                 if (noteDirection == NoteCreator.NoteDirection.Up)
                 {
                     var beamPos = first.max;
-                    beam.transform.position = new Vector3(beamPos.x, beamPos.y - offsetY, 0.0f);
+                    beam.transform.localPosition = new Vector3(beamPos.x, beamPos.y - offsetY, 0.0f);
 
                     distX = last.max.x - beamPos.x;
                 }
                 else
                 {
                     var beamPos = first.min;
-                    beam.transform.position = new Vector3(beamPos.x, beamPos.y + offsetY, 0.0f); ;
+                    beam.transform.localPosition = new Vector3(beamPos.x, beamPos.y + offsetY, 0.0f);
 
                     distX = last.min.x - beamPos.x;
                 }
