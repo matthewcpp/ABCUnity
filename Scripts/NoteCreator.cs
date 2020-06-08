@@ -61,7 +61,7 @@ namespace ABCUnity
         public NoteInfo CreateNote(ABC.Note note, Beam beam, IReadOnlyList<string> decorations, GameObject container)
         {
             int stepCount = note.pitch - clefZero[beam.clef];
-            return CreateNote(note, stepCount, beam.stemHeight, beam.noteDirection, decorations, container);
+            return CreateNote(note, beam.clef, stepCount, beam.stemHeight, beam.noteDirection, decorations, container);
         }
 
         public NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container)
@@ -69,7 +69,7 @@ namespace ABCUnity
             int stepCount = note.pitch - clefZero[clef];
             var noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
 
-            return CreateNote(note, stepCount, 0.0f, noteDirection, decorations, container);
+            return CreateNote(note, clef, stepCount, 0.0f, noteDirection, decorations, container);
         }
 
         public NoteInfo CreateChord(ABC.Chord chord, Beam beam, IReadOnlyList<string> decorations, GameObject container)
@@ -86,44 +86,11 @@ namespace ABCUnity
                 return CreateChord(chord, clef, noteDirection, 0.0f, decorations, container);
         }
 
-        /// <summary>
-        /// Draws all required staff markers for a note  with a given step count from the Staff's zero value.
-        /// </summary>
-        private bool AddNoteStaffMarkers(int stepCount, GameObject container, float positionX, float localScaleX, ref Bounds bounding)
-        {
-            if (stepCount < -2)  // below the staff
-            {
-                int stepOffset = stepCount % 2 == 0 ? 1 : 0;
-
-                // if the step count is odd then the mark belongs in the middle, else below
-                bounding.Encapsulate(CreateStaffMark(stepCount + stepOffset, container, positionX, stepOffset == 0 ? 1.0f : localScaleX));
-
-                for (int sc = stepCount + 2 + stepOffset; sc < -2; sc += 2)
-                    bounding.Encapsulate(CreateStaffMark(sc, container, positionX, localScaleX));
-
-                return true;
-            }
-            else if (stepCount > 8) // above the staff
-            {
-                int stepOffset = stepCount % 2 == 0 ? 1 : 0;
-
-                // if the step count is odd then the mark belongs in the middle, else above
-                bounding.Encapsulate(CreateStaffMark(stepCount + stepOffset, container, positionX, 1.0f));
-
-                for (int sc = stepCount + stepOffset - 2; sc > 8; sc -= 2)
-                    bounding.Encapsulate(CreateStaffMark(sc, container, positionX, stepOffset == 0 ? 1.0f : localScaleX));
-
-                return true;
-            }
-
-            return false;
-        }
-
         /// <summary> The space between an accidental and the note it is attached to. </summary>
         const float accidentalOffset = 0.25f;
         const float accidentalWidth = 0.55f;
 
-        private NoteInfo CreateNote(ABC.Note note, int noteStepCount, float stemHeight, NoteDirection noteDirection, IReadOnlyList<string> decorations, GameObject container)
+        private NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, int noteStepCount, float stemHeight, NoteDirection noteDirection, IReadOnlyList<string> decorations, GameObject container)
         {
             var notePosition =  new Vector3(0.0f, noteStep * noteStepCount, 0.0f);
 
@@ -142,8 +109,7 @@ namespace ABCUnity
             GameObject staffMarkers = null;
             if (NeedsStaffMarkers(noteStepCount))
             {
-                staffMarkers = new GameObject();
-                AddNoteStaffMarkers(noteStepCount, staffMarkers, notePosition.x, 1.0f, ref totalBounds);
+                staffMarkers = CreateNoteStaffMarkers(noteDirection, note, clef, notePosition.x, ref totalBounds);
                 notePosition += new Vector3(staffMarkerNoteOffset, 0.0f, 0.0f);
             }
 
@@ -400,6 +366,50 @@ namespace ABCUnity
                 return CreateChordStaffMarkersUp(chord, clef, position, offsetSize, ref totalBounds);
             else
                 return CreateChordStaffMarkersDown(chord, clef, position, -offsetSize, ref totalBounds);
+        }
+
+        private GameObject CreateNoteStaffMarkers(NoteDirection noteDirection, ABC.Note note, ABC.Clef clef, float position, ref Bounds totalBounds)
+        {
+            if (noteDirection == NoteDirection.Up)
+                return CreateNoteStaffMarkersUp(note, clef, position, ref totalBounds);
+            else
+                return CreateNoteStaffMarkersDown(note, clef, position, ref totalBounds);
+        }
+
+        private GameObject CreateNoteStaffMarkersUp(ABC.Note note, ABC.Clef clef, float position, ref Bounds totalBounds)
+        {
+            int stepCount = note.pitch - clefZero[clef];
+
+            if (stepCount > -3)
+                return null;
+
+            if (stepCount % 2 == 0)
+                stepCount += 1;
+
+            var staffMarkers = new GameObject("Staff Markers");
+
+            for (int step = stepCount; step <= -3; step += 2)
+                totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position, 1.0f));
+
+            return staffMarkers;
+        }
+
+        private GameObject CreateNoteStaffMarkersDown(ABC.Note note, ABC.Clef clef, float position, ref Bounds totalBounds)
+        {
+            int stepCount = note.pitch - clefZero[clef];
+
+            if (stepCount < 9)
+                return null;
+
+            if (stepCount % 2 == 0)
+                stepCount -= 1;
+
+            var staffMarkers = new GameObject("Staff Markers");
+
+            for (int step = stepCount; step >= 9; step -= 2)
+                totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position, 1.0f));
+
+            return staffMarkers;
         }
 
         private GameObject CreateChordStaffMarkersUp(ABC.Chord chord, ABC.Clef clef, float position, float offsetSize, ref Bounds totalBounds)
