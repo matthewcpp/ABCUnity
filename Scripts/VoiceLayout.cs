@@ -40,6 +40,9 @@ namespace ABCUnity
                 public GameObject container;
                 public Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
                 public List<Element> elements = new List<Element>();
+                public List<float> spacers = new List<float>();
+
+                public float minWidth { get { return GetMinWidth(); } }
 
                 public Measure(Alignment.Measure measure)
                 {
@@ -64,6 +67,19 @@ namespace ABCUnity
                     elements.Add(element);
                     return element;
                 }
+
+                private float GetMinWidth()
+                {
+                    float minWidth = 0.0f;
+
+                    foreach (var spacer in spacers)
+                        minWidth += spacer;
+
+                    foreach (var element in elements)
+                        minWidth += element.totalWidth;
+
+                    return minWidth;
+                }
             }
 
             public class Element
@@ -71,18 +87,21 @@ namespace ABCUnity
                 public ABC.Item item { get; }
                 public GameObject container { get; set; }
                 public NoteInfo info;
-                
 
                 public Element(ABC.Item item)
                 {
                     this.item = item;
                 }
 
-                public float referencePosition { get; set; } // relative position within the measure
                 public float prefixAmount { get { return info.rootBounding.min.x; } }
-                public float postfixAmount { get { return info.totalBounding.max.x - info.rootBounding.max.x; } }
                 public float totalWidth { get { return info.totalBounding.size.x; } }
-                public float alignOffset { get; set; } = 0.0f;
+
+                public NoteInfo OffsetNoteInfo(Vector3 offset)
+                {
+                    return new NoteInfo(
+                        new Bounds(info.totalBounding.center + offset, info.totalBounding.size),
+                        new Bounds(info.rootBounding.center + offset, info.rootBounding.size));
+                }
             }
         }
 

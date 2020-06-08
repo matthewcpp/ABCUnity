@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEngine.SocialPlatforms.Impl;
+using UnityEditor;
 
 namespace ABCUnity
 {
@@ -173,16 +174,18 @@ namespace ABCUnity
                     measureInfo.container = new GameObject("Measure");
                 }
 
+                float maxBeatX = 0.0f;
+
                 for (int beat = 1; beat <= timeSignature.beatCount; beat++)
                 {
                     int beatItemIndex = 0;
 
                     while (true)
                     {
-                        float maxBeatX = float.MinValue;
-                        float alignment = 0.0f;
                         bool more = false;
+                        float alignment = 0.0f;
 
+                        //layout
                         foreach (var layout in layouts)
                         {
                             var scoreLine = layout.scoreLines[lineNum];
@@ -213,10 +216,22 @@ namespace ABCUnity
                                         break;
                                 }
 
-                                alignment = Mathf.Max(alignment, element.postfixAmount);
+
+                                // advance
+                                // in order to preserve alignment, all layouts will advance to the furthest position of the current beat marker
+                                var delta = maxBeatX - layoutMeasure.insertX;
+                                layoutMeasure.spacers.Add(delta);
+                                layoutMeasure.AdvaceInsertPos(delta);
+
+                                // position
+                                var beatItem = layoutMeasure.elements[layoutMeasure.elements.Count - 1];
+                                float alignPos = SetItemReferencePosition(beatItem, layoutMeasure, advanceAmount);
+                                alignment = Mathf.Max(alignment, alignPos);
+                                beatItem.container.transform.parent = layoutMeasure.container.transform;
                             }
                         }
 
+                        // align
                         foreach (var layout in layouts)
                         {
                             var scoreLine = layout.scoreLines[lineNum];
@@ -225,25 +240,11 @@ namespace ABCUnity
                             if (beatInfo.beatStart == beat && beatItemIndex < beatInfo.items.Count)
                             {
                                 var beatItem = layoutMeasure.elements[layoutMeasure.elements.Count - 1];
-                                beatItem.alignOffset = alignment - beatItem.postfixAmount;
 
-                                SetItemReferencePosition(beatItem, layoutMeasure, advanceAmount);
-                                beatItem.container.transform.parent = layoutMeasure.container.transform;
-                            }
-
-                            maxBeatX = Math.Max(maxBeatX, layoutMeasure.bounds.size.x);
-                        }
-
-                        foreach (var layout in layouts)
-                        {
-                            var scoreLine = layout.scoreLines[lineNum];
-                            var layoutMeasure = scoreLine.measures[measure];
-                            var beatInfo = layoutMeasure.source.beats[layout.beatIndex];
-                            if (beatInfo.beatStart == beat && beatItemIndex < beatInfo.items.Count)
-                            {
-                                //todo: This calculation may be incorrect if notes had different number of dots..
-                                var delta = maxBeatX - layoutMeasure.insertX;
-                                layoutMeasure.elements[layoutMeasure.elements.Count - 1].referencePosition += delta;
+                                float alignPos = layoutMeasure.insertX - beatItem.totalWidth + beatItem.prefixAmount;
+                                float delta = alignment - alignPos;
+                                layoutMeasure.spacers[layoutMeasure.spacers.Count - 1] += delta;
+                                layoutMeasure.AdvaceInsertPos(delta);
 
                                 bool allItemsDone = beatItemIndex == beatInfo.items.Count - 1;
                                 if (allItemsDone)
@@ -252,9 +253,7 @@ namespace ABCUnity
                                     more = true;
                             }
 
-                            // in order to preserve alignment, all layouts will advance to the furthest position of the current beat marker
-                            var measureInfo = layout.scoreLines[lineNum].measures[measure];
-                            measureInfo.bounds.Encapsulate(new Vector3(maxBeatX, 0.0f, 0.0f));
+                            maxBeatX = Math.Max(maxBeatX, layoutMeasure.bounds.size.x);
                         }
 
                         beatItemIndex += 1;
@@ -269,6 +268,10 @@ namespace ABCUnity
                     if (layoutMeasure.source.isRest)
                         CenterRestMeasure(layoutMeasure);
 
+                    var delta = maxBeatX - layoutMeasure.insertX;
+                    layoutMeasure.spacers.Add(delta);
+                    layoutMeasure.AdvaceInsertPos(delta);
+
                     var element = layoutMeasure.AddItem(layoutMeasure.source.bar);
                     CreateBarSprite(element);
                     SetItemReferencePosition(element, layoutMeasure, advanceAmount);
@@ -282,7 +285,7 @@ namespace ABCUnity
             var item = measure.elements[0];
             var center = measure.insertX / 2.0f;
             var pos = center - item.info.totalBounding.size.x / 2.0f;
-            item.referencePosition = pos;
+            //item.referencePosition = pos;
         }
 
         void RenderScoreLine(int lineNum)
@@ -354,19 +357,29 @@ namespace ABCUnity
             Bounds actualBounds = new Bounds(Vector3.zero, Vector3.zero);
             List<Vector3> beamVertices = null;
 
-            foreach (var item in measure.elements)
-            {
+            float positionX = 0.0f;
+            float deltaWidth = actualmeasureWidth - measure.minWidth;
+            float deltaWidth2 = actualmeasureWidth - measure.insertX;
+            float spacerAdjust = deltaWidth / (measure.elements.Count - 1);
 
-                float positionX = (item.referencePosition / measure.insertX) * actualmeasureWidth;
-                Vector3 insertPos = new Vector3(positionX - item.alignOffset - item.totalWidth, 0.0f, 0.0f);
+            for (int i = 0; i < measure.elements.Count; i++)
+            {
+                var item = measure.elements[i];
+                positionX += measure.spacers[i];
+                if (i > 0)
+                    positionX += spacerAdjust;
+
+                Vector3 insertPos = new Vector3(positionX, 0.0f, 0.0f);
                 item.container.transform.localPosition = insertPos;
-                actualBounds.Encapsulate(new Bounds(item.info.totalBounding.center + insertPos, item.info.totalBounding.size));
+                positionX += item.totalWidth;
+
+                var actualNoteInfo = item.OffsetNoteInfo(insertPos);
+                actualBounds.Encapsulate(actualNoteInfo.totalBounding);
 
                 var duration = item.item as ABC.Duration;
                 if (duration != null && beams.TryGetValue(duration.beam, out Beam beam))
                 {
-                    var rootBounding = new Bounds(item.info.rootBounding.center + insertPos, item.info.rootBounding.size);
-                    beam.Update(rootBounding);
+                    beam.Update(actualNoteInfo.rootBounding);
 
                     if (beam.isReadyToCreate)
                     {
@@ -625,14 +638,17 @@ namespace ABCUnity
             currentStaff.transform.localScale = new Vector3(scaleX, 1.0f, 1.0f);
         }
         
-        void SetItemReferencePosition(VoiceLayout.ScoreLine.Element element, VoiceLayout.ScoreLine.Measure measure, float advanceAmount)
+        float SetItemReferencePosition(VoiceLayout.ScoreLine.Element element, VoiceLayout.ScoreLine.Measure measure, float advanceAmount)
         {
             float spacer = Mathf.Max(minimumAdavance, advanceAmount - element.prefixAmount);
-            
+            float alignmentPos = measure.insertX + spacer + element.prefixAmount;
+
+            measure.spacers[measure.spacers.Count - 1] += spacer;
             measure.AdvaceInsertPos(spacer);
             
             measure.EncapsulateAppendedBounds(element.info.totalBounding);
-            element.referencePosition = measure.insertX;
+
+            return alignmentPos;
         }
 
         void CreateChordSprite(ABC.Clef clef, VoiceLayout.ScoreLine.Element element)

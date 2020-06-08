@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.CompilerServices;
-using ABC;
 
 namespace ABCUnity
 {
@@ -356,7 +355,7 @@ namespace ABCUnity
             CreateChordAccidentals(chord.notes, clef, ref offset, container, ref totalBounds);
             offset.x = totalBounds.max.x;
 
-            var staffMarkers = CreateChordStaffMarkersDown(chord, clef, offset.x, compressedChordWholeNoteOffset,ref totalBounds);
+            var staffMarkers = CreateChordStaffMarkersDown(chord, clef, offset.x, -compressedChordWholeNoteOffset,ref totalBounds);
 
             if (staffMarkers == null)
                 staffMarkers = CreateChordStaffMarkersUp(chord, clef, offset.x, compressedChordWholeNoteOffset, ref totalBounds);
@@ -395,7 +394,7 @@ namespace ABCUnity
             return new NoteInfo(rootBounds, totalBounds);
         }
 
-        private GameObject CreateChordStaffMarkers(NoteDirection noteDirection, Chord chord, ABC.Clef clef, float position, float offsetSize, ref Bounds totalBounds)
+        private GameObject CreateChordStaffMarkers(NoteDirection noteDirection, ABC.Chord chord, ABC.Clef clef, float position, float offsetSize, ref Bounds totalBounds)
         {
             if (noteDirection == NoteDirection.Up)
                 return CreateChordStaffMarkersUp(chord, clef, position, offsetSize, ref totalBounds);
@@ -403,7 +402,7 @@ namespace ABCUnity
                 return CreateChordStaffMarkersDown(chord, clef, position, -offsetSize, ref totalBounds);
         }
 
-        private GameObject CreateChordStaffMarkersUp(Chord chord, ABC.Clef clef, float position, float offsetSize, ref Bounds totalBounds)
+        private GameObject CreateChordStaffMarkersUp(ABC.Chord chord, ABC.Clef clef, float position, float offsetSize, ref Bounds totalBounds)
         {
             int stepCount = chord.notes[0].pitch - clefZero[clef];
 
@@ -438,7 +437,7 @@ namespace ABCUnity
             return staffMarkers;
         }
 
-        private GameObject CreateChordStaffMarkersDown(Chord chord, ABC.Clef clef, float position, float offsetSize, ref Bounds totalBounds)
+        private GameObject CreateChordStaffMarkersDown(ABC.Chord chord, ABC.Clef clef, float position, float offsetSize, ref Bounds totalBounds)
         {
             int stepCount = chord.notes[chord.notes.Length - 1].pitch - clefZero[clef];
 
@@ -447,6 +446,9 @@ namespace ABCUnity
 
             if (stepCount % 2 == 0)
                 stepCount -= 1;
+
+            if (ChordIsCompressed(chord, NoteDirection.Down))
+                position += Mathf.Abs(offsetSize);
 
             var staffMarkers = new GameObject("Staff Markers");
 
@@ -473,6 +475,28 @@ namespace ABCUnity
             return staffMarkers;
         }
 
+        private bool ChordIsCompressed(ABC.Chord chord, NoteDirection noteDirection)
+        {
+            if (noteDirection == NoteDirection.Down)
+            {
+                for (int i = chord.notes.Length - 2; i >= 0; i--)
+                {
+                    if (chord.notes[i + 1].pitch - chord.notes[i].pitch == 1)
+                        return true;
+                }
+            }
+            else
+            {
+                for (int i = 1; i < chord.notes.Length; i++)
+                {
+                    if (chord.notes[i].pitch - chord.notes[i - 1].pitch == 1)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
         private Bounds CreateChordNotes(NoteDirection noteDirection, ABC.Chord chord, ABC.Length length, float stemHeight, ABC.Clef clef, bool beam, GameObject container, Vector3 offset, ref Bounds totalBounds)
         {
             if (noteDirection == NoteDirection.Up)
@@ -488,7 +512,8 @@ namespace ABCUnity
             var lastNotePos = Vector3.zero;
 
             var dotValue = length > ABC.Length.Quarter ? length : ABC.Length.Quarter;
-            var chordBounds = AddChordNoteHead(chord.notes[0].pitch, dotValue, clef, NoteDirection.Down, container, offset, ref lastNotePos);
+            var rootBounds = AddChordNoteHead(chord.notes[0].pitch, dotValue, clef, NoteDirection.Down, container, offset, ref lastNotePos);
+            var chordBounds = rootBounds;
             var stemPos = chordBounds.min + Beam.stemUpOffset;
             stem.transform.localPosition = stemPos;
 
@@ -507,7 +532,10 @@ namespace ABCUnity
                     right = false;
                 }
 
-                chordBounds.Encapsulate(AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, NoteDirection.Down, container, noteOffset, ref lastNotePos));
+                var noteBounds = AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, NoteDirection.Down, container, noteOffset, ref lastNotePos);
+                chordBounds.Encapsulate(noteBounds);
+                if (!right)
+                    rootBounds.Encapsulate(noteBounds);
             }
 
             if (stemHeight == 0.0f)
@@ -522,10 +550,11 @@ namespace ABCUnity
 
             stem.transform.localScale = new Vector3(1.0f, stemHeight, 1.0f);
 
+            rootBounds.Encapsulate(stem.bounds);
             chordBounds.Encapsulate(stem.bounds);
             totalBounds.Encapsulate(chordBounds);
 
-            return stem.bounds;
+            return rootBounds;
         }
 
         private Bounds CreateChordNotesDown(ABC.Chord chord, ABC.Length length, float stemHeight, ABC.Clef clef, bool beam, GameObject container, Vector3 offset, ref Bounds totalBounds)
@@ -534,8 +563,12 @@ namespace ABCUnity
             stem.transform.parent = container.transform;
             var lastNotePos = Vector3.zero;
 
+            if (ChordIsCompressed(chord, NoteDirection.Down))
+                offset.x += compressedChordNoteOffset;
+
             var dotValue = length > ABC.Length.Quarter ? length : ABC.Length.Quarter;
-            var chordBounds = AddChordNoteHead(chord.notes[chord.notes.Length - 1].pitch, dotValue, clef, NoteDirection.Down, container, offset, ref lastNotePos);
+            var rootBounds = AddChordNoteHead(chord.notes[chord.notes.Length - 1].pitch, dotValue, clef, NoteDirection.Down, container, offset, ref lastNotePos);
+            var chordBounds = rootBounds;
             var stemPos = container.transform.GetChild(container.transform.childCount - 1).localPosition + Beam.stemDownOffset;
             stem.transform.localPosition = stemPos;
 
@@ -554,7 +587,10 @@ namespace ABCUnity
                     left = false;
                 }
 
-                chordBounds.Encapsulate(AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, NoteDirection.Down, container, noteOffset, ref lastNotePos));
+                var noteBounds = AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, NoteDirection.Down, container, noteOffset, ref lastNotePos);
+                chordBounds.Encapsulate(noteBounds);
+                if (!left)
+                    rootBounds.Encapsulate(noteBounds);
             }
 
             if (stemHeight == 0.0f)
@@ -564,10 +600,11 @@ namespace ABCUnity
 
             stem.transform.localScale = new Vector3(1.0f, stemHeight, 1.0f);
 
+            rootBounds.Encapsulate(stem.bounds);
             chordBounds.Encapsulate(stem.bounds);
             totalBounds.Encapsulate(chordBounds);
 
-            return stem.bounds;
+            return rootBounds;
         }
 
         private Bounds CreateWholeNoteChordNotes(ABC.Chord chord, ABC.Clef clef, GameObject container, Vector3 offset, ref Bounds totalBounds)
