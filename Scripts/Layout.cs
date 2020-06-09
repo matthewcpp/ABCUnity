@@ -17,45 +17,72 @@ namespace ABCUnity
         [SerializeField] public TextMeshPro textPrefab;
         [SerializeField] public float staffLinePadding = 0.4f;
         [SerializeField] public float staffLineMargin = 1.0f;
-
         [SerializeField] public bool overrideLineBreaks = false;
 
+        #region Callbacks
+        public delegate void OnLoaded(ABC.Tune tune);
+        public OnLoaded onLoaded;
+        #endregion
+
+        #region TuneSpecificMembers
+        List<VoiceLayout> layouts = new List<VoiceLayout>();
+        Dictionary<int, Beam> beams;
+        public ABC.Tune tune { get; private set; }
+        GameObject scoreContainer;
+        public Dictionary<int, GameObject> gameObjectMap { get; } = new Dictionary<int, GameObject>();
+        public Dictionary<GameObject, ABC.Item> itemMap { get; } = new Dictionary<GameObject, ABC.Item>();
+        private Dictionary<int, List<SpriteRenderer>> spriteRendererCache = new Dictionary<int, List<SpriteRenderer>>();
+        private TimeSignature timeSignature;
+        #endregion
+        
+        private float layoutScale = 1.0f;
+        public RectTransform rectTransform { get; private set; }
         private SpriteCache cache;
         private NoteCreator notes;
-
         private bool multilineLayout;
+        Vector2 staffOffset;
+        private float horizontalMax;
 
-        public ABC.Tune tune { get; private set; }
-
-        public delegate void OnLoaded(ABC.Tune tune);
-
-        public OnLoaded onLoaded;
-
-        public RectTransform rectTransform { get; private set; }
-
-        GameObject scoreContainer;
-        private float layoutScale = 1.0f;
-
+        #region Constants
         public const float staffPadding = 0.3f;
         public const float measurePadding = 0.5f;
         public const float noteAdvance = 0.75f;
         const float minimumAdavance = 0.25f;
         const float staffHeight = 2.29f;
+        #endregion
 
         public void Awake()
         {
             multilineLayout = !overrideLineBreaks;
             rectTransform = GetComponent<RectTransform>();
             cache = new SpriteCache(spriteAtlas, textPrefab);
+            layouts.Clear();
+            if (beams != null)
+                beams.Clear();
 
             NoteMaterial = GameObject.Instantiate(NoteMaterial);
             NoteMaterial.color = color;
+        }
+
+        public void Clear()
+        {
+            if (tune == null) return;
+            
+            GameObject.Destroy(scoreContainer);
+            layouts.Clear();
+            gameObjectMap.Clear();
+            itemMap.Clear();
+            spriteRendererCache.Clear();
+            
+            timeSignature = null;
+            tune = null;
         }
 
         public void LoadString(string abc)
         {
             try
             {
+                Clear();
                 tune = ABC.Tune.Load(abc);
                 LayoutTune();
                 onLoaded?.Invoke(tune);
@@ -70,6 +97,7 @@ namespace ABCUnity
         {
             try
             {
+                Clear();
                 tune = ABC.Tune.Load(stream);
                 LayoutTune();
                 onLoaded?.Invoke(tune);
@@ -87,12 +115,6 @@ namespace ABCUnity
                 LoadStream(file);
             }
         }
-
-        public Dictionary<int, GameObject> gameObjectMap { get; } = new Dictionary<int, GameObject>();
-        public Dictionary<GameObject, ABC.Item> itemMap { get; } = new Dictionary<GameObject, ABC.Item>();
-        private Dictionary<int, List<SpriteRenderer>> spriteRendererCache = new Dictionary<int, List<SpriteRenderer>>();
-        private TimeSignature timeSignature;
-
 
         public GameObject FindItemRootObject(GameObject obj)
         {
@@ -129,13 +151,6 @@ namespace ABCUnity
                     spriteRenderer.color = color;
             }
         }
-
-        Vector2 staffOffset;
-
-        List<VoiceLayout> layouts = new List<VoiceLayout>();
-        Dictionary<int, Beam> beams;
-
-        private float horizontalMax;
 
         public Alignment GetAlignment(int i)
         {

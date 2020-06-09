@@ -87,5 +87,4 @@ namespace ABCUnity
             return sprite;
         }
     }
-
 }
