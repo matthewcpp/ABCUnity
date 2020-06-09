@@ -27,7 +27,7 @@ SpriteAtlas:
       blockOffset: 1
       allowAlphaSplitting: 0
       enableRotation: 1
-      enableTightPacking: 1
+      enableTightPacking: 0
     variantMultiplier: 1
     packables:
     - {fileID: 2800000, guid: 9ba701bbe2a76af4aa5cbf4b04f974d6, type: 3}
@@ -74,14 +74,17 @@ SpriteAtlas:
     - {fileID: 2800000, guid: 0d287075029336a4cac36ea963024e0b, type: 3}
     - {fileID: 2800000, guid: def7af34cfa1b8a45b402ea62822dfdb, type: 3}
     - {fileID: 2800000, guid: 4f5e52637b152fd40b550038e68deacd, type: 3}
-    totalSpriteSurfaceArea: 436584
+    totalSpriteSurfaceArea: 477380
     bindAsDefault: 1
   m_MasterAtlas: {fileID: 0}
   m_PackedSprites:
   - {fileID: 21300000, guid: bae87d7032c5cc740bd40821d95511b4, type: 3}
   - {fileID: 21300000, guid: f9efa9d0911ad854db5bba23dd905bc8, type: 3}
+  - {fileID: 21300000, guid: 38101d11fc52541b8bdf8fbfca153631, type: 3}
+  - {fileID: 21300000, guid: c70af2d15aebd4d5b8a00ca9c0bc7d8d, type: 3}
   - {fileID: 21300000, guid: d70898e135652664db3b6ced0b4b0e77, type: 3}
   - {fileID: 21300000, guid: b61efaf13e7dc2c448d4d2c02fb72af7, type: 3}
+  - {fileID: 21300000, guid: 5e4aa2b23b13d4a0b9c07804729854cc, type: 3}
   - {fileID: 21300000, guid: 890aa6f2c4123ce4f901cf5febc2c960, type: 3}
   - {fileID: 21300000, guid: a4427ef2a55621a4cbbd41a9f15ab676, type: 3}
   - {fileID: 21300000, guid: 4f5e52637b152fd40b550038e68deacd, type: 3}
@@ -111,6 +114,7 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 608ea78db957b7e4cad5007697dc3d01, type: 3}
   - {fileID: 21300000, guid: 421a439d38c5f6a42bba8b8bd6ca4f7d, type: 3}
   - {fileID: 21300000, guid: 40d2f39dd41b7244bbbb240e4421a4ed, type: 3}
+  - {fileID: 21300000, guid: 2343b4bd059904dcb996a5e9c8ed8b0a, type: 3}
   - {fileID: 21300000, guid: f8632aedeccf8284f9c677b8b97c9b45, type: 3}
   - {fileID: 21300000, guid: dd84830ef07e5cf4192887bc6ae2f0e6, type: 3}
   - {fileID: 21300000, guid: d0aa5f8effbcdcf419c38667b5bde60a, type: 3}
@@ -121,8 +125,11 @@ SpriteAtlas:
   m_PackedSpriteNamesToIndex:
   - Clef_Bass
   - Note_Half_Down
+  - Note_Flag_Eighth_Down
+  - Note_Flag_Eighth_Up
   - Time_6
   - Bar_Line
+  - Note_Flag_Sixteenth_Up
   - Note_Eighth_Down
   - Note_Half_Up
   - Time_9
@@ -152,6 +159,7 @@ SpriteAtlas:
   - Note_Beam_Down
   - Time_2
   - Time_0
+  - Note_Flag_Sixteenth_Down
   - Rest_Quarter
   - Note_Quarter_Down
   - Clef_Treble
