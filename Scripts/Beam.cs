@@ -5,7 +5,7 @@ namespace ABCUnity
 {
     class Beam
     {
-        const float defaultStemHeight = 1.92f;
+        public const float defaultStemHeight = 1.92f;
         public static Vector3 stemUpOffset = new Vector3(0.65f, 0.35f, 0.0f);
         public static Vector3 stemDownOffset = new Vector3(0.0f, 0.262f, 0.0f);
 
@@ -67,7 +67,7 @@ namespace ABCUnity
         /// <summary> Analyzes the items in the beam and determines relevant info that will control layout. </summary>
         public void Analyze()
         {
-            DetermineNoteDirection();
+            DetermineDirection();
 
             if (IsBasic())
                 type = Type.Basic;
@@ -118,7 +118,7 @@ namespace ABCUnity
         /// Determines the direction of the beam stem.
         /// If the average of all notes is above the middle staff value they will be down else, up.
         /// </summary>
-        private void DetermineNoteDirection()
+        private void DetermineDirection()
         {
             int total = 0;
             foreach (var item in items)
@@ -169,11 +169,11 @@ namespace ABCUnity
 
         bool IsBasic()
         {
-            var firstNote = GetPitchForItem(items[0]);
+            var firstNotePitch = GetPitchForItem(items[0]);
 
             for (int i = 0; i < items.Count; i++)
             {
-                if (GetPitchForItem(items[i]) != firstNote)
+                if (GetPitchForItem(items[i]) != firstNotePitch)
                     return false;
             }
 
@@ -214,6 +214,8 @@ namespace ABCUnity
 
                     previousNote = currentNote;
                 }
+
+                return true;
             }
 
             return false;
@@ -240,14 +242,14 @@ namespace ABCUnity
                 if (noteDirection == NoteCreator.NoteDirection.Up)
                 {
                     var beamPos = first.max;
-                    beam.transform.position = new Vector3(beamPos.x, beamPos.y - offsetY, 0.0f);
+                    beam.transform.localPosition = new Vector3(beamPos.x, beamPos.y - offsetY, 0.0f);
 
                     distX = last.max.x - beamPos.x;
                 }
                 else
                 {
                     var beamPos = first.min;
-                    beam.transform.position = new Vector3(beamPos.x, beamPos.y + offsetY, 0.0f); ;
+                    beam.transform.localPosition = new Vector3(beamPos.x, beamPos.y + offsetY, 0.0f);
 
                     distX = last.min.x - beamPos.x;
                 }

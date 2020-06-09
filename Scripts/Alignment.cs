@@ -6,36 +6,22 @@ namespace ABCUnity
 {
     public class Alignment
     {
-        public class Item
-        {
-            public ABC.Item item { get; }
-            public GameObject container;
-            public NoteInfo info;
-            public float referencePosition; // relative position within the measure
 
-            public Item(ABC.Item item)
-            {
-                this.item = item;
-            }
-        }
-        
         public class Beat
         {
-            public List<Item> items = new List<Item>();
+            public List<ABC.Item> items = new List<ABC.Item>();
             public int beatStart { get; }
 
             public Beat(int beatStart)
             {
                 this.beatStart = beatStart;
             }
-
-            public float contentWidth = 0.0f;
         }
 
         public class Measure
         {
             public List<Beat> beats { get; } = new List<Beat>();
-            public Item bar;
+            public ABC.Item bar;
             public int lineNumber { get; set; }
 
             public Measure(int lineNumber)
@@ -43,19 +29,6 @@ namespace ABCUnity
                 this.lineNumber = lineNumber;
             }
 
-            public Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
-            public void EncapsulateAppendedBounds(Bounds bounding)
-            {
-                bounds.Encapsulate(new Bounds(bounding.center + new Vector3(insertX, 0.0f, 0.0f), bounding.size));
-            }
-            
-            public void AdvaceInsertPos(float amount)
-            {
-                var pos = new Vector3(insertX, 0.0f, 0.0f);
-                pos.x += amount;
-                bounds.Encapsulate(pos);
-            }
-            
             public bool isRest 
             {
                 get { return IsMeasureRest(); }
@@ -69,11 +42,8 @@ namespace ABCUnity
                 if (beats[0].items.Count != 1)
                     return false;
 
-                return beats[0].items[0].item.type == ABC.Item.Type.MultiMeasureRest;
+                return beats[0].items[0].type == ABC.Item.Type.MultiMeasureRest;
             }
-
-            public float insertX { get { return bounds.size.x; } }
-            public GameObject container;
         }
 
         public List<Measure> measures { get; private set; }
@@ -106,7 +76,7 @@ namespace ABCUnity
                     case ABC.Item.Type.Rest:
                     case ABC.Item.Type.Note:
                         var noteItem = voice.items[i] as ABC.Duration;
-                        beat.items.Add(new Item(noteItem));
+                        beat.items.Add(noteItem);
                         t += noteItem.duration;
 
                         if (t >= timeSignature.noteValue) // current beat is filled
@@ -126,12 +96,12 @@ namespace ABCUnity
                         if (measureRest.count > 1)
                             throw new LayoutException("Measure Rests of length greater than 1 are not currently supported.");
 
-                        beat.items.Add(new Item(measureRest));
+                        beat.items.Add(measureRest);
 
                         break;
 
                     case ABC.Item.Type.Bar:
-                        measure.bar = new Item(voice.items[i]);
+                        measure.bar = voice.items[i];
 
                         if (beat.items.Count > 0)
                             measure.beats.Add(beat);
