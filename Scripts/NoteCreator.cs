@@ -321,7 +321,7 @@ namespace ABCUnity
             CreateChordAccidentals(chord.notes, clef, ref offset, container, ref totalBounds);
             offset.x = totalBounds.max.x;
 
-            var staffMarkers = CreateChordStaffMarkersDown(chord, clef, offset.x, -compressedChordWholeNoteOffset,ref totalBounds);
+            var staffMarkers = CreateChordStaffMarkersDown(chord, clef, offset.x, compressedChordWholeNoteOffset,ref totalBounds);
 
             if (staffMarkers == null)
                 staffMarkers = CreateChordStaffMarkersUp(chord, clef, offset.x, compressedChordWholeNoteOffset, ref totalBounds);
@@ -365,7 +365,11 @@ namespace ABCUnity
             if (noteDirection == NoteDirection.Up)
                 return CreateChordStaffMarkersUp(chord, clef, position, offsetSize, ref totalBounds);
             else
+            {
+                if (ChordIsCompressed(chord, NoteDirection.Down))
+                    position += offsetSize;
                 return CreateChordStaffMarkersDown(chord, clef, position, -offsetSize, ref totalBounds);
+            }
         }
 
         private GameObject CreateNoteStaffMarkers(NoteDirection noteDirection, ABC.Note note, ABC.Clef clef, float position, ref Bounds totalBounds)
@@ -456,9 +460,6 @@ namespace ABCUnity
 
             if (stepCount % 2 == 0)
                 stepCount -= 1;
-
-            if (ChordIsCompressed(chord, NoteDirection.Down))
-                position += Mathf.Abs(offsetSize);
 
             var staffMarkers = new GameObject("Staff Markers");
 
