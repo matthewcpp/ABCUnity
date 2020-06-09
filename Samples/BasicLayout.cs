@@ -7,17 +7,21 @@ using TMPro;
 
 namespace ABCUnity.Example
 {
-    public class LayoutSizer : MonoBehaviour
+    public class BasicLayout : MonoBehaviour
     {
-        [SerializeField] private Camera camera;
-        [SerializeField] private Layout layout;
         [SerializeField] private TextMeshPro title;
+        [SerializeField] private string resourceName;
         
+        private Camera mainCamera;
+        private Layout layout;
         private float aspect;
         private float orthographicSize;
 
-        public void Awake()
+        void Awake()
         {
+            mainCamera = Camera.main;
+            layout = FindObjectOfType<Layout>();
+            
             ResizeLayout();
             layout.onLoaded += OnLoaded;
         }
@@ -27,16 +31,30 @@ namespace ABCUnity.Example
             title.text = tune.title;
         }
 
-        public void Update()
+        void Start()
         {
-            if (aspect != camera.aspect || orthographicSize != camera.orthographicSize)
+            if (!string.IsNullOrEmpty(resourceName))
+                LoadFromResource(resourceName);
+        }
+
+        void Update()
+        {
+            if (aspect != mainCamera.aspect || orthographicSize != mainCamera.orthographicSize)
                 ResizeLayout();
+        }
+
+        public void LoadFromResource(string resourceName)
+        {
+            TextAsset abcTextAsset = Resources.Load(resourceName) as TextAsset;
+
+            if (abcTextAsset)
+                layout.LoadString(abcTextAsset.text);
         }
 
         private void ResizeLayout()
         {
-            aspect = camera.aspect;
-            orthographicSize = camera.orthographicSize;
+            aspect = mainCamera.aspect;
+            orthographicSize = mainCamera.orthographicSize;
 
             float orthoHeight = orthographicSize* 2.0f;
             float targetWidth = (orthoHeight * aspect) * 0.8f;
