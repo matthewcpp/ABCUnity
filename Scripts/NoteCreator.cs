@@ -701,7 +701,7 @@ namespace ABCUnity
 
         static readonly Dictionary<ABC.Length, float> restHeight = new Dictionary<ABC.Length, float>()
         {
-            { ABC.Length.Whole, 1.41f }, { ABC.Length.Half, 1.16f }, { ABC.Length.Quarter, 0.3f}, { ABC.Length.Eighth, 0.0f}, { ABC.Length.Sixteenth, 0.0f }
+            { ABC.Length.Whole, 1.41f }, { ABC.Length.Half, 1.16f }, { ABC.Length.Quarter, 0.3f}, { ABC.Length.Eighth, 0.6f}, { ABC.Length.Sixteenth, 0.0f }
         };
 
         public NoteInfo CreateRest(ABC.Rest rest, GameObject container)
