@@ -354,6 +354,9 @@ namespace ABCUnity
             Bounds rootBounds = CreateChordNotes(noteDirection, chord, chord.length, stemHeight, clef, chord.beam != 0, container, offset, ref totalBounds);
             AddFingeringDecorations(chord, decorations, rootBounds, container, ref totalBounds);
 
+            if (chord.dotCount > 0)
+                AddChordDots(chord, clef, noteDirection, totalBounds, container, ref totalBounds);
+
             if (staffMarkers != null)
                 staffMarkers.transform.parent = container.transform;
 
@@ -649,17 +652,31 @@ namespace ABCUnity
             return rootBounds;
         }
 
-        void AddChordDots(ABC.Chord.Element note, int dotCount, ABC.Clef clef, Bounds rootItem, GameObject container, ref Bounds totalBounds)
+        void AddChordDots(ABC.Chord chord, ABC.Clef clef, NoteDirection noteDirection, Bounds rootItem, GameObject container, ref Bounds totalBounds)
         {
-            int stepCount = note.pitch - clefZero[clef];
-            Bounds anchor = rootItem;
-
-            for (int i = 0; i < dotCount; i++)
+            int oddStepOffset = noteDirection == NoteDirection.Up ? 1 : -1;
+            var dotSet = new HashSet<int>();
+            foreach(var note in chord.notes)
             {
-                Vector3 dotOffset = new Vector3(anchor.max.x + dotAdvance, 0.0f, 0.0f);
-                var dot = CreateNoteDot(stepCount, container, dotOffset.x);
-                anchor = dot.bounds;
-                totalBounds.Encapsulate(anchor);
+                int stepCount = note.pitch - clefZero[clef];
+
+                if (stepCount % 2 == 1)
+                    stepCount += oddStepOffset;
+
+                dotSet.Add(stepCount);
+            }
+
+            foreach (var step in dotSet)
+            {
+                var positionX = rootItem.max.x;
+
+                for (int i = 0; i < chord.dotCount; i++)
+                {
+                    var dot = CreateNoteDot(step, container, positionX + dotAdvance);
+                    var dotBounds = dot.bounds;
+                    positionX += dotBounds.size.x;
+                    totalBounds.Encapsulate(dotBounds);
+                }
             }
         }
 
