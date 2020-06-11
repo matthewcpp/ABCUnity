@@ -125,8 +125,8 @@ SpriteAtlas:
   m_PackedSpriteNamesToIndex:
   - Clef_Bass
   - Note_Half_Down
-  - Note_Flag_Eighth_Down
   - Note_Flag_Eighth_Up
+  - Note_Flag_Eighth_Down
   - Time_6
   - Bar_Line
   - Note_Flag_Sixteenth_Up
