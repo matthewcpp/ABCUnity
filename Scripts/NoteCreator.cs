@@ -554,10 +554,17 @@ namespace ABCUnity
                     rootBounds.Encapsulate(noteBounds);
             }
 
+            SpriteRenderer flag = null;
             if (stemHeight == unspecifiedStemHeight)
             {
                 lastNotePos += Beam.stemUpOffset;
                 stemHeight = Mathf.Abs(lastNotePos.y - stemPos.y) + Beam.defaultStemHeight;
+
+                if (chord.length <= ABC.Length.Eighth)
+                {
+                    flag = spriteCache.GetSpriteObject($"Note_Flag_{chord.length}_Up");
+                    flag.transform.parent = container.transform;
+                }
             }
             else
             {
@@ -565,9 +572,13 @@ namespace ABCUnity
             }
 
             stem.transform.localScale = new Vector3(1.0f, stemHeight, 1.0f);
+            var stemBounds = stem.bounds;
 
-            rootBounds.Encapsulate(stem.bounds);
-            chordBounds.Encapsulate(stem.bounds);
+            if (flag != null)
+                flag.transform.localPosition = new Vector3(stemBounds.max.x, stemBounds.max.y, 0.0f);
+            
+            rootBounds.Encapsulate(stemBounds);
+            chordBounds.Encapsulate(stemBounds);
             totalBounds.Encapsulate(chordBounds);
 
             return rootBounds;
@@ -609,15 +620,29 @@ namespace ABCUnity
                     rootBounds.Encapsulate(noteBounds);
             }
 
+            SpriteRenderer flag = null;
             if (stemHeight == unspecifiedStemHeight)
+            {
                 stemHeight = Mathf.Abs((lastNotePos.y - Beam.defaultStemHeight) - stemPos.y);
+
+                if (chord.length <= ABC.Length.Eighth)
+                {
+                    flag = spriteCache.GetSpriteObject($"Note_Flag_{chord.length}_Down");
+                    flag.transform.parent = container.transform;
+                }
+            }
             else
                 stemHeight = Mathf.Abs(stemHeight - stemPos.y);
 
             stem.transform.localScale = new Vector3(1.0f, stemHeight, 1.0f);
 
-            rootBounds.Encapsulate(stem.bounds);
-            chordBounds.Encapsulate(stem.bounds);
+            var stemBounds = stem.bounds;
+
+            if (flag != null)
+                flag.transform.localPosition = new Vector3(stemBounds.max.x, stemBounds.min.y, 0.0f);
+            
+            rootBounds.Encapsulate(stemBounds);
+            chordBounds.Encapsulate(stemBounds);
             totalBounds.Encapsulate(chordBounds);
 
             return rootBounds;
