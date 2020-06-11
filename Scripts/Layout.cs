@@ -280,8 +280,6 @@ namespace ABCUnity
                 foreach (var layout in layouts)
                 {
                     var layoutMeasure = layout.scoreLines[lineNum].measures[measure];
-                    if (layoutMeasure.source.isRest)
-                        CenterRestMeasure(layoutMeasure);
 
                     var delta = maxBeatX - layoutMeasure.insertX;
                     layoutMeasure.spacers.Add(delta);
@@ -295,15 +293,7 @@ namespace ABCUnity
             }
         }
 
-        void CenterRestMeasure(VoiceLayout.ScoreLine.Measure measure)
-        {
-            var item = measure.elements[0];
-            var center = measure.insertX / 2.0f;
-            var pos = center - item.info.totalBounding.size.x / 2.0f;
-            //item.referencePosition = pos;
-        }
-
-        void RenderScoreLine(int lineNum)
+        void PositionScoreLine(int lineNum)
         {
             float startX = float.MinValue;
 
@@ -339,7 +329,13 @@ namespace ABCUnity
                 for (int i = 0; i < scoreLine.measures.Count; i++)
                 {
                     var measure = scoreLine.measures[i];
-                    var actualMeasureBounds = SetMeasureItemPositions(measure, measureWidths[i]);
+
+                    Bounds actualMeasureBounds;
+                    if (measure.source.isRest)
+                        actualMeasureBounds = PositionMeasureRest(measure, measureWidths[i]);
+                    else
+                        actualMeasureBounds = PositionMeasureItems(measure, measureWidths[i]);
+
                     measure.container.transform.parent = scoreLine.container.transform;
                     measure.container.transform.localPosition = scoreLine.insertPos;
                     scoreLine.EncapsulateAppendedBounds(actualMeasureBounds);
@@ -367,7 +363,28 @@ namespace ABCUnity
             return measureWidths;
         }
 
-        Bounds SetMeasureItemPositions(VoiceLayout.ScoreLine.Measure measure, float actualmeasureWidth)
+        /// <summary>
+        /// Sets the position of a full measure rest such that it is centered in the available space.
+        /// Positions the bar first, then centers the rest in the remaining space.
+        /// </summary>
+        Bounds PositionMeasureRest(VoiceLayout.ScoreLine.Measure measure, float allocatedWidth)
+        {
+            var bar = measure.elements[1];
+            float barX = allocatedWidth - bar.totalWidth;
+            bar.container.transform.localPosition = new Vector3(barX, 0.0f, 0.0f);
+
+            var rest = measure.elements[0];
+            var measureCenter = barX / 2.0f;
+            var posX = measureCenter - rest.info.totalBounding.size.x / 2.0f;
+            rest.container.transform.localPosition = new Vector3(posX, 0.0f, 0.0f);
+
+            Bounds actualBounds = new Bounds(Vector3.zero, Vector3.zero);
+            actualBounds.Encapsulate(new Vector3(allocatedWidth, 0.0f, 0.0f));
+
+            return actualBounds;
+        }
+
+        Bounds PositionMeasureItems(VoiceLayout.ScoreLine.Measure measure, float actualmeasureWidth)
         {
             Bounds actualBounds = new Bounds(Vector3.zero, Vector3.zero);
             List<Vector3> beamVertices = null;
@@ -509,7 +526,7 @@ namespace ABCUnity
             PrepareScoreLines();
 
             for (int i = 0; i < layouts[0].scoreLines.Count; i++)
-                RenderScoreLine(i);
+                PositionScoreLine(i);
 
             scoreContainer.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
             this.gameObject.transform.localScale = scale;
