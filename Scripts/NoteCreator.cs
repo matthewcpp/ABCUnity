@@ -351,7 +351,7 @@ namespace ABCUnity
             if (staffMarkers != null) // this ensures that the note appears centered w.r.t the markers
                 offset += new Vector3(staffMarkerNoteOffset, 0.0f, 0.0f);
 
-            Bounds rootBounds = CreateChordNotes(noteDirection, chord, chord.length, beam, clef, container, offset, ref totalBounds);
+            Bounds rootBounds = CreateChordNotes(noteDirection, chord, beam, clef, container, offset, ref totalBounds);
             AddFingeringDecorations(chord, decorations, rootBounds, container, ref totalBounds);
 
             if (chord.dotCount > 0)
@@ -511,21 +511,21 @@ namespace ABCUnity
             return false;
         }
 
-        private Bounds CreateChordNotes(NoteDirection noteDirection, ABC.Chord chord, ABC.Length length, Beam beam, ABC.Clef clef, GameObject container, Vector3 offset, ref Bounds totalBounds)
+        private Bounds CreateChordNotes(NoteDirection noteDirection, ABC.Chord chord, Beam beam, ABC.Clef clef, GameObject container, Vector3 offset, ref Bounds totalBounds)
         {
             if (noteDirection == NoteDirection.Up)
-                return CreateChordNotesUp(chord, length, beam, clef, container, offset, ref totalBounds);
+                return CreateChordNotesUp(chord, beam, clef, container, offset, ref totalBounds);
             else
-                return CreateChordNotesDown(chord, length, beam, clef, container, offset, ref totalBounds);
+                return CreateChordNotesDown(chord, beam, clef, container, offset, ref totalBounds);
         }
 
-        private Bounds CreateChordNotesUp(ABC.Chord chord, ABC.Length length, Beam beam, ABC.Clef clef, GameObject container, Vector3 offset, ref Bounds totalBounds)
+        private Bounds CreateChordNotesUp(ABC.Chord chord,  Beam beam, ABC.Clef clef, GameObject container, Vector3 offset, ref Bounds totalBounds)
         {
             var stem = spriteCache.GetSpriteObject("Note_Stem_Up");
             stem.transform.parent = container.transform;
             var lastNotePos = Vector3.zero;
 
-            var dotValue = length > ABC.Length.Quarter ? length : ABC.Length.Quarter;
+            var dotValue = chord.length > ABC.Length.Quarter ? chord.length : ABC.Length.Quarter;
             var rootBounds = AddChordNoteHead(chord.notes[0].pitch, dotValue, clef, NoteDirection.Down, container, offset, ref lastNotePos);
             var chordBounds = rootBounds;
             var stemPos = chordBounds.min + Beam.stemUpOffset;
@@ -584,7 +584,7 @@ namespace ABCUnity
             return rootBounds;
         }
 
-        private Bounds CreateChordNotesDown(ABC.Chord chord, ABC.Length length, Beam beam, ABC.Clef clef, GameObject container, Vector3 offset, ref Bounds totalBounds)
+        private Bounds CreateChordNotesDown(ABC.Chord chord, Beam beam, ABC.Clef clef, GameObject container, Vector3 offset, ref Bounds totalBounds)
         {
             var stem = spriteCache.GetSpriteObject("Note_Stem_Down");
             stem.transform.parent = container.transform;
@@ -593,7 +593,7 @@ namespace ABCUnity
             if (ChordIsCompressed(chord, NoteDirection.Down))
                 offset.x += compressedChordNoteOffset;
 
-            var dotValue = length > ABC.Length.Quarter ? length : ABC.Length.Quarter;
+            var dotValue = chord.length > ABC.Length.Quarter ? chord.length : ABC.Length.Quarter;
             var rootBounds = AddChordNoteHead(chord.notes[chord.notes.Length - 1].pitch, dotValue, clef, NoteDirection.Down, container, offset, ref lastNotePos);
             var chordBounds = rootBounds;
             var stemPos = container.transform.GetChild(container.transform.childCount - 1).localPosition + Beam.stemDownOffset;
