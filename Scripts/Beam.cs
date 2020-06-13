@@ -5,6 +5,7 @@ namespace ABCUnity
 {
     class Beam
     {
+        public const float unspecifiedStemHeight = float.MaxValue;
         public const float defaultStemHeight = 1.92f;
         public static Vector3 stemUpOffset = new Vector3(0.65f, 0.35f, 0.0f);
         public static Vector3 stemDownOffset = new Vector3(0.0f, 0.262f, 0.0f);
@@ -33,7 +34,7 @@ namespace ABCUnity
 
         public ABC.Clef clef { get; }
 
-        public float stemHeight { get; set; } = 0.0f;
+        public float stemHeight { get; set; } = unspecifiedStemHeight;
 
         private int index = 0;
         public bool isReadyToCreate { get { return index == items.Count; } }

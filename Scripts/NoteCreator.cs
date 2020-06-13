@@ -52,8 +52,6 @@ namespace ABCUnity
         /// <summary> Distance between dots </summary>
         const float dotAdvance = 0.2f;
 
-        private const float unspecifiedStemHeight = float.MaxValue;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool NeedsStaffMarkers(int stepCount)
         {
@@ -71,7 +69,7 @@ namespace ABCUnity
             int stepCount = note.pitch - clefZero[clef];
             var noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
 
-            return CreateNote(note, clef, stepCount, unspecifiedStemHeight, noteDirection, decorations, container);
+            return CreateNote(note, clef, stepCount, Beam.unspecifiedStemHeight, noteDirection, decorations, container);
         }
 
         public NoteInfo CreateChord(ABC.Chord chord, Beam beam, IReadOnlyList<string> decorations, GameObject container)
@@ -85,7 +83,7 @@ namespace ABCUnity
             if (chord.length == ABC.Length.Whole)
                 return CreateWholeNoteChord(chord, clef, decorations, container);
             else
-                return CreateChord(chord, clef, noteDirection, unspecifiedStemHeight, decorations, container);
+                return CreateChord(chord, clef, noteDirection, Beam.unspecifiedStemHeight, decorations, container);
         }
 
         /// <summary> The space between an accidental and the note it is attached to. </summary>
@@ -117,7 +115,7 @@ namespace ABCUnity
 
             Bounds rootItemBounds;
             SpriteRenderer rootItem = null;
-            if (stemHeight != unspecifiedStemHeight)
+            if (stemHeight != Beam.unspecifiedStemHeight)
             {
                 var noteHead = spriteCache.GetSpriteObject("Chord_Quarter");
                 noteHead.transform.parent = container.transform;
@@ -555,7 +553,7 @@ namespace ABCUnity
             }
 
             SpriteRenderer flag = null;
-            if (stemHeight == unspecifiedStemHeight)
+            if (stemHeight == Beam.unspecifiedStemHeight)
             {
                 lastNotePos += Beam.stemUpOffset;
                 stemHeight = Mathf.Abs(lastNotePos.y - stemPos.y) + Beam.defaultStemHeight;
@@ -621,7 +619,7 @@ namespace ABCUnity
             }
 
             SpriteRenderer flag = null;
-            if (stemHeight == unspecifiedStemHeight)
+            if (stemHeight == Beam.unspecifiedStemHeight)
             {
                 stemHeight = Mathf.Abs((lastNotePos.y - Beam.defaultStemHeight) - stemPos.y);
 
