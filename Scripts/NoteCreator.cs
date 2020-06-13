@@ -61,7 +61,7 @@ namespace ABCUnity
         public NoteInfo CreateNote(ABC.Note note, Beam beam, IReadOnlyList<string> decorations, GameObject container)
         {
             int stepCount = note.pitch - clefZero[beam.clef];
-            return CreateNote(note, beam.clef, stepCount, beam.stemHeight, beam.noteDirection, decorations, container);
+            return CreateNote(note, beam.clef, stepCount, beam, beam.noteDirection, decorations, container);
         }
 
         public NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container)
@@ -69,12 +69,12 @@ namespace ABCUnity
             int stepCount = note.pitch - clefZero[clef];
             var noteDirection = stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
 
-            return CreateNote(note, clef, stepCount, Beam.unspecifiedStemHeight, noteDirection, decorations, container);
+            return CreateNote(note, clef, stepCount, null, noteDirection, decorations, container);
         }
 
         public NoteInfo CreateChord(ABC.Chord chord, Beam beam, IReadOnlyList<string> decorations, GameObject container)
         {
-            return CreateChord(chord, beam.clef, beam.noteDirection, beam.stemHeight, decorations, container);
+            return CreateChord(chord, beam.clef, beam.noteDirection, beam, decorations, container);
         }
 
         public NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container)
@@ -83,14 +83,14 @@ namespace ABCUnity
             if (chord.length == ABC.Length.Whole)
                 return CreateWholeNoteChord(chord, clef, decorations, container);
             else
-                return CreateChord(chord, clef, noteDirection, Beam.unspecifiedStemHeight, decorations, container);
+                return CreateChord(chord, clef, noteDirection, null, decorations, container);
         }
 
         /// <summary> The space between an accidental and the note it is attached to. </summary>
         const float accidentalOffset = 0.25f;
         const float accidentalWidth = 0.55f;
 
-        private NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, int noteStepCount, float stemHeight, NoteDirection noteDirection, IReadOnlyList<string> decorations, GameObject container)
+        private NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, int noteStepCount, Beam beam, NoteDirection noteDirection, IReadOnlyList<string> decorations, GameObject container)
         {
             var notePosition =  new Vector3(0.0f, noteStep * noteStepCount, 0.0f);
 
@@ -115,7 +115,7 @@ namespace ABCUnity
 
             Bounds rootItemBounds;
             SpriteRenderer rootItem = null;
-            if (stemHeight != Beam.unspecifiedStemHeight)
+            if (beam != null && beam.stemHeight != Beam.unspecifiedStemHeight)
             {
                 var noteHead = spriteCache.GetSpriteObject("Chord_Quarter");
                 noteHead.transform.parent = container.transform;
@@ -127,7 +127,7 @@ namespace ABCUnity
 
                 var stemPos = notePosition + (noteDirection == NoteDirection.Up ? Beam.stemUpOffset : Beam.stemDownOffset);
                 rootItem.transform.localPosition = stemPos;
-                rootItem.transform.localScale = new Vector3(1.0f, Mathf.Abs(stemHeight - stemPos.y), 1.0f);
+                rootItem.transform.localScale = new Vector3(1.0f, Mathf.Abs(beam.stemHeight - stemPos.y), 1.0f);
                 rootItemBounds.Encapsulate(rootItem.bounds);
             }
             else
@@ -337,7 +337,7 @@ namespace ABCUnity
             return new NoteInfo(rootBounds, totalBounds);
         }
 
-        private NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, NoteDirection noteDirection, float stemHeight, IReadOnlyList<string> decorations, GameObject container)
+        private NoteInfo CreateChord(ABC.Chord chord, ABC.Clef clef, NoteDirection noteDirection, Beam beam, IReadOnlyList<string> decorations, GameObject container)
         {
             var offset = Vector3.zero;
             var totalBounds = new Bounds();
@@ -351,7 +351,7 @@ namespace ABCUnity
             if (staffMarkers != null) // this ensures that the note appears centered w.r.t the markers
                 offset += new Vector3(staffMarkerNoteOffset, 0.0f, 0.0f);
 
-            Bounds rootBounds = CreateChordNotes(noteDirection, chord, chord.length, stemHeight, clef, chord.beam != 0, container, offset, ref totalBounds);
+            Bounds rootBounds = CreateChordNotes(noteDirection, chord, chord.length, beam, clef, container, offset, ref totalBounds);
             AddFingeringDecorations(chord, decorations, rootBounds, container, ref totalBounds);
 
             if (chord.dotCount > 0)
@@ -511,15 +511,15 @@ namespace ABCUnity
             return false;
         }
 
-        private Bounds CreateChordNotes(NoteDirection noteDirection, ABC.Chord chord, ABC.Length length, float stemHeight, ABC.Clef clef, bool beam, GameObject container, Vector3 offset, ref Bounds totalBounds)
+        private Bounds CreateChordNotes(NoteDirection noteDirection, ABC.Chord chord, ABC.Length length, Beam beam, ABC.Clef clef, GameObject container, Vector3 offset, ref Bounds totalBounds)
         {
             if (noteDirection == NoteDirection.Up)
-                return CreateChordNotesUp(chord, length, stemHeight, clef, beam, container, offset, ref totalBounds);
+                return CreateChordNotesUp(chord, length, beam, clef, container, offset, ref totalBounds);
             else
-                return CreateChordNotesDown(chord, length, stemHeight, clef, beam, container, offset, ref totalBounds);
+                return CreateChordNotesDown(chord, length, beam, clef, container, offset, ref totalBounds);
         }
 
-        private Bounds CreateChordNotesUp(ABC.Chord chord, ABC.Length length, float stemHeight, ABC.Clef clef, bool beam, GameObject container, Vector3 offset, ref Bounds totalBounds)
+        private Bounds CreateChordNotesUp(ABC.Chord chord, ABC.Length length, Beam beam, ABC.Clef clef, GameObject container, Vector3 offset, ref Bounds totalBounds)
         {
             var stem = spriteCache.GetSpriteObject("Note_Stem_Up");
             stem.transform.parent = container.transform;
@@ -553,19 +553,21 @@ namespace ABCUnity
             }
 
             SpriteRenderer flag = null;
-            if (stemHeight == Beam.unspecifiedStemHeight)
-            {
-                lastNotePos += Beam.stemUpOffset;
-                stemHeight = Mathf.Abs(lastNotePos.y - stemPos.y) + Beam.defaultStemHeight;
+            lastNotePos += Beam.stemUpOffset;
+            float stemHeight = Mathf.Abs(lastNotePos.y - stemPos.y) + Beam.defaultStemHeight;
 
+            if (beam == null)
+            {
+                // If this chord is not part of a beam it may need to have a flag attached.
                 if (chord.length <= ABC.Length.Eighth)
                 {
                     flag = spriteCache.GetSpriteObject($"Note_Flag_{chord.length}_Up");
                     flag.transform.parent = container.transform;
                 }
             }
-            else
+            else if (beam.stemHeight != Beam.unspecifiedStemHeight)
             {
+                // beam contains notes at different heights, used the calculated stem height
                 stemHeight = stemHeight - stemPos.y;
             }
 
@@ -582,7 +584,7 @@ namespace ABCUnity
             return rootBounds;
         }
 
-        private Bounds CreateChordNotesDown(ABC.Chord chord, ABC.Length length, float stemHeight, ABC.Clef clef, bool beam, GameObject container, Vector3 offset, ref Bounds totalBounds)
+        private Bounds CreateChordNotesDown(ABC.Chord chord, ABC.Length length, Beam beam, ABC.Clef clef, GameObject container, Vector3 offset, ref Bounds totalBounds)
         {
             var stem = spriteCache.GetSpriteObject("Note_Stem_Down");
             stem.transform.parent = container.transform;
@@ -619,18 +621,21 @@ namespace ABCUnity
             }
 
             SpriteRenderer flag = null;
-            if (stemHeight == Beam.unspecifiedStemHeight)
+            float stemHeight = Mathf.Abs((lastNotePos.y - Beam.defaultStemHeight) - stemPos.y);
+            if (beam == null)
             {
-                stemHeight = Mathf.Abs((lastNotePos.y - Beam.defaultStemHeight) - stemPos.y);
-
+                // If this chord is not part of a beam it may need to have a flag attached.
                 if (chord.length <= ABC.Length.Eighth)
                 {
                     flag = spriteCache.GetSpriteObject($"Note_Flag_{chord.length}_Down");
                     flag.transform.parent = container.transform;
                 }
             }
-            else
+            else if (beam.stemHeight != Beam.unspecifiedStemHeight)
+            {
+                // beam contains notes at different heights, used the calculated stem height
                 stemHeight = Mathf.Abs(stemHeight - stemPos.y);
+            }
 
             stem.transform.localScale = new Vector3(1.0f, stemHeight, 1.0f);
 
