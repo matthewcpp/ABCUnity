@@ -52,6 +52,8 @@ namespace ABCUnity
         /// <summary> Distance between dots </summary>
         const float dotAdvance = 0.2f;
 
+        const float wholeNoteStaffMarkerSize = 1.2f;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool NeedsStaffMarkers(int stepCount)
         {
@@ -394,9 +396,10 @@ namespace ABCUnity
                 stepCount += 1;
 
             var staffMarkers = new GameObject("Staff Markers");
+            float staffMarkerSize = note.length < ABC.Length.Whole ? 1.0f : wholeNoteStaffMarkerSize;
 
             for (int step = stepCount; step <= -3; step += 2)
-                totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position, 1.0f));
+                totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position, staffMarkerSize));
 
             return staffMarkers;
         }
@@ -412,9 +415,10 @@ namespace ABCUnity
                 stepCount -= 1;
 
             var staffMarkers = new GameObject("Staff Markers");
+            float staffMarkerSize = note.length < ABC.Length.Whole ? 1.0f : wholeNoteStaffMarkerSize;
 
             for (int step = stepCount; step >= 9; step -= 2)
-                totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position, 1.0f));
+                totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position, staffMarkerSize));
 
             return staffMarkers;
         }
@@ -430,9 +434,10 @@ namespace ABCUnity
                 stepCount += 1;
 
             var staffMarkers = new GameObject("Staff Markers");
+            float staffMarkerSize = chord.length < ABC.Length.Whole ? 1.0f : wholeNoteStaffMarkerSize;
 
             for (int step = stepCount; step <= -3; step += 2)
-                totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position, 1.0f));
+                totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position, staffMarkerSize));
 
             for (int i = 1; i < chord.notes.Length; i++)
             {
@@ -446,7 +451,7 @@ namespace ABCUnity
                         stepCount += 1;
 
                     for (int step = stepCount; step <= -3; step += 2)
-                        totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position + offsetSize, 1.0f));
+                        totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position + offsetSize, staffMarkerSize));
                     break;
                 }
             }
@@ -465,9 +470,10 @@ namespace ABCUnity
                 stepCount -= 1;
 
             var staffMarkers = new GameObject("Staff Markers");
+            float staffMarkerSize = chord.length < ABC.Length.Whole ? 1.0f : wholeNoteStaffMarkerSize;
 
             for (int step = stepCount; step >= 9; step -= 2)
-                totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position, 1.0f));
+                totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position, staffMarkerSize));
 
             for (int i = chord.notes.Length - 2; i >= 0; i--)
             {
@@ -481,7 +487,7 @@ namespace ABCUnity
                         stepCount -= 1;
 
                     for (int step = stepCount; step >= 9; step -= 2)
-                        totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position + offsetSize, 1.0f));
+                        totalBounds.Encapsulate(CreateStaffMark(step, staffMarkers, position + offsetSize, staffMarkerSize));
                     break;
                 }
             }
