@@ -154,7 +154,7 @@ namespace ABCUnity
                 totalBounds.Encapsulate(dot.bounds);
             }
 
-            AddFingeringDecorations(note, decorations, rootItemBounds, container, ref totalBounds);
+            AddDecorations(note, decorations, rootItemBounds, container, ref totalBounds);
 
             if (staffMarkers != null)
                 staffMarkers.transform.parent = container.transform;
@@ -169,7 +169,7 @@ namespace ABCUnity
             "1", "2", "3", "4", "5"
         };
 
-        private void AddFingeringDecorations(ABC.Item item, IReadOnlyList<string> decorations, Bounds referenceBounding, GameObject container, ref Bounds bounds)
+        private void AddDecorations(ABC.Item item, IReadOnlyList<string> decorations, Bounds referenceBounding, GameObject container, ref Bounds bounds)
         {
             if (decorations != null)
             {
@@ -335,6 +335,7 @@ namespace ABCUnity
                 offset += new Vector3(staffMarkerNoteOffset, 0.0f, 0.0f);
 
             var rootBounds = CreateWholeNoteChordNotes(chord, clef, container, offset, ref totalBounds);
+            AddDecorations(chord, decorations, rootBounds, container, ref totalBounds);
 
             if (staffMarkers != null)
                 staffMarkers.transform.parent = container.transform;
@@ -357,7 +358,7 @@ namespace ABCUnity
                 offset += new Vector3(staffMarkerNoteOffset, 0.0f, 0.0f);
 
             Bounds rootBounds = CreateChordNotes(noteDirection, chord, beam, clef, container, offset, ref totalBounds);
-            AddFingeringDecorations(chord, decorations, rootBounds, container, ref totalBounds);
+            AddDecorations(chord, decorations, rootBounds, container, ref totalBounds);
 
             if (chord.dotCount > 0)
                 AddChordDots(chord, clef, noteDirection, totalBounds, container, ref totalBounds);
