@@ -53,6 +53,9 @@ namespace ABCUnity
         const float dotAdvance = 0.2f;
 
         const float wholeNoteStaffMarkerSize = 1.2f;
+        
+        /// <summary> The step height to use for rest dots. </summary>
+        const int restDotStepCount = 4;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool NeedsStaffMarkers(int stepCount)
@@ -747,7 +750,16 @@ namespace ABCUnity
             restObj.transform.parent = container.transform;
             restObj.transform.localPosition = new Vector3(0.0f, restHeight[rest.length], 0.0f);
 
-            return new NoteInfo(restObj.bounds, restObj.bounds);
+            var rootBounds = restObj.bounds;
+            var totalBounds = rootBounds;
+
+            for (int i = 0; i < rest.dotCount; i++)
+            {
+                var dotSprite = CreateNoteDot(restDotStepCount, container, totalBounds.max.x + dotAdvance);
+                totalBounds.Encapsulate(dotSprite.bounds);
+            }
+
+            return new NoteInfo(rootBounds, totalBounds);
         }
 
         public NoteInfo CreateMeasureRest(ABC.MultiMeasureRest rest, GameObject container)
