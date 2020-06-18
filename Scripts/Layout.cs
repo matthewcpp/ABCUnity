@@ -207,6 +207,12 @@ namespace ABCUnity
                             var layoutMeasure = scoreLine.measures[measure];
                             var beatInfo = layoutMeasure.source.beats[layout.beatIndex];
 
+                            // advance
+                            // in order to preserve alignment, all layouts will advance to the furthest position of the current beat marker
+                            var delta = maxBeatX - layoutMeasure.insertX;
+                            layoutMeasure.spacers.Add(delta);
+                            layoutMeasure.AdvaceInsertPos(delta);
+
                             // if this beat is the start of a new group of notes render them
                             if (beatInfo.beatStart == beat && beatItemIndex < beatInfo.items.Count)
                             {
@@ -231,18 +237,15 @@ namespace ABCUnity
                                         break;
                                 }
 
-
-                                // advance
-                                // in order to preserve alignment, all layouts will advance to the furthest position of the current beat marker
-                                var delta = maxBeatX - layoutMeasure.insertX;
-                                layoutMeasure.spacers.Add(delta);
-                                layoutMeasure.AdvaceInsertPos(delta);
-
                                 // position
                                 var beatItem = layoutMeasure.elements[layoutMeasure.elements.Count - 1];
                                 float alignPos = SetItemReferencePosition(beatItem, layoutMeasure, advanceAmount);
                                 alignment = Mathf.Max(alignment, alignPos);
                                 beatItem.container.transform.parent = layoutMeasure.container.transform;
+                            }
+                            else
+                            {
+                                layoutMeasure.AddItem(null);
                             }
                         }
 
@@ -277,6 +280,7 @@ namespace ABCUnity
                     }
                 }
 
+                // after all items in the measure are placed, add the measure's bar
                 foreach (var layout in layouts)
                 {
                     var layoutMeasure = layout.scoreLines[lineNum].measures[measure];
@@ -369,7 +373,7 @@ namespace ABCUnity
         /// </summary>
         Bounds PositionMeasureRest(VoiceLayout.ScoreLine.Measure measure, float allocatedWidth)
         {
-            var bar = measure.elements[1];
+            var bar = measure.elements[measure.elements.Count - 1];
             float barX = allocatedWidth - bar.totalWidth;
             bar.container.transform.localPosition = new Vector3(barX, 0.0f, 0.0f);
 
@@ -400,6 +404,9 @@ namespace ABCUnity
                 positionX += measure.spacers[i];
                 if (i > 0)
                     positionX += spacerAdjust;
+
+                if (item.item == null)
+                    continue;
 
                 Vector3 insertPos = new Vector3(positionX, 0.0f, 0.0f);
                 item.container.transform.localPosition = insertPos;
