@@ -246,6 +246,8 @@ namespace ABCUnity
                             else
                             {
                                 layoutMeasure.AddItem(null);
+                                layoutMeasure.spacers[layoutMeasure.spacers.Count - 1] += noteAdvance;
+                                layoutMeasure.AdvaceInsertPos(noteAdvance);
                             }
                         }
 
