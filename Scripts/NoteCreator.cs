@@ -57,6 +57,12 @@ namespace ABCUnity
         /// <summary> The step height to use for rest dots. </summary>
         const int restDotStepCount = 4;
 
+        /// <summary> The space between an accidental and the note it is attached to. </summary>
+        const float accidentalOffset = 0.25f;
+
+        /// <summary> width allocated for an accidental sprite. </summary>
+        const float accidentalWidth = 0.55f;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool NeedsStaffMarkers(int stepCount)
         {
@@ -90,10 +96,6 @@ namespace ABCUnity
             else
                 return CreateChord(chord, clef, noteDirection, null, decorations, container);
         }
-
-        /// <summary> The space between an accidental and the note it is attached to. </summary>
-        const float accidentalOffset = 0.25f;
-        const float accidentalWidth = 0.55f;
 
         private NoteInfo CreateNote(ABC.Note note, ABC.Clef clef, int noteStepCount, Beam beam, NoteDirection noteDirection, IReadOnlyList<string> decorations, GameObject container)
         {
@@ -292,14 +294,12 @@ namespace ABCUnity
             return notesInLevel;
         }
 
-        private void CreateChordAccidentals(ABC.Chord.Element[] notes, ABC.Clef clef, ref Vector3 offset, GameObject container, ref Bounds bounding)
+        private bool CreateChordAccidentals(ABC.Chord.Element[] notes, ABC.Clef clef, ref Vector3 offset, GameObject container, ref Bounds totalBounding)
         {
             var accidentalLevels = ComputeChordAccidentalLevels(notes, clefZero[clef]);
 
             if (accidentalLevels == null)
-                return;
-
-            offset = offset + new Vector3(-accidentalWidth, 0.0f, 0.0f);
+                return false;
 
             for (int i = accidentalLevels.Count - 1; i >= 0; i--)
             {
@@ -310,11 +310,13 @@ namespace ABCUnity
                     var accidental = spriteCache.GetSpriteObject($"Accidental_{note.accidental}");
                     accidental.transform.parent = container.transform;
                     accidental.transform.localPosition = offset + new Vector3(0.0f, noteStep * stepCount, 0.0f);
-                    bounding.Encapsulate(accidental.bounds);
+                    totalBounding.Encapsulate(accidental.bounds);
                 }
 
-                offset = offset + new Vector3(accidentalWidth, 0.0f, 0.0f);
+                offset += new Vector3(accidentalWidth, 0.0f, 0.0f);
             }
+
+            return true;
         }
 
         private NoteInfo CreateWholeNoteChord(ABC.Chord chord, ABC.Clef clef, IReadOnlyList<string> decorations, GameObject container)
@@ -323,8 +325,8 @@ namespace ABCUnity
             var totalBounds = new Bounds();
             totalBounds.SetMinMax(offset, offset);
 
-            CreateChordAccidentals(chord.notes, clef, ref offset, container, ref totalBounds);
-            offset.x = totalBounds.max.x;
+            if (CreateChordAccidentals(chord.notes, clef, ref offset, container, ref totalBounds))
+                offset.x = totalBounds.max.x + accidentalOffset;
 
             var staffMarkers = CreateChordStaffMarkersDown(chord, clef, offset.x, compressedChordWholeNoteOffset,ref totalBounds);
 
@@ -349,8 +351,8 @@ namespace ABCUnity
             var totalBounds = new Bounds();
             totalBounds.SetMinMax(offset, offset);
 
-            CreateChordAccidentals(chord.notes, clef, ref offset, container, ref totalBounds);
-            offset.x = totalBounds.max.x;
+            if (CreateChordAccidentals(chord.notes, clef, ref offset, container, ref totalBounds))
+                offset.x = totalBounds.max.x + accidentalOffset;
 
             var staffMarkers = CreateChordStaffMarkers(noteDirection, chord, clef, offset.x, compressedChordNoteOffset, ref totalBounds);
 
