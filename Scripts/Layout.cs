@@ -503,9 +503,13 @@ namespace ABCUnity
             }
 
             float calculatedHeight = CalculateScoreHeight();
+            var rectSize = rectTransform.sizeDelta;
 
-            if (calculatedHeight > rectTransform.rect.size.y)
-                layoutScale = rectTransform.rect.size.y / calculatedHeight;
+            if (calculatedHeight > rectSize.y)
+                layoutScale = rectSize.y / calculatedHeight;
+
+            horizontalMax = rectSize.x * 1.0f / layoutScale;
+            staffOffset = new Vector2(-rectSize.x / 2.0f, 0);
         }
 
         void LayoutTune()
@@ -516,11 +520,6 @@ namespace ABCUnity
             cache.color = color;
             
             timeSignature = GetTimeSignature();
-
-            var rect = rectTransform.rect;
-            horizontalMax = rect.size.x * 1.0f / layoutScale;
-
-            staffOffset = new Vector2(-rect.size.x / 2.0f, 0);
 
             Vector3 scale = this.gameObject.transform.localScale;
             this.gameObject.transform.localScale = Vector3.one;
@@ -619,7 +618,7 @@ namespace ABCUnity
                 AdjustStaffScale(scoreLine);
 
                 scoreLine.container.transform.parent = scoreContainer.transform;
-                scoreLine.container.transform.localPosition = new Vector3(staffOffset.x, staffOffset.y - (scoreLine.bounds.max.y), 0.0f);
+                scoreLine.container.transform.localPosition = new Vector3(staffOffset.x * (1.0f / layoutScale), staffOffset.y - (scoreLine.bounds.max.y), 0.0f);
                 var staffSpacer = i == layouts.Count - 1 ? staffLineMargin : staffLinePadding;
                 staffOffset.y -= (scoreLine.bounds.size.y + staffSpacer);
             }

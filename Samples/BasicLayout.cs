@@ -11,7 +11,8 @@ namespace ABCUnity.Example
     {
         [SerializeField] private TextMeshPro title;
         [SerializeField] private string resourceName;
-        
+
+        [Range(0.0f, 1.0f)]public float layoutWidth = 0.8f;
         private Camera mainCamera;
         private Layout layout;
         private float aspect;
@@ -57,7 +58,7 @@ namespace ABCUnity.Example
             orthographicSize = mainCamera.orthographicSize;
 
             float orthoHeight = orthographicSize* 2.0f;
-            float targetWidth = (orthoHeight * aspect) * 0.8f;
+            float targetWidth = (orthoHeight * aspect) * layoutWidth;
 
             var titleTransform = title.rectTransform;
             titleTransform.position = new Vector3(0.0f, orthographicSize, 0.0f);

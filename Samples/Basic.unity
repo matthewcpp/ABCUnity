@@ -440,6 +440,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   title: {fileID: 525257793}
   resourceName: sample.abc
+  layoutWidth: 0.9
 --- !u!4 &936662192
 Transform:
   m_ObjectHideFlags: 0
