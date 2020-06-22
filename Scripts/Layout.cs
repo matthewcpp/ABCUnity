@@ -237,6 +237,9 @@ namespace ABCUnity
                                         break;
                                 }
 
+                                gameObjectMap.Add(element.item.id, element.container);
+                                itemMap.Add(element.container, element.item);
+
                                 // position
                                 var beatItem = layoutMeasure.elements[layoutMeasure.elements.Count - 1];
                                 float alignPos = SetItemReferencePosition(beatItem, layoutMeasure, advanceAmount);
