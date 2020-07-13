@@ -33,7 +33,13 @@ SpriteAtlas:
     - {fileID: 2800000, guid: 9ba701bbe2a76af4aa5cbf4b04f974d6, type: 3}
     - {fileID: 2800000, guid: 79b69c47ae9175243b03c0639e2d4d94, type: 3}
     - {fileID: 2800000, guid: d57bdc5f437a5c44db5204cdbdb6a508, type: 3}
+    - {fileID: 2800000, guid: ccc5ffc3bd6384980812ebde95398e7a, type: 3}
+    - {fileID: 2800000, guid: 535a22bc9622942e8ae7ac743f605118, type: 3}
     - {fileID: 2800000, guid: b61efaf13e7dc2c448d4d2c02fb72af7, type: 3}
+    - {fileID: 2800000, guid: 743b3d504f89b4285a20a345b8d08a39, type: 3}
+    - {fileID: 2800000, guid: 2c5b1712dad5f4d8b894e322dad5d018, type: 3}
+    - {fileID: 2800000, guid: 427447a24b15846dab2a9f8a81584e1c, type: 3}
+    - {fileID: 2800000, guid: 34817576678fc4b0b86d5e8dbff66c63, type: 3}
     - {fileID: 2800000, guid: 61e5123fdd34c461fb5ab16ff9fa9773, type: 3}
     - {fileID: 2800000, guid: 1e2afd7fa89f0452583229794ceaff27, type: 3}
     - {fileID: 2800000, guid: bae87d7032c5cc740bd40821d95511b4, type: 3}
@@ -74,21 +80,25 @@ SpriteAtlas:
     - {fileID: 2800000, guid: 0d287075029336a4cac36ea963024e0b, type: 3}
     - {fileID: 2800000, guid: def7af34cfa1b8a45b402ea62822dfdb, type: 3}
     - {fileID: 2800000, guid: 4f5e52637b152fd40b550038e68deacd, type: 3}
-    totalSpriteSurfaceArea: 477380
+    totalSpriteSurfaceArea: 589132
     bindAsDefault: 1
   m_MasterAtlas: {fileID: 0}
   m_PackedSprites:
+  - {fileID: 21300000, guid: 743b3d504f89b4285a20a345b8d08a39, type: 3}
   - {fileID: 21300000, guid: bae87d7032c5cc740bd40821d95511b4, type: 3}
   - {fileID: 21300000, guid: f9efa9d0911ad854db5bba23dd905bc8, type: 3}
   - {fileID: 21300000, guid: 38101d11fc52541b8bdf8fbfca153631, type: 3}
   - {fileID: 21300000, guid: c70af2d15aebd4d5b8a00ca9c0bc7d8d, type: 3}
   - {fileID: 21300000, guid: d70898e135652664db3b6ced0b4b0e77, type: 3}
   - {fileID: 21300000, guid: b61efaf13e7dc2c448d4d2c02fb72af7, type: 3}
+  - {fileID: 21300000, guid: 2c5b1712dad5f4d8b894e322dad5d018, type: 3}
+  - {fileID: 21300000, guid: 427447a24b15846dab2a9f8a81584e1c, type: 3}
   - {fileID: 21300000, guid: 5e4aa2b23b13d4a0b9c07804729854cc, type: 3}
   - {fileID: 21300000, guid: 890aa6f2c4123ce4f901cf5febc2c960, type: 3}
   - {fileID: 21300000, guid: a4427ef2a55621a4cbbd41a9f15ab676, type: 3}
   - {fileID: 21300000, guid: 4f5e52637b152fd40b550038e68deacd, type: 3}
   - {fileID: 21300000, guid: 718a59936202d8e4eae4a419f43d31a2, type: 3}
+  - {fileID: 21300000, guid: ccc5ffc3bd6384980812ebde95398e7a, type: 3}
   - {fileID: 21300000, guid: def7af34cfa1b8a45b402ea62822dfdb, type: 3}
   - {fileID: 21300000, guid: 142edb644b62fd145aa545b4e51f15de, type: 3}
   - {fileID: 21300000, guid: 2861bd15868f8d34389b90aa710227cb, type: 3}
@@ -96,6 +106,7 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 4ed3eb7535126c74091bd78a39fbfb7f, type: 3}
   - {fileID: 21300000, guid: 39de9bb5df37c54409143d3124387f98, type: 3}
   - {fileID: 21300000, guid: 4d7a7c66572c8c7408501fa7c935d980, type: 3}
+  - {fileID: 21300000, guid: 34817576678fc4b0b86d5e8dbff66c63, type: 3}
   - {fileID: 21300000, guid: 1eeb50072b04d574e8a47aeb5109c855, type: 3}
   - {fileID: 21300000, guid: 79b69c47ae9175243b03c0639e2d4d94, type: 3}
   - {fileID: 21300000, guid: 380571b8da950a546ba5d15a98aecb88, type: 3}
@@ -108,6 +119,7 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 01944aea3f67cdc42a5a2b8d3e99c15f, type: 3}
   - {fileID: 21300000, guid: 9ba701bbe2a76af4aa5cbf4b04f974d6, type: 3}
   - {fileID: 21300000, guid: ac60059c9248421418964fd4504260a2, type: 3}
+  - {fileID: 21300000, guid: 535a22bc9622942e8ae7ac743f605118, type: 3}
   - {fileID: 21300000, guid: e7c078dc210efda4f935a75101013a9c, type: 3}
   - {fileID: 21300000, guid: 2891052d14266ec4081eea792282c869, type: 3}
   - {fileID: 21300000, guid: 088acb7dccf57e749b5f7d1052416662, type: 3}
@@ -123,17 +135,21 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 1e2afd7fa89f0452583229794ceaff27, type: 3}
   - {fileID: 21300000, guid: dc59fbafdeb4949aca2ed8536cd2545e, type: 3}
   m_PackedSpriteNamesToIndex:
+  - Bar_RepeatEnd
   - Clef_Bass
   - Note_Half_Down
   - Note_Flag_Eighth_Up
   - Note_Flag_Eighth_Down
   - Time_6
   - Bar_Line
+  - Bar_RepeatEndStart
+  - Bar_RepeatStart
   - Note_Flag_Sixteenth_Up
   - Note_Eighth_Down
   - Note_Half_Up
   - Time_9
   - Note_Eighth_Up
+  - Bar_DoubleLine
   - Time_8
   - Note_Stem_Down
   - Note_Dot
@@ -141,6 +157,7 @@ SpriteAtlas:
   - Time_Cut
   - Rest_Eighth
   - Staff
+  - Bar_Start
   - Staff_Mark
   - Accidental_Natural
   - Time_Common
@@ -153,6 +170,7 @@ SpriteAtlas:
   - Note_Quarter_Up
   - Accidental_Flat
   - Note_Beam_Up
+  - Bar_Final
   - Rest_Half
   - Time_4
   - Time_1
