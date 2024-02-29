@@ -1,0 +1,15 @@
+X:1
+T:Test Notes
+M:C
+L:1/4
+K:C
+
+A4 | d'4 | G,4 | c'4 | A,4 |
+
+F2 d2 | d'2 G,2 | c'2 A,2 |
+
+F d z2 | d' G, z2 | c' A, z2 |
+
+F/2 d/2 z d'/2 G,/2 z | c'/2 A,/2 z z2 |
+
+F/4 d/4 z/2 d'/4 G,/4 z/2  c'/4 A,/4 z/2 z |

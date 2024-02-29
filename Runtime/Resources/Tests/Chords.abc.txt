@@ -1,0 +1,15 @@
+X:1
+T:Test Chords
+M:4/4
+L:1/4
+K:C
+
+[Ace]4 | [cde]4 | [abc']4 | [A,B,C]4 |
+
+[Ace]2 [FAc]2| [cde]2 [FGA]2 | [abc']2  [A,B,C]2 | [FAc]3 z| [GBd]3 z | [Bc]3 z |
+
+[Ace] [FAc] [cde] [FGA] | [abc']  [A,B,C] z2 | [FAc] > z [FGA] > z | [Bc] > z  [de] > z|
+
+[Ace]/2 [FAc]/2 [cde]/2 [FGA]/2 [abc']/2  [A,B,C]/2 z|
+
+[Ace]/4 [FAc]/4 [cde]/4 [FGA]/4 [abc']/4  [A,B,C]/4 z/4 z/4 z z|

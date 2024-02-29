@@ -480,7 +480,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   title: {fileID: 525257793}
-  resourceName: sample.abc
+  resourceName: Samples/sample.abc
   layoutWidth: 0.8
 --- !u!4 &936662192
 Transform:
