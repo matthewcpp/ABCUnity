@@ -14,6 +14,8 @@ namespace ABCUnity
             public GameObject container;
             public Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
 
+            public GameObject slurs;
+
             public Vector3 insertPos
             {
                 get { return new Vector3(bounds.size.x, 0.0f, 0.0f); }

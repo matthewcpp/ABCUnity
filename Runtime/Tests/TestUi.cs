@@ -24,7 +24,8 @@ public class TestUi : MonoBehaviour
         "Beams.abc",
         "Chords.abc",
         "Notes.abc",
-        "Rests.abc"
+        "Rests.abc",
+        "Slurs.abc"
     };
 
     void PopulateDropdown()

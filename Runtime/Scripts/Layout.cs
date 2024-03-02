@@ -28,7 +28,7 @@ namespace ABCUnity
         public ABC.Tune tune { get; private set; }
         GameObject scoreContainer;
         public Dictionary<int, GameObject> gameObjectMap { get; } = new Dictionary<int, GameObject>();
-        public Dictionary<GameObject, ABC.Item> itemMap { get; } = new Dictionary<GameObject, ABC.Item>();
+        private Dictionary<int, VoiceLayout.ScoreLine.Element> abcItemToLayoutElement { get; } = new Dictionary<int, VoiceLayout.ScoreLine.Element>();
         private Dictionary<int, List<SpriteRenderer>> spriteRendererCache = new Dictionary<int, List<SpriteRenderer>>();
         private TimeSignature timeSignature;
         #endregion
@@ -69,7 +69,7 @@ namespace ABCUnity
             GameObject.Destroy(scoreContainer);
             layouts.Clear();
             gameObjectMap.Clear();
-            itemMap.Clear();
+            abcItemToLayoutElement.Clear();
             spriteRendererCache.Clear();
             
             timeSignature = null;
@@ -112,14 +112,6 @@ namespace ABCUnity
             {
                 LoadStream(file);
             }
-        }
-
-        public GameObject FindItemRootObject(GameObject obj)
-        {
-            while (!itemMap.ContainsKey(obj))
-                obj = obj.transform.parent.gameObject;
-
-            return obj;
         }
 
         public bool SetItemColor(ABC.Item item, Color color)
@@ -236,7 +228,8 @@ namespace ABCUnity
                                 }
 
                                 gameObjectMap.Add(element.item.id, element.container);
-                                itemMap.Add(element.container, element.item);
+                                Debug.Log($"Add element {element.item.id}");
+                                abcItemToLayoutElement.Add(element.item.id, element);
 
                                 // position
                                 var beatItem = layoutMeasure.elements[layoutMeasure.elements.Count - 1];
@@ -537,9 +530,28 @@ namespace ABCUnity
             for (int i = 0; i < layouts[0].scoreLines.Count; i++)
                 PositionScoreLine(i);
 
+            CreateSlurs();
+
             scoreContainer.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
             this.gameObject.transform.localScale = scale;
-            
+        }
+
+        void CreateSlurs()
+        {
+            foreach (var voice in tune.voices)
+            {
+                if (voice.slurs.Count == 0)
+                    continue;
+
+                foreach (var slur in voice.slurs)
+                {
+                    var startElement = abcItemToLayoutElement[slur.startId];
+                    var endElement = abcItemToLayoutElement[slur.endId];
+
+                    Debug.Log(startElement.info.rootBounding);
+                    Debug.Log(endElement.info.rootBounding);
+                }
+            }
         }
 
         /// <summary> Breaks up a single score line into multiple lines based on the horizontal max</summary>
