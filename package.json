@@ -1,0 +1,12 @@
+{
+    "name": "com.matthewcpp.abcunity",
+    "version": "0.1.0",
+    "displayName": "ABC Unity",
+    "description": "Render ABC Notation in Unity",
+    "unity": "2019.1",
+    "author": {
+        "name": "Matthew LaRocca",
+        "email": "mlarocca.cpp@gmail.com",
+        "url": "https://www.unity3d.com"
+    }
+}

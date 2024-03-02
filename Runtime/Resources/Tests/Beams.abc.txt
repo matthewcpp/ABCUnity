@@ -1,0 +1,9 @@
+X:1
+T:Test Beams
+M:C
+L:1/4
+K:C
+
+F/2F/2 F/2A/2 A/2F/2 z | e/2e/2 e/2g/2 g/2g/2 z | [FA]/2[FA]/2 [FA]/2[Ac]/2 [Ac]/2[FA]/2 z | [eg]/2[eg]/2 [eg]/2[gb]/2 [gb]/2[eg]/2 z | F/2A/2A/2F/2 g/2b/2b/2g/2 |
+
+F/4F/4 F/4A/4 A/4F/4 z/2  e/4e/4 e/4g/4 g/4g/4 z/2 | [FA]/4[FA]/4 [FA]/4[Ac]/4 [Ac]/4[FA]/4 z/2  [eg]/4[eg]/4 [eg]/4[gb]/4 [gb]/4[eg]/4 z/2| F/4A/4A/4F/4 z g/4b/4b/4g/4 z |
