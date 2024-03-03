@@ -23,6 +23,13 @@ namespace ABCUnity
 
             public float insertX { get { return bounds.size.x; } }
 
+            public Measure AddMeasure(Measure measure)
+            {
+                measures.Add(measure);
+                measure.scoreLine = this;
+                return measure;
+            }
+
             public void EncapsulateAppendedBounds(Bounds bounding)
             {
                 bounds.Encapsulate(new Bounds(bounding.center + insertPos, bounding.size));
@@ -43,6 +50,8 @@ namespace ABCUnity
                 public Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
                 public List<Element> elements = new List<Element>();
                 public List<float> spacers = new List<float>();
+
+                public ScoreLine scoreLine {get; set;}
 
                 public float minWidth { get { return GetMinWidth(); } }
 
@@ -66,6 +75,7 @@ namespace ABCUnity
                 public Element AddItem(ABC.Item item)
                 {
                     var element = new Element(item);
+                    element.measure = this;
                     elements.Add(element);
                     return element;
                 }
@@ -89,6 +99,8 @@ namespace ABCUnity
                 public ABC.Item item { get; }
                 public GameObject container { get; set; }
                 public NoteInfo info;
+
+                public Measure measure {get; set;}
 
                 public Element(ABC.Item item)
                 {
@@ -126,7 +138,7 @@ namespace ABCUnity
                     if (measure.lineNumber >= scoreLines.Count)
                         scoreLines.Add(new ScoreLine());
 
-                    scoreLines[measure.lineNumber].measures.Add(new ScoreLine.Measure(measure));
+                    scoreLines[measure.lineNumber].AddMeasure(new ScoreLine.Measure(measure));
                 }
             }
             else
@@ -134,7 +146,7 @@ namespace ABCUnity
                 var scoreLine = new ScoreLine();
 
                 foreach (var measure in alignment.measures)
-                    scoreLine.measures.Add(new ScoreLine.Measure(measure));
+                    scoreLine.AddMeasure(new ScoreLine.Measure(measure));
 
                 scoreLines.Add(scoreLine);
             }

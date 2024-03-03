@@ -12,6 +12,7 @@ namespace ABCUnity
         [SerializeField] private SpriteAtlas spriteAtlas; // set in editor
         [SerializeField] public Color color = Color.black;
         [SerializeField] public Material NoteMaterial;
+        [SerializeField] public Material LineMaterial;
         [SerializeField] public TextMeshPro textPrefab;
         [SerializeField] public float staffLinePadding = 0.4f;
         [SerializeField] public float staffLineMargin = 1.0f;
@@ -536,8 +537,10 @@ namespace ABCUnity
             this.gameObject.transform.localScale = scale;
         }
 
-        void CreateSlurs()
+        private void CreateSlurs()
         {
+            Dictionary<VoiceLayout.ScoreLine, List<Vector3>> slurCache = new Dictionary<VoiceLayout.ScoreLine, List<Vector3>>();
+
             foreach (var voice in tune.voices)
             {
                 if (voice.slurs.Count == 0)
@@ -546,12 +549,50 @@ namespace ABCUnity
                 foreach (var slur in voice.slurs)
                 {
                     var startElement = abcItemToLayoutElement[slur.startId];
-                    var endElement = abcItemToLayoutElement[slur.endId];
+                    var startScoreline = startElement.measure.scoreLine;
 
-                    Debug.Log(startElement.info.rootBounding);
-                    Debug.Log(endElement.info.rootBounding);
+                    var endElement = abcItemToLayoutElement[slur.endId];
+                    var endScoreline = endElement.measure.scoreLine;
+
+                    if (!slurCache.TryGetValue(startScoreline, out var lineCache))
+                    {
+                        lineCache = new List<Vector3>();
+                        slurCache[startScoreline] = lineCache;
+                    }
+
+                    if (startScoreline == endScoreline)
+                        CreateSlurInSameScoreline(startScoreline, startElement, endElement, lineCache);
+                    
+                    // TODO: handle slurs across score lines
                 }
             }
+
+            foreach (var cache in slurCache)
+            {
+                var scoreLine = cache.Key;
+                scoreLine.slurs = new GameObject("Slurs");
+                scoreLine.slurs.transform.SetParent(scoreLine.container.transform, false);
+                var lineRenderer = scoreLine.slurs.AddComponent<LineRenderer>();
+                lineRenderer.positionCount = cache.Value.Count;
+                lineRenderer.SetPositions(cache.Value.ToArray());
+                lineRenderer.material = LineMaterial;
+                lineRenderer.useWorldSpace = false;
+                lineRenderer.startWidth = 0.1f;
+                lineRenderer.endWidth = 0.1f;
+            }
+        }
+
+        private void CreateSlurInSameScoreline(VoiceLayout.ScoreLine scoreLine, VoiceLayout.ScoreLine.Element startElement, VoiceLayout.ScoreLine.Element endElement, List<Vector3> slurPositions)
+        {
+            var startPos = startElement.container.transform.localPosition + startElement.measure.container.transform.localPosition;
+            var endPos = endElement.container.transform.localPosition + endElement.measure.container.transform.localPosition;
+
+            var midpoint = (startPos + endPos) / 2.0f;
+            midpoint.y -= 0.2f;
+
+            slurPositions.Add(startPos);
+            slurPositions.Add(midpoint);
+            slurPositions.Add(endPos);
         }
 
         /// <summary> Breaks up a single score line into multiple lines based on the horizontal max</summary>
@@ -593,7 +634,7 @@ namespace ABCUnity
                 for (int i = 0; i < scoreLines.Length; i++)
                 {
                     var scoreLine = layouts[i].scoreLines[layouts[i].scoreLines.Count - 1];
-                    scoreLine.measures.Add(scoreLines[i][measureIndex]);
+                    scoreLine.AddMeasure(scoreLines[i][measureIndex]);
                     currentWidth += measureWidth;
                 }
             }
