@@ -538,8 +538,6 @@ namespace ABCUnity
 
         private void CreateSlurs()
         {
-            Dictionary<VoiceLayout.ScoreLine, List<Vector3>> slurCache = new Dictionary<VoiceLayout.ScoreLine, List<Vector3>>();
-
             foreach (var voice in tune.voices)
             {
                 if (voice.slurs.Count == 0)
@@ -553,31 +551,11 @@ namespace ABCUnity
                     var endElement = abcItemToLayoutElement[slur.endId];
                     var endScoreline = endElement.measure.scoreLine;
 
-                    if (!slurCache.TryGetValue(startScoreline, out var lineCache))
-                    {
-                        lineCache = new List<Vector3>();
-                        slurCache[startScoreline] = lineCache;
-                    }
-
                     if (startScoreline == endScoreline)
-                        CreateSlurInSameScoreline(startScoreline, startElement, endElement, lineCache);
-                    
+                        Slur.CreateSingleScorelineSlur(startScoreline, startElement, endElement, LineMaterial);
+
                     // TODO: handle slurs across score lines
                 }
-            }
-
-            foreach (var cache in slurCache)
-            {
-                var scoreLine = cache.Key;
-                scoreLine.slurs = new GameObject("Slurs");
-                scoreLine.slurs.transform.SetParent(scoreLine.container.transform, false);
-                var lineRenderer = scoreLine.slurs.AddComponent<LineRenderer>();
-                lineRenderer.positionCount = cache.Value.Count;
-                lineRenderer.SetPositions(cache.Value.ToArray());
-                lineRenderer.material = LineMaterial;
-                lineRenderer.useWorldSpace = false;
-                lineRenderer.startWidth = 0.1f;
-                lineRenderer.endWidth = 0.1f;
             }
         }
 
