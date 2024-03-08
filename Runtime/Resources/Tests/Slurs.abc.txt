@@ -1,7 +1,11 @@
 X:1
-T:Test Slurs
+T:Test Ties and Slurs
 M:C
 L:1/4
 K:C
 
-D E F G/E/- | E F G A |
+(CDEF) | (fedc) | (DDdd) | (ddDD) |
+
+(DFAc | cAFD) |
+
+G-G dd- | d EEE- | EEE-E|

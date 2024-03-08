@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ABCUnity
 {
-    public static class MatrixUtil
+    public static class MathUtil
     {
         public static float[,] ReducedRowEchelonForm(float[,] matrix)
         {            
@@ -47,6 +47,30 @@ namespace ABCUnity
                 lead++;
             }
             return matrix;
+        }
+
+        public static Vector3 LineIntersect(Vector3 line1V1, Vector3 line1V2, Vector3 line2V1, Vector3 line2V2)
+        {
+            //Line1
+            float A1 = line1V2.y - line1V1.y;
+            float B1 = line1V1.x - line1V2.x;
+            float C1 = A1*line1V1.x + B1*line1V1.y;
+
+            //Line2
+            float A2 = line2V2.y - line2V1.y;
+            float B2 = line2V1.x - line2V2.x;
+            float C2 = A2 * line2V1.x + B2 * line2V1.y;
+
+            float det = A1*B2 - A2*B1;
+            if (det == 0)
+            {
+                return Vector3.zero; //parallel lines
+            }
+
+            float x = (B2*C1 - B1*C2)/det;
+            float y = (A1 * C2 - A2 * C1) / det;
+
+            return new Vector3(x,y,0);
         }
     }
 }

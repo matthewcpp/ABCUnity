@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEditor.Experimental.GraphView;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System;
+using UnityEditor;
 
 namespace ABCUnity
 {
@@ -31,38 +33,45 @@ namespace ABCUnity
 
             if (slurPosition == SlurPosition.Below)
             {
-                startPos += new Vector3(startElement.info.totalBounding.max.x, startElement.info.totalBounding.min.y, 0.0f);
+                startPos += new Vector3(startElement.info.rootBounding.max.x, startElement.info.rootBounding.min.y, 0.0f);
                 startAnchor = startPos;
 
                 startPos += new Vector3(0.1f, -0.1f, 0.0f);
-                startAnchor.x -= startElement.info.totalBounding.extents.x;
+                startAnchor.x -= startElement.info.rootBounding.extents.x;
 
-                endPos += endElement.info.totalBounding.min;
+                endPos += endElement.info.rootBounding.min;
                 endAnchor = endPos;
 
                 endPos += new Vector3(-0.1f, -0.1f, 0.0f);
-                endAnchor.x += endElement.info.totalBounding.extents.x;
+                endAnchor.x += endElement.info.rootBounding.extents.x;
             }
             else
             {
-                startPos += new Vector3(startElement.info.totalBounding.max.x, startElement.info.totalBounding.max.y, 0.0f);
+                startPos += new Vector3(startElement.info.rootBounding.max.x, startElement.info.rootBounding.max.y, 0.0f);
                 startAnchor = startPos;
 
                 startPos += new Vector3(0.1f, 0.1f, 0.0f);
-                startAnchor.x -= startElement.info.totalBounding.extents.x;
+                startAnchor.x -= startElement.info.rootBounding.extents.x;
 
-                endPos += new Vector3(endElement.info.totalBounding.min.x, endElement.info.totalBounding.max.y, 0.0f);
+                endPos += new Vector3(endElement.info.rootBounding.min.x, endElement.info.rootBounding.max.y, 0.0f);
                 endAnchor = endPos;
 
                 endPos += new Vector3(-0.1f, 0.1f, 0.0f);
-                endAnchor.x += endElement.info.totalBounding.extents.x;
+                endAnchor.x += endElement.info.rootBounding.extents.x;
             }
+
+            var boundingY = GetSlurBoundingY(elements, slurPosition);
+            Vector3 boundingPt1 = new Vector3(0.0f, boundingY, 0.0f);
+            Vector3 boundingPt2 = new Vector3(1.0f, boundingY, 0.0f);
 
             var lineMidpoint = (startPos + endPos) / 2.0f;
             var anchorMidpoint = (startAnchor + endAnchor) / 2.0f;
+            
+
+            var slurMidpoint = MathUtil.LineIntersect(lineMidpoint, anchorMidpoint, boundingPt1, boundingPt2);
             var direction = (lineMidpoint - anchorMidpoint).normalized * ParaoblaMidpointScale;
 
-            var slurLinePoints = CreatePoints(startPos, lineMidpoint + direction, endPos);
+            var slurLinePoints = CreatePoints(startPos, slurMidpoint + direction, endPos);
 
             return CreateLineRenderer(scoreLine, slurLinePoints, material);
         }
@@ -79,7 +88,7 @@ namespace ABCUnity
                 { endPos.x * endPos.x, endPos.x, 1,  endPos.y  }
             };
 
-            matrix = MatrixUtil.ReducedRowEchelonForm(matrix);
+            matrix = MathUtil.ReducedRowEchelonForm(matrix);
             float a = matrix[0, 3];
             float b = matrix[1, 3];
             float c = matrix[2, 3];
@@ -188,6 +197,30 @@ namespace ABCUnity
 
             float averagePitch = total / (float)numItems;
             return (averagePitch > (float)NoteCreator.clefZero[elements[0].measure.scoreLine.voiceLayout.voice.clef] + 3) ? SlurPosition.Above : SlurPosition.Below;
+        }
+
+        private static float GetSlurBoundingY(List<VoiceLayout.ScoreLine.Element> elements, SlurPosition slurPosition)
+        {
+            if (slurPosition == SlurPosition.Above)
+            {
+                float max = float.MinValue;
+                foreach(var element in elements)
+                {
+                    max = Math.Max(max, element.info.rootBounding.max.y);
+                }
+
+                return max;
+            }
+            else
+            {
+                float min = float.MaxValue;
+                foreach(var element in elements)
+                {
+                    min = Math.Min(min, element.info.rootBounding.min.y);
+                }
+
+                return min;
+            }
         }
     }
 }
