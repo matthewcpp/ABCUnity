@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using ABC;
 using UnityEngine;
 
 namespace ABCUnity
@@ -10,6 +11,12 @@ namespace ABCUnity
 
         public class ScoreLine
         {
+            public ScoreLine(VoiceLayout voiceLayout)
+            {
+                this.voiceLayout = voiceLayout;
+            }
+
+            public VoiceLayout voiceLayout { get; private set;}
             public List<Measure> measures = new List<Measure>();
             public GameObject container;
             public Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
@@ -136,14 +143,14 @@ namespace ABCUnity
                 foreach (var measure in alignment.measures)
                 {
                     if (measure.lineNumber >= scoreLines.Count)
-                        scoreLines.Add(new ScoreLine());
+                        scoreLines.Add(new ScoreLine(this));
 
                     scoreLines[measure.lineNumber].AddMeasure(new ScoreLine.Measure(measure));
                 }
             }
             else
             {
-                var scoreLine = new ScoreLine();
+                var scoreLine = new ScoreLine(this);
 
                 foreach (var measure in alignment.measures)
                     scoreLine.AddMeasure(new ScoreLine.Measure(measure));

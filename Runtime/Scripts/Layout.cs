@@ -552,7 +552,7 @@ namespace ABCUnity
                     var endScoreline = endElement.measure.scoreLine;
 
                     if (startScoreline == endScoreline)
-                        Slur.CreateSingleScorelineSlur(startScoreline, startElement, endElement, LineMaterial);
+                        Slur.Create(startElement, endElement, LineMaterial);
 
                     // TODO: handle slurs across score lines
                 }
@@ -608,7 +608,7 @@ namespace ABCUnity
             {
                 scoreLines[i] = layouts[i].scoreLines[0].measures;
                 layouts[i].scoreLines.Clear();
-                layouts[i].scoreLines.Add(new VoiceLayout.ScoreLine());
+                layouts[i].scoreLines.Add(new VoiceLayout.ScoreLine(layouts[i]));
             }
 
             float currentWidth = 0.0f;
@@ -626,7 +626,7 @@ namespace ABCUnity
                     if (currentWidth + scoreLine[measureIndex].insertX > horizontalMax)
                     {
                         foreach (var layout in layouts)
-                            layout.scoreLines.Add(new VoiceLayout.ScoreLine());
+                            layout.scoreLines.Add(new VoiceLayout.ScoreLine(layout));
 
                         currentWidth = 0.0f;
                         break;
