@@ -172,31 +172,38 @@ namespace ABCUnity
             return elements;
         }
 
+        /// Determines the Position of the slur by looking at note directions.
+        /// If the stems point up then the slur will be placed below.
+        /// If the stems point down then the slur will be placed above.
+        /// If the stems are mixed then the slur will be placed above 
         private static SlurPosition DetermineSlurPosition(List<VoiceLayout.ScoreLine.Element> elements)
         {
-            int total = 0, numItems = 0;
-            foreach (var element in elements)
-            {
-                if (element.item.type == ABC.Item.Type.Note)
-                {
-                    var note = element.item as ABC.Note;
-                    total += (int)note.pitch;
-                    numItems += 1;
-                }
-                else if (element.item.type == ABC.Item.Type.Chord)
-                {
-                    var chord = element.item as ABC.Chord;
-                    int sum = 0;
-                    foreach (var chordNote in chord.notes)
-                        sum += (int)chordNote.pitch;
 
-                    total += (int)Mathf.Round(sum / (float)chord.notes.Length);
-                    numItems += 1;
-                }
+            var clef = elements[0].measure.scoreLine.voiceLayout.voice.clef;
+
+            // get the initial direction
+            int i = 0;
+            var initialDirection = NoteCreator.NoteDirection.Unknown;
+
+            for (; i < elements.Count; i++) 
+            {
+                if (initialDirection != NoteCreator.NoteDirection.Unknown)
+                    break;
+
+                initialDirection = NoteCreator.DetermineNoteDirection(elements[i].item, clef);
             }
 
-            float averagePitch = total / (float)numItems;
-            return (averagePitch > (float)NoteCreator.clefZero[elements[0].measure.scoreLine.voiceLayout.voice.clef] + 3) ? SlurPosition.Above : SlurPosition.Below;
+            for (; i < elements.Count; i++) 
+            {
+                var direction = NoteCreator.DetermineNoteDirection(elements[i].item, clef);
+                if (direction == NoteCreator.NoteDirection.Unknown)
+                    continue;
+
+                if (direction != initialDirection)
+                    return SlurPosition.Above;
+            }
+
+            return initialDirection == NoteCreator.NoteDirection.Up ? SlurPosition.Below : SlurPosition.Above;
         }
 
         private static float GetSlurBoundingY(List<VoiceLayout.ScoreLine.Element> elements, SlurPosition slurPosition)
