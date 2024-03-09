@@ -7,7 +7,7 @@ using UnityEditor;
 
 namespace ABCUnity
 {
-    static class Slur
+    static class Grouping
     {
         const float ParaoblaMidpointScale = 0.3f;
 

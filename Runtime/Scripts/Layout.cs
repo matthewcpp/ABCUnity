@@ -530,32 +530,28 @@ namespace ABCUnity
             for (int i = 0; i < layouts[0].scoreLines.Count; i++)
                 PositionScoreLine(i);
 
-            CreateSlurs();
+            CreateSlursAndTies();
 
             scoreContainer.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
             this.gameObject.transform.localScale = scale;
         }
 
-        private void CreateSlurs()
+        private void CreateSlursAndTies()
         {
             foreach (var voice in tune.voices)
             {
-                if (voice.slurs.Count == 0)
-                    continue;
+                CreateGroupings(voice.slurs);
+                CreateGroupings(voice.ties);
+            }
+        }
 
-                foreach (var slur in voice.slurs)
-                {
-                    var startElement = abcItemToLayoutElement[slur.startId];
-                    var startScoreline = startElement.measure.scoreLine;
-
-                    var endElement = abcItemToLayoutElement[slur.endId];
-                    var endScoreline = endElement.measure.scoreLine;
-
-                    if (startScoreline == endScoreline)
-                        Slur.Create(startElement, endElement, LineMaterial);
-
-                    // TODO: handle slurs across score lines
-                }
+        private void CreateGroupings(IEnumerable<ABC.Grouping> groupings)
+        {
+            foreach (var grouping in groupings)
+            {
+                var startElement = abcItemToLayoutElement[grouping.startId];
+                var endElement = abcItemToLayoutElement[grouping.endId];
+                Grouping.Create(startElement, endElement, LineMaterial);
             }
         }
 

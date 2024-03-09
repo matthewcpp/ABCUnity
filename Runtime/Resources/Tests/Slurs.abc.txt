@@ -8,4 +8,4 @@ K:C
 
 (DFAc | cAFD) |
 
-G-G dd- | d EEE- | EEE-E|
+d-d dd- | d EEE- | EEE-E|
