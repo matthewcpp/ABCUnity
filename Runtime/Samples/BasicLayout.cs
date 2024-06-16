@@ -11,6 +11,8 @@ namespace ABCUnity.Example
     {
         [SerializeField] private TextMeshPro title;
         [SerializeField] private string resourceName;
+        [SerializeField] private string abcString;
+        [SerializeField] private string abcFile;
 
         [Range(0.0f, 1.0f)]public float layoutWidth = 0.8f;
         private Camera mainCamera;
@@ -34,8 +36,19 @@ namespace ABCUnity.Example
 
         void Start()
         {
-            if (!string.IsNullOrEmpty(resourceName))
+            if (!string.IsNullOrEmpty(abcString)) {
+                layout.LoadString(abcString);
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(abcFile)) {
+                layout.LoadFile(abcFile);
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(resourceName)) {
                 LoadFromResource(resourceName);
+            }
         }
 
         void Update()

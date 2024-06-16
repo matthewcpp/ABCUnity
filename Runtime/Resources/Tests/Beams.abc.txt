@@ -4,6 +4,9 @@ M:C
 L:1/4
 K:C
 
-F/2F/2 F/2A/2 A/2F/2 z | e/2e/2 e/2g/2 g/2g/2 z | [FA]/2[FA]/2 [FA]/2[Ac]/2 [Ac]/2[FA]/2 z | [eg]/2[eg]/2 [eg]/2[gb]/2 [gb]/2[eg]/2 z | F/2A/2A/2F/2 g/2b/2b/2g/2 |
-
+F/2F/2 F/2A/2 A/2F/2 z | e/2e/2 e/2g/2 g/2g/2 z | [FA]/2[FA]/2 [FA]/2[Ac]/2 [Ac]/2[FA]/2 z | [eg]/2[eg]/2 [eg]/2[gb]/2 [gb]/2[eg]/2 z |
+F/2A/2A/2F/2 g/2b/2b/2g/2 | C/2`D/2`E/2`F/2 G/2`F/2`E/2`D/2 | C/4`D/4`E/4`F/4 G/4`F/4`E/4`D/4 z2|
 F/4F/4 F/4A/4 A/4F/4 z/2  e/4e/4 e/4g/4 g/4g/4 z/2 | [FA]/4[FA]/4 [FA]/4[Ac]/4 [Ac]/4[FA]/4 z/2  [eg]/4[eg]/4 [eg]/4[gb]/4 [gb]/4[eg]/4 z/2| F/4A/4A/4F/4 z g/4b/4b/4g/4 z |
+G/4`G/4`G/2 e/4`e/4`e/2 e/4`c/4`A/2 c/4`e/4`g/2| B,/4`D/4`F/2 F/4`D/4`B,/2 z2|
+G/2`G/4`G/4 e/2`e/4`e/4 e/2`c/4`A/4 c/2`e/4`g/4| B,/2`D/4`F/4 F/2`D/4`B,/4 z2|
+G/2`G/4 z/4 G/4`G/2 z/4 d/2`d/4 z/4 d/4`d/2 z/4|G/2`A/4 z/4 A/4`G/2 z/4 d/2`f/4 z/4 f/4`d/2 z/4|

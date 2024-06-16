@@ -1,5 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 namespace ABCUnity
 {
@@ -30,16 +31,17 @@ namespace ABCUnity
 
         public Type type { get; private set; }
 
-        int id { get; }
+        ABC.Beam id { get; }
 
         public ABC.Clef clef { get; }
 
         public float stemHeight { get; set; } = unspecifiedStemHeight;
 
-        private int index = 0;
-        public bool isReadyToCreate { get { return index == items.Count; } }
+        public bool isReadyToCreate { get { return noteInfos.Count == items.Count; } }
 
-        public Beam(int id, ABC.Clef clef)
+        List<NoteInfo> noteInfos = new List<NoteInfo>();
+
+        public Beam(ABC.Beam id, ABC.Clef clef)
         {
             this.id = id;
             this.clef = clef;
@@ -149,23 +151,13 @@ namespace ABCUnity
             noteDirection = (averagePitch > (float)NoteCreator.clefZero[clef] + 3) ? NoteCreator.NoteDirection.Down : NoteCreator.NoteDirection.Up;
         }
 
-        Bounds first;
-        Bounds last;
-
         /// <summary>
         /// This method is called every time an item in the beam has been laid out.  
         /// When the final item is laid out the beam will be added to the scene.
         /// </summary>
-        public void Update(Bounds bounds)
+        public void AddNoteInfo(NoteInfo noteInfo)
         {
-            if (index == 0)
-                first = bounds;
-
-            if (index < items.Count)
-            {
-                last = bounds;
-                index += 1;
-            }
+            noteInfos.Add(noteInfo);
         }
 
         bool IsBasic()
@@ -222,81 +214,108 @@ namespace ABCUnity
             return false;
         }
 
-        /// <summary>
-        /// Creates a basic straight beam connecting the first and last item in this beam.
-        /// Note that this method should be used when the first and last items have the same max Y bounding value.
-        /// </summary>
-        public bool CreateBasicBeam(SpriteCache cache, GameObject container)
+        enum BeamSegmentType
         {
-            if (type != Type.Basic && type != Type.Straight)
-                return false;
+            Same, // Both Notes in the beam pair have the same length
+        }
 
-            float offsetY = 0.0f;
-            ABC.Length length = (items[0] as ABC.Duration).length;
+        public bool CreateBeamVertices(List<Vector3> vertices)
+        {
+            for (int i = 1; i < noteInfos.Count; i ++) {
+                var itemA = items[i - 1];
+                var boundingA = noteInfos[i - 1].rootBounding;
 
-            for (ABC.Length l = ABC.Length.Eighth; l >= length; l--)
-            {
-                var beam = cache.GetSpriteObject($"Note_Beam_{noteDirection}");
-                beam.transform.parent = container.transform;
+                var itemB = items[i];
+                var boundingB = noteInfos[i].rootBounding;
 
-                float distX;
-                if (noteDirection == NoteCreator.NoteDirection.Up)
-                {
-                    var beamPos = first.max;
-                    beam.transform.localPosition = new Vector3(beamPos.x, beamPos.y - offsetY, 0.0f);
-
-                    distX = last.max.x - beamPos.x;
+                // basic case, the notes are the same length, simply draw a beam segment for each length <= Eighth
+                if (itemA.length == itemB.length) {
+                    for (ABC.Length l = ABC.Length.Eighth; l >= itemA.length; l--) {
+                        CreateBeamSegment(vertices, boundingA, boundingB, l);
+                    }
                 }
-                else
-                {
-                    var beamPos = first.min;
-                    beam.transform.localPosition = new Vector3(beamPos.x, beamPos.y + offsetY, 0.0f);
+                else {
+                    // figure out how many beam segments to draw
+                    ABC.Length start, end;
+                    if (itemA.length > itemB.length) {
+                        start = itemA.length;
+                        end = itemB.length;
+                    } else {
+                        start = itemB.length;
+                        end = itemA.length;
+                    }
 
-                    distX = last.min.x - beamPos.x;
+                    for (ABC.Length l = start; l > end; l--) {
+                        CreateBeamSegment(vertices, boundingA, boundingB, l);
+                    }
+
+                    // draw a secondary (broken) beam if necessary
+                    if (items.Count == 2) {
+                        ABC.Length brokenLength;
+                        if (itemA.length > itemB.length){
+                            // "slide" A over so that it is close to B
+                            brokenLength = itemB.length;
+
+                            var A = new Vector3(boundingB.max.x, boundingB.max.y, 0);
+                            var B = new Vector3(boundingA.max.x, boundingA.max.y, 0);
+
+                            var C = new Vector3(boundingB.min.x, boundingB.max.y, 0);
+                            var D = new Vector3(boundingB.min.x, boundingB.min.y, 0);
+
+                            var topRight = MathUtil.LineIntersect(A, B, C, D);
+
+                            boundingA.SetMinMax(
+                                new Vector3(topRight.x - boundingA.size.x, topRight.y - boundingA.size.y, boundingA.min.z),
+                                new Vector3(topRight.x, topRight.y, boundingA.max.z)
+                            );
+
+                        }
+                        else {
+                             // "slide" B over so that it is close to A
+                            brokenLength = itemA.length;
+
+                            var A = new Vector3(boundingA.max.x, boundingA.max.y, 0);
+                            var B = new Vector3(boundingB.min.x, boundingB.max.y, 0);
+
+                            var C = new Vector3(boundingA.max.x + boundingA.size.x, boundingA.max.y, 0);
+                            var D = new Vector3(boundingA.max.x + boundingA.size.x, boundingA.min.y, 0);
+
+                            var topLeft = MathUtil.LineIntersect(A, B, C, D);
+
+                            boundingB.SetMinMax(
+                                new Vector3(boundingA.max.x, topLeft.y - boundingB.size.y, boundingB.min.z),
+                                new Vector3(topLeft.x, topLeft.y, boundingB.max.z)
+                            );
+                            
+                        }
+
+                        CreateBeamSegment(vertices, boundingA, boundingB, brokenLength);
+                    }
                 }
-
-                beam.transform.localScale = new Vector3(distX, 1.0f, 1.0f);
-
-                offsetY += beamHeight + defaultBeamSpacer;
             }
 
             return true;
         }
 
-        /// <summary>
-        /// Creates a beam connecting the first and last item in this beam.
-        /// This method should be used when the max values for these items are not at the same height.
-        /// Mesh vertices are generated as opposed to a sprite as in the straight beam.
-        /// </summary>
-        public bool CreateAngledBeam(List<Vector3> vertices)
+        private void CreateBeamSegment(List<Vector3> vertices, Bounds first, Bounds last, ABC.Length length)
         {
-            if (type != Type.Angle)
-                return false;
+            float delta = (int)ABC.Length.Eighth - (int)length;
+            float offsetY = delta * (beamHeight + defaultBeamSpacer);
 
-            float offsetY = 0.0f;
-            ABC.Length length = (items[0] as ABC.Duration).length;
-
-            for (ABC.Length l = ABC.Length.Eighth; l >= length; l--)
+            if (noteDirection == NoteCreator.NoteDirection.Up)
             {
-                if (noteDirection == NoteCreator.NoteDirection.Up)
-                {
-                    vertices.Add(new Vector3(first.max.x, first.max.y - offsetY, 0.0f));
-                    vertices.Add(new Vector3(last.max.x, last.max.y - offsetY, 0.0f));
-                    vertices.Add(new Vector3(first.max.x, first.max.y - offsetY - beamHeight, 0.0f));
-                    vertices.Add(new Vector3(last.max.x, last.max.y - offsetY - beamHeight, 0.0f));
-                }
-                else
-                {
-                    vertices.Add(new Vector3(first.min.x, first.min.y + offsetY + beamHeight, 0.0f));
-                    vertices.Add(new Vector3(last.min.x, last.min.y + offsetY + beamHeight, 0.0f));
-                    vertices.Add(new Vector3(first.min.x, first.min.y + offsetY, 0.0f));
-                    vertices.Add(new Vector3(last.min.x, last.min.y + offsetY, 0.0f));
-                }
-
-                offsetY += beamHeight + defaultBeamSpacer;
+                vertices.Add(new Vector3(first.max.x, first.max.y - offsetY, 0.0f));
+                vertices.Add(new Vector3(last.max.x, last.max.y - offsetY, 0.0f));
+                vertices.Add(new Vector3(first.max.x, first.max.y - offsetY - beamHeight, 0.0f));
+                vertices.Add(new Vector3(last.max.x, last.max.y - offsetY - beamHeight, 0.0f));
             }
-
-            return true;
+            else
+            {
+                vertices.Add(new Vector3(first.min.x, first.min.y + offsetY + beamHeight, 0.0f));
+                vertices.Add(new Vector3(last.min.x, last.min.y + offsetY + beamHeight, 0.0f));
+                vertices.Add(new Vector3(first.min.x, first.min.y + offsetY, 0.0f));
+                vertices.Add(new Vector3(last.min.x, last.min.y + offsetY, 0.0f));
+            }
         }
 
         public static void CreateMesh(List<Vector3> vertices, Material material, GameObject container)
@@ -328,9 +347,9 @@ namespace ABCUnity
             item.transform.parent = container.transform;
         }
 
-        public static Dictionary<int, Beam> CreateBeams(ABC.Tune tune)
+        public static Dictionary<ABC.Beam, Beam> CreateBeams(ABC.Tune tune)
         {
-            var beams = new Dictionary<int, Beam>();
+            var beams = new Dictionary<ABC.Beam, Beam>();
 
             foreach (var voice in tune.voices)
             {
@@ -342,7 +361,7 @@ namespace ABCUnity
                         continue;
                     
                     // add this note to a beam if necessary
-                    if (duration.beam != 0)
+                    if (duration.beam != null)
                     {
                         beams.TryGetValue(duration.beam, out Beam beam);
                         if (beam == null)
