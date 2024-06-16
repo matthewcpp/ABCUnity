@@ -25,7 +25,7 @@ namespace ABCUnity
 
         #region TuneSpecificMembers
         List<VoiceLayout> layouts = new List<VoiceLayout>();
-        Dictionary<int, Beam> beams;
+        Dictionary<ABC.Beam, Beam> beams;
         public ABC.Tune tune { get; private set; }
         GameObject scoreContainer;
         public Dictionary<int, GameObject> gameObjectMap { get; } = new Dictionary<int, GameObject>();
@@ -412,23 +412,16 @@ namespace ABCUnity
                 actualBounds.Encapsulate(actualNoteInfo.totalBounding);
 
                 var duration = item.item as ABC.Duration;
-                if (duration != null && beams.TryGetValue(duration.beam, out Beam beam))
+                if (duration != null && duration.beam != null && beams.TryGetValue(duration.beam, out Beam beam))
                 {
-                    beam.Update(actualNoteInfo.rootBounding);
+                    beam.AddNoteInfo(actualNoteInfo);
 
-                    if (beam.isReadyToCreate)
-                    {
-                        if (beam.type == Beam.Type.Angle)
-                        {
-                            if (beamVertices == null)
-                                beamVertices = new List<Vector3>();
+                    if (beamVertices == null) {
+                        beamVertices = new List<Vector3>();
+                    }
 
-                            beam.CreateAngledBeam(beamVertices);
-                        }
-                        else
-                        {
-                            beam.CreateBasicBeam(cache, measure.container);
-                        }
+                    if (beam.isReadyToCreate) {
+                        beam.CreateBeamVertices(beamVertices);
                     }
                 }
             }
@@ -713,7 +706,7 @@ namespace ABCUnity
             tune.decorations.TryGetValue(chordItem.id, out var decorations);
             
             NoteInfo chordInfo;
-            if (beams.TryGetValue(chordItem.beam, out Beam beam))
+            if (chordItem.beam != null && beams.TryGetValue(chordItem.beam, out Beam beam))
                 chordInfo = notes.CreateChord(chordItem, beam, decorations, element.container);
             else
                 chordInfo = notes.CreateChord(chordItem, clef, decorations, element.container);
@@ -729,7 +722,7 @@ namespace ABCUnity
             tune.decorations.TryGetValue(noteItem.id, out var decorations);
 
             NoteInfo noteInfo;
-            if (beams.TryGetValue(noteItem.beam, out Beam beam))
+            if (noteItem.beam != null && beams.TryGetValue(noteItem.beam, out Beam beam))
                 noteInfo = notes.CreateNote(noteItem, beam, decorations, element.container);
             else
                 noteInfo = notes.CreateNote(noteItem, clef, decorations, element.container);

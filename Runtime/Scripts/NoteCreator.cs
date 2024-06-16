@@ -158,7 +158,7 @@ namespace ABCUnity
             }
             else
             {
-                var spriteName = GetNoteSpriteName(note.length, note.beam != 0, noteDirection);
+                var spriteName = GetNoteSpriteName(note.length, note.beam != null, noteDirection);
                 rootItem = spriteCache.GetSpriteObject(spriteName);
                 rootItem.transform.parent = container.transform;
                 rootItem.transform.localPosition = notePosition;
