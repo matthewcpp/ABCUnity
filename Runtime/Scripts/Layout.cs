@@ -12,6 +12,7 @@ namespace ABCUnity
         [SerializeField] private SpriteAtlas spriteAtlas; // set in editor
         [SerializeField] public Color color = Color.black;
         [SerializeField] public Material NoteMaterial;
+        [SerializeField] public Material LineMaterial;
         [SerializeField] public TextMeshPro textPrefab;
         [SerializeField] public float staffLinePadding = 0.4f;
         [SerializeField] public float staffLineMargin = 1.0f;
@@ -28,7 +29,7 @@ namespace ABCUnity
         public ABC.Tune tune { get; private set; }
         GameObject scoreContainer;
         public Dictionary<int, GameObject> gameObjectMap { get; } = new Dictionary<int, GameObject>();
-        public Dictionary<GameObject, ABC.Item> itemMap { get; } = new Dictionary<GameObject, ABC.Item>();
+        private Dictionary<int, VoiceLayout.ScoreLine.Element> abcItemToLayoutElement { get; } = new Dictionary<int, VoiceLayout.ScoreLine.Element>();
         private Dictionary<int, List<SpriteRenderer>> spriteRendererCache = new Dictionary<int, List<SpriteRenderer>>();
         private TimeSignature timeSignature;
         #endregion
@@ -69,7 +70,7 @@ namespace ABCUnity
             GameObject.Destroy(scoreContainer);
             layouts.Clear();
             gameObjectMap.Clear();
-            itemMap.Clear();
+            abcItemToLayoutElement.Clear();
             spriteRendererCache.Clear();
             
             timeSignature = null;
@@ -112,14 +113,6 @@ namespace ABCUnity
             {
                 LoadStream(file);
             }
-        }
-
-        public GameObject FindItemRootObject(GameObject obj)
-        {
-            while (!itemMap.ContainsKey(obj))
-                obj = obj.transform.parent.gameObject;
-
-            return obj;
         }
 
         public bool SetItemColor(ABC.Item item, Color color)
@@ -236,7 +229,7 @@ namespace ABCUnity
                                 }
 
                                 gameObjectMap.Add(element.item.id, element.container);
-                                itemMap.Add(element.container, element.item);
+                                abcItemToLayoutElement.Add(element.item.id, element);
 
                                 // position
                                 var beatItem = layoutMeasure.elements[layoutMeasure.elements.Count - 1];
@@ -537,9 +530,29 @@ namespace ABCUnity
             for (int i = 0; i < layouts[0].scoreLines.Count; i++)
                 PositionScoreLine(i);
 
+            CreateSlursAndTies();
+
             scoreContainer.transform.localScale = new Vector3(layoutScale, layoutScale, layoutScale);
             this.gameObject.transform.localScale = scale;
-            
+        }
+
+        private void CreateSlursAndTies()
+        {
+            foreach (var voice in tune.voices)
+            {
+                CreateGroupings(voice.slurs);
+                CreateGroupings(voice.ties);
+            }
+        }
+
+        private void CreateGroupings(IEnumerable<ABC.Grouping> groupings)
+        {
+            foreach (var grouping in groupings)
+            {
+                var startElement = abcItemToLayoutElement[grouping.startId];
+                var endElement = abcItemToLayoutElement[grouping.endId];
+                Grouping.Create(startElement, endElement, LineMaterial);
+            }
         }
 
         /// <summary> Breaks up a single score line into multiple lines based on the horizontal max</summary>
@@ -552,7 +565,7 @@ namespace ABCUnity
             {
                 scoreLines[i] = layouts[i].scoreLines[0].measures;
                 layouts[i].scoreLines.Clear();
-                layouts[i].scoreLines.Add(new VoiceLayout.ScoreLine());
+                layouts[i].scoreLines.Add(new VoiceLayout.ScoreLine(layouts[i]));
             }
 
             float currentWidth = 0.0f;
@@ -570,7 +583,7 @@ namespace ABCUnity
                     if (currentWidth + scoreLine[measureIndex].insertX > horizontalMax)
                     {
                         foreach (var layout in layouts)
-                            layout.scoreLines.Add(new VoiceLayout.ScoreLine());
+                            layout.scoreLines.Add(new VoiceLayout.ScoreLine(layout));
 
                         currentWidth = 0.0f;
                         break;
@@ -581,7 +594,7 @@ namespace ABCUnity
                 for (int i = 0; i < scoreLines.Length; i++)
                 {
                     var scoreLine = layouts[i].scoreLines[layouts[i].scoreLines.Count - 1];
-                    scoreLine.measures.Add(scoreLines[i][measureIndex]);
+                    scoreLine.AddMeasure(scoreLines[i][measureIndex]);
                     currentWidth += measureWidth;
                 }
             }

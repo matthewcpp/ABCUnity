@@ -33,7 +33,7 @@ namespace ABCUnity
 
         public enum NoteDirection
         {
-            Down, Up
+            Unknown, Down, Up
         }
 
         /// <summary> The distance between note values on the staff. </summary>
@@ -67,6 +67,25 @@ namespace ABCUnity
         private bool NeedsStaffMarkers(int stepCount)
         {
             return stepCount < -2 || stepCount > 8;
+        }
+
+        public static NoteDirection DetermineNoteDirection(ABC.Item item, ABC.Clef clef)
+        {
+            if (item.type == ABC.Item.Type.Note)
+            {
+                var note = item as ABC.Note;
+                int stepCount = note.pitch - clefZero[clef];
+                return stepCount > 3 ? NoteDirection.Down : NoteDirection.Up;
+            }
+            else if (item.type == ABC.Item.Type.Chord)
+            {
+                var chord = item as ABC.Chord;
+                return DetermineChordNoteDirection(chord.notes, clef);
+            }
+            else
+            {
+                return NoteDirection.Unknown;
+            }
         }
 
         public NoteInfo CreateNote(ABC.Note note, Beam beam, IReadOnlyList<string> decorations, GameObject container)
@@ -234,7 +253,7 @@ namespace ABCUnity
         /// The direction is chosen by examining the extreme notes of the chord and picking the direction based on the note which is farthest away from the value of the middle staffline.
         /// Precondition: notes array should be sorted in ascending order.
         /// </summary>
-        private NoteDirection DetermineChordNoteDirection(ABC.Chord.Element[] sortedNotes, ABC.Clef clef)
+        private static NoteDirection DetermineChordNoteDirection(ABC.Chord.Element[] sortedNotes, ABC.Clef clef)
         {
             var direction = NoteDirection.Down;
 

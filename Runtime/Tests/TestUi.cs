@@ -10,6 +10,12 @@ public class TestUi : MonoBehaviour
     private TMP_Dropdown testSelector;
     private ABCUnity.Layout layout;
 
+    /// <summary>
+    /// Specifies a file path which will override any dropdown selection when the "Load" Button is clicked.
+    /// This is primarily used for iteratively building up tests.
+    /// </summary>
+    [SerializeField] string filePathOverride = null;
+
     void Awake()
     {
         testSelector = FindObjectOfType<TMP_Dropdown>();
@@ -24,7 +30,8 @@ public class TestUi : MonoBehaviour
         "Beams.abc",
         "Chords.abc",
         "Notes.abc",
-        "Rests.abc"
+        "Rests.abc",
+        "Slurs.abc"
     };
 
     void PopulateDropdown()
@@ -39,19 +46,27 @@ public class TestUi : MonoBehaviour
 
     public void LoadSelectedTest()
     {
-        var testName = testSelector.options[testSelector.value].text;
-        var resourceName = $"Tests/{testName}";
-
-        TextAsset abcTextAsset = Resources.Load(resourceName) as TextAsset;
-
-        if (abcTextAsset)
+        if (!string.IsNullOrEmpty(filePathOverride))
         {
-            Debug.Log($"Load Test: {resourceName}");
-            layout.LoadString(abcTextAsset.text);
+            Debug.Log($"Load File from Override: {filePathOverride}");
+            layout.LoadFile(filePathOverride);
         }
         else
         {
-            Debug.Log($"Failed to load resource: {resourceName}");
+            var testName = testSelector.options[testSelector.value].text;
+            var resourceName = $"Tests/{testName}";
+
+            TextAsset abcTextAsset = Resources.Load(resourceName) as TextAsset;
+
+            if (abcTextAsset)
+            {
+                Debug.Log($"Load Test: {resourceName}");
+                layout.LoadString(abcTextAsset.text);
+            }
+            else
+            {
+                Debug.Log($"Failed to load resource: {resourceName}");
+            }
         }
     }
 }

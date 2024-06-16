@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using ABC;
 using UnityEngine;
 
 namespace ABCUnity
@@ -10,9 +11,17 @@ namespace ABCUnity
 
         public class ScoreLine
         {
+            public ScoreLine(VoiceLayout voiceLayout)
+            {
+                this.voiceLayout = voiceLayout;
+            }
+
+            public VoiceLayout voiceLayout { get; private set;}
             public List<Measure> measures = new List<Measure>();
             public GameObject container;
             public Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
+
+            public GameObject slurs;
 
             public Vector3 insertPos
             {
@@ -20,6 +29,13 @@ namespace ABCUnity
             }
 
             public float insertX { get { return bounds.size.x; } }
+
+            public Measure AddMeasure(Measure measure)
+            {
+                measures.Add(measure);
+                measure.scoreLine = this;
+                return measure;
+            }
 
             public void EncapsulateAppendedBounds(Bounds bounding)
             {
@@ -41,6 +57,8 @@ namespace ABCUnity
                 public Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
                 public List<Element> elements = new List<Element>();
                 public List<float> spacers = new List<float>();
+
+                public ScoreLine scoreLine {get; set;}
 
                 public float minWidth { get { return GetMinWidth(); } }
 
@@ -64,6 +82,7 @@ namespace ABCUnity
                 public Element AddItem(ABC.Item item)
                 {
                     var element = new Element(item);
+                    element.measure = this;
                     elements.Add(element);
                     return element;
                 }
@@ -87,6 +106,8 @@ namespace ABCUnity
                 public ABC.Item item { get; }
                 public GameObject container { get; set; }
                 public NoteInfo info;
+
+                public Measure measure {get; set;}
 
                 public Element(ABC.Item item)
                 {
@@ -122,17 +143,17 @@ namespace ABCUnity
                 foreach (var measure in alignment.measures)
                 {
                     if (measure.lineNumber >= scoreLines.Count)
-                        scoreLines.Add(new ScoreLine());
+                        scoreLines.Add(new ScoreLine(this));
 
-                    scoreLines[measure.lineNumber].measures.Add(new ScoreLine.Measure(measure));
+                    scoreLines[measure.lineNumber].AddMeasure(new ScoreLine.Measure(measure));
                 }
             }
             else
             {
-                var scoreLine = new ScoreLine();
+                var scoreLine = new ScoreLine(this);
 
                 foreach (var measure in alignment.measures)
-                    scoreLine.measures.Add(new ScoreLine.Measure(measure));
+                    scoreLine.AddMeasure(new ScoreLine.Measure(measure));
 
                 scoreLines.Add(scoreLine);
             }

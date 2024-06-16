@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ABC;
 using UnityEngine;
 
 namespace ABCUnity
@@ -49,8 +50,11 @@ namespace ABCUnity
         public List<Measure> measures { get; private set; }
         TimeSignature timeSignature;
 
+        public Voice voice {get; private set;}
+
         public void Create(ABC.Voice voice)
         {
+            this.voice = voice;
             measures = new List<Measure>();
 
             if (voice.items.Count == 0) return;
