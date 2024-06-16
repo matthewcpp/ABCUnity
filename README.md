@@ -3,6 +3,8 @@ This library renders a subset of [ABC Music Notation](http://abcnotation.com/) i
 
 ### Installation
 The easiest way to to use the library is to install it using the Unity package manager.
+To install the package from your local disk refer to [Installing UPM Packages from local folders](https://docs.unity3d.com/Manual/upm-ui-local.html).
+To install the package from git directly refer to [Installing UPM Packages from Git](https://docs.unity3d.com/Manual/upm-ui-giturl.html).
 This project requires the installation of the basic TextMeshPro asset package.
 
 ### Basic Usage
@@ -30,12 +32,13 @@ Appears in the game engine as:
 
 [![score.png](https://i.postimg.cc/T1Fy1dCJ/score.png)](https://matthewcpp.github.io/assets/images/score.png)
 
+### Adding tests
+Create a new abc file in the `Runtime/Resources/Tests` folder that contains the test abc code.  The file should be specified as `testname.abc.txt`.
+Add a new entry to the `testFiles` array in `Runtime/Tests/TestUi.cs`
+Create a new MuseScore file in the `Runtime/Tests/Baselines~` folder that correctly renders the functionality you are testing.
+
 ### Testing
 The test harness is loacated in the `Runtime/Tests/Test.unity` scene.
 Enter playmode and select the test which to run from the dropdown menu.
 Compare the output with the corresponding baseline file.
 
-### Adding tests
-Create a new abc file in the `Runtime/Resources/Tests` folder that contains the test abc code.  The file should be specified as `testname.abc.txt`.
-Add a new entry to the `testFiles` array in `Runtime/Tests/TestUi.cs`
-Create a new MuseScore file in the `Runtime/Tests/Baselines~` folder that correctly renders the functionality you are testing.
