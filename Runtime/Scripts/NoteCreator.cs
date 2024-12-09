@@ -622,7 +622,9 @@ namespace ABCUnity
             var lastNotePos = Vector3.zero;
 
             if (ChordIsCompressed(chord, NoteDirection.Down))
+            {
                 offset.x += compressedChordNoteOffset;
+            }
 
             var dotValue = chord.length > ABC.Length.Quarter ? chord.length : ABC.Length.Quarter;
             var rootBounds = AddChordNoteHead(chord.notes[chord.notes.Length - 1].pitch, dotValue, clef, NoteDirection.Down, container, offset, ref lastNotePos);
@@ -648,7 +650,9 @@ namespace ABCUnity
                 var noteBounds = AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, NoteDirection.Down, container, noteOffset, ref lastNotePos);
                 chordBounds.Encapsulate(noteBounds);
                 if (!left)
+                {
                     rootBounds.Encapsulate(noteBounds);
+                }
             }
 
             SpriteRenderer flag = null;
@@ -665,7 +669,7 @@ namespace ABCUnity
             else if (beam.stemHeight != Beam.unspecifiedStemHeight)
             {
                 // beam contains notes at different heights, used the calculated stem height
-                stemHeight = Mathf.Abs(stemHeight - stemPos.y);
+                stemHeight = Mathf.Abs(beam.stemHeight - Beam.beamHeight);
             }
 
             stem.transform.localScale = new Vector3(1.0f, stemHeight, 1.0f);
@@ -673,8 +677,10 @@ namespace ABCUnity
             var stemBounds = stem.bounds;
 
             if (flag != null)
+            {
                 flag.transform.localPosition = new Vector3(stemBounds.max.x, stemBounds.min.y, 0.0f);
-            
+            }
+
             rootBounds.Encapsulate(stemBounds);
             chordBounds.Encapsulate(stemBounds);
             totalBounds.Encapsulate(chordBounds);

@@ -11,7 +11,7 @@ namespace ABCUnity
         public static Vector3 stemUpOffset = new Vector3(0.65f, 0.35f, 0.0f);
         public static Vector3 stemDownOffset = new Vector3(0.0f, 0.262f, 0.0f);
 
-        const float beamHeight = 0.28f;
+        public const float beamHeight = 0.28f;
         static Vector3 beamOffset = new Vector3(0.0f, 0.366f, 0.0f);
         const float defaultBeamSpacer = 0.2f;
 

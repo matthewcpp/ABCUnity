@@ -31,7 +31,8 @@ public class TestUi : MonoBehaviour
         "Chords.abc",
         "Notes.abc",
         "Rests.abc",
-        "Slurs.abc"
+        "Slurs.abc",
+        "Github-5.abc"
     };
 
     void PopulateDropdown()
