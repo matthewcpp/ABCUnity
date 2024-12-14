@@ -16,20 +16,8 @@ namespace ABCUnity
         const float defaultBeamSpacer = 0.2f;
 
         public NoteCreator.NoteDirection noteDirection { get; private set; }
-        public enum Type {
-            /// <summary> All the notes contain the same pitch need to render a straight bar.</summary>
-            Basic,
-
-            /// <summary> All Notes are either increasing or decreasing in pitch.</summary>
-            Angle,
-
-            /// <summary> Notes are connected by a straight beam.</summary>
-            Straight
-        }
 
         public List<ABC.Duration> items { get; } = new List<ABC.Duration>();
-
-        public Type type { get; private set; }
 
         ABC.Beam id { get; }
 
@@ -67,18 +55,15 @@ namespace ABCUnity
             }
         }
 
-        /// <summary> Analyzes the items in the beam and determines relevant info that will control layout. </summary>
+        /// <summary> 
+        /// Analyzes the items in the beam and determines relevant info that will control layout.
+        /// </summary>
         public void Analyze()
         {
             DetermineDirection();
 
-            if (IsBasic())
-                type = Type.Basic;
-            else if (IsAngled())
-                type = Type.Angle;
-            else
+            if (!IsBasic() && !IsAngled())
             {
-                type = Type.Straight;
                 DetermineStemHeight();
             }
         }
@@ -160,6 +145,9 @@ namespace ABCUnity
             noteInfos.Add(noteInfo);
         }
 
+        /// <summary>
+        /// Returns true if each item in the beam has the same pitch.
+        /// </summary>
         bool IsBasic()
         {
             var firstNotePitch = GetPitchForItem(items[0]);
@@ -173,6 +161,10 @@ namespace ABCUnity
             return true;
         }
 
+        /// <summary>
+        /// Returns true if each item in the beam has an increasing or decreasing pitch
+        /// </summary>
+        /// <returns></returns>
         bool IsAngled()
         {
             var previousNote = GetPitchForItem(items[0]);
@@ -212,11 +204,6 @@ namespace ABCUnity
             }
 
             return false;
-        }
-
-        enum BeamSegmentType
-        {
-            Same, // Both Notes in the beam pair have the same length
         }
 
         public bool CreateBeamVertices(List<Vector3> vertices)
@@ -347,6 +334,9 @@ namespace ABCUnity
             item.transform.parent = container.transform;
         }
 
+        /// <summary>
+        /// Creates Creates ABCUnity.Beam objects that correspond to ABC.Beams and performs direction and height analysis on them.
+        /// </summary>
         public static Dictionary<ABC.Beam, Beam> CreateBeams(ABC.Tune tune)
         {
             var beams = new Dictionary<ABC.Beam, Beam>();

@@ -554,6 +554,8 @@ namespace ABCUnity
         {
             var stem = spriteCache.GetSpriteObject("Note_Stem_Up");
             stem.transform.parent = container.transform;
+
+            /// This is set to the position of the note with the highest pitch in the chord.
             var lastNotePos = Vector3.zero;
 
             var dotValue = chord.length > ABC.Length.Quarter ? chord.length : ABC.Length.Quarter;
@@ -619,6 +621,8 @@ namespace ABCUnity
         {
             var stem = spriteCache.GetSpriteObject("Note_Stem_Down");
             stem.transform.parent = container.transform;
+
+            /// This is set to the position of the note with the lowest pitch in the chord.
             var lastNotePos = Vector3.zero;
 
             if (ChordIsCompressed(chord, NoteDirection.Down))
@@ -626,8 +630,8 @@ namespace ABCUnity
                 offset.x += compressedChordNoteOffset;
             }
 
-            var dotValue = chord.length > ABC.Length.Quarter ? chord.length : ABC.Length.Quarter;
-            var rootBounds = AddChordNoteHead(chord.notes[chord.notes.Length - 1].pitch, dotValue, clef, NoteDirection.Down, container, offset, ref lastNotePos);
+            var noteHeadType = chord.length > ABC.Length.Quarter ? chord.length : ABC.Length.Quarter;
+            var rootBounds = AddChordNoteHead(chord.notes[chord.notes.Length - 1].pitch, noteHeadType, clef, NoteDirection.Down, container, offset, ref lastNotePos);
             var chordBounds = rootBounds;
             var stemPos = container.transform.GetChild(container.transform.childCount - 1).localPosition + Beam.stemDownOffset;
             stem.transform.localPosition = stemPos;
@@ -647,7 +651,7 @@ namespace ABCUnity
                     left = false;
                 }
 
-                var noteBounds = AddChordNoteHead(chord.notes[i].pitch, dotValue, clef, NoteDirection.Down, container, noteOffset, ref lastNotePos);
+                var noteBounds = AddChordNoteHead(chord.notes[i].pitch, noteHeadType, clef, NoteDirection.Down, container, noteOffset, ref lastNotePos);
                 chordBounds.Encapsulate(noteBounds);
                 if (!left)
                 {
@@ -656,6 +660,8 @@ namespace ABCUnity
             }
 
             SpriteRenderer flag = null;
+            
+            // This value determines the amount of scale to apply to the stem sprite in order for it to be the expected height.
             float stemHeight = Mathf.Abs((lastNotePos.y - Beam.defaultStemHeight) - stemPos.y);
             if (beam == null)
             {
@@ -669,7 +675,7 @@ namespace ABCUnity
             else if (beam.stemHeight != Beam.unspecifiedStemHeight)
             {
                 // beam contains notes at different heights, used the calculated stem height
-                stemHeight = Mathf.Abs(beam.stemHeight - Beam.beamHeight);
+                stemHeight = Mathf.Abs(beam.stemHeight - stemPos.y);
             }
 
             stem.transform.localScale = new Vector3(1.0f, stemHeight, 1.0f);

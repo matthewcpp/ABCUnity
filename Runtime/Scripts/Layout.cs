@@ -12,6 +12,7 @@ namespace ABCUnity
         [SerializeField] private SpriteAtlas spriteAtlas; // set in editor
         [SerializeField] public Color color = Color.black;
         [SerializeField] public Material NoteMaterial;
+        [SerializeField] public Material BeamMaterial;
         [SerializeField] public Material LineMaterial;
         [SerializeField] public TextMeshPro textPrefab;
         [SerializeField] public float staffLinePadding = 0.4f;
@@ -427,7 +428,7 @@ namespace ABCUnity
             }
 
             if (beamVertices != null)
-                Beam.CreateMesh(beamVertices, NoteMaterial, measure.container);
+                Beam.CreateMesh(beamVertices, BeamMaterial, measure.container);
 
             return actualBounds;
         }

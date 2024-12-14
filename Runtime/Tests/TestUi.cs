@@ -14,7 +14,9 @@ public class TestUi : MonoBehaviour
     /// Specifies a file path which will override any dropdown selection when the "Load" Button is clicked.
     /// This is primarily used for iteratively building up tests.
     /// </summary>
-    [SerializeField] string filePathOverride = null;
+    [Tooltip("Specifies a file path which will override any dropdown selection.")]
+    [SerializeField] 
+    string filePathOverride = null;
 
     void Awake()
     {
